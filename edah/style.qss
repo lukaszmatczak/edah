@@ -1,0 +1,139 @@
+QWidget {
+    color: rgb(255,255,255);
+    font: 16pt "Open Sans Light";
+}
+
+QWidget:focus {
+    outline: none;
+}
+
+QMainWindow {
+    background: transparent;
+}
+
+QPushButton {
+    background-color: rgb(36,36,36);
+    border-color: rgb(0,0,0);
+    border-top-color: rgb(70, 70, 70);
+    border-left-color: rgb(70, 70, 70);
+    border-width: 2 4 4 2px;
+    border-style: solid;
+    border-radius: 10px;
+}
+
+QPushButton:pressed {
+    border-color: rgb(0,0,0);
+    border-bottom-color: rgb(70, 70, 70);
+    border-right-color: rgb(70, 70, 70);
+    border-width: 4 2 2 4px;
+}
+
+QToolTip {
+    color: white;
+    background-color: black;
+    border: none;
+}
+
+#winFrame {
+    border: 4px solid rgb(20,20,20);
+    border-top-color: rgba(20,20,20,200);
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+#winFrame[hasFocus="false"] {
+    border-top-color: rgba(20,20,20,0);
+}
+
+#winFrame_active {
+    border: 4px solid rgb(127,127,127);
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+#container[isMaximized="false"] {
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+#titleBar[isMaximized="false"][hasFocus="true"] {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(20,20,20, 200),
+        stop:0.3 rgba(20,20,20, 228),
+        stop:0.8 rgba(20,20,20, 255));
+}
+
+#titleBar[isMaximized="true"][hasFocus="true"] {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgb(40,40,40),
+        stop:0.3 rgb(30,30,30),
+        stop:0.8 rgb(20,20,20));
+}
+
+#titleBar[hasFocus="false"] {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(20,20,20,0),
+        stop:0.3 rgba(20,20,20,127),
+        stop:0.8 rgba(20,20,20,255));
+}
+
+#titleLbl {
+    color: qlineargradient(spread:pad, x1:0, y1:0, x2:458, y2:0, stop:0 rgba(255, 255, 255, 255),  stop:0.95 rgba(255,255,255,255), stop:1 rgba(0, 0, 0, 0));
+}
+
+#bottomBar {
+    background-color: rgb(41, 41, 47);
+}
+
+#pluginContainer {
+    background-color: rgb(20,20,20);
+}
+
+#pluginContainer[isMaximized="false"] {
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+#closeBtn, #minimizeBtn, #maximizeBtn, #menuBtn
+{
+    border-style: none;
+    background-color: rgba(0,0,0,0);
+    padding: 0;
+    icon-size: 16px;
+}
+
+#menuBtn {
+    icon-size: 20px;
+}
+
+#closeBtn:hover, #minimizeBtn:hover, #maximizeBtn:hover, #menuBtn:hover
+{
+    background-color: rgba(36,36,127);
+    border-radius: 5px;
+}
+
+#closeBtn_bottom, #minimizeBtn_bottom, #menuBtn_bottom {
+    background-color: rgba(0,0,0,0);
+    border-color:  rgb(255,255,255);
+    border-width : 0 1 0 1 px;
+    border-style: solid;
+    border-radius: 0px;
+}
+
+#closeBtn_bottom:pressed, #minimizeBtn_bottom:pressed, #menuBtn_bottom:pressed {
+    background-color: rgb(36,36,36);
+}
+
+QMenu {
+    background-color: rgb(40, 40, 40);
+    border: 1px solid black;
+    font-size: 12pt;
+}
+
+QMenu::item {
+    background-color: transparent;
+}
+
+QMenu::item:selected {
+    background-color: rgb(36, 36, 76);
+}

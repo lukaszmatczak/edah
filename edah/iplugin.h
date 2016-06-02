@@ -23,6 +23,11 @@ class IPlugin
 {
 public:
     virtual QWidget *getBigFrame() = 0;
+    virtual QWidget *getSettingsTab() = 0;
+    virtual QString getPluginName() = 0;
+
+    virtual void loadSettings() = 0;
+    virtual void writeSettings() = 0;
 };
 
 Q_DECLARE_INTERFACE(IPlugin, "edah.iplugin")

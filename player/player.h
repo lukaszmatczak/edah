@@ -3,8 +3,7 @@
 
 #include <QObject>
 
-#include <iplugin.h>
-
+#include <edah/iplugin.h>
 
 class Player : public QObject, public IPlugin
 {
@@ -17,9 +16,15 @@ public:
     virtual ~Player();
 
     QWidget *getBigFrame();
+    QWidget *getSettingsTab();
+    QString getPluginName();
+
+    void loadSettings();
+    void writeSettings();
 
 private:
     QWidget *bigFrame;
+    QWidget *settingsTab;
 };
 
 #endif // PLAYER_H

@@ -8,11 +8,11 @@ QT       += core gui widgets
 
 TARGET = player
 TEMPLATE = lib
-CONFIG += plugin
+CONFIG += plugin c++11
 
 DESTDIR = ../plugins/player
 
-INCLUDEPATH += ../edah
+INCLUDEPATH += ..
 
 SOURCES += player.cpp
 

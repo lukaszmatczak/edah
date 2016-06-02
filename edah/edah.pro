@@ -32,6 +32,8 @@ HEADERS  += mainwindow.h \
     database.h \
     iplugin.h
 
+INCLUDEPATH += ..
+
 linux: SOURCES += linuxutils.cpp
 
 linux: HEADERS += linuxutils.h

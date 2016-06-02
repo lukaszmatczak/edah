@@ -19,6 +19,8 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include "mainwindow.h"
+
 #include <QDialog>
 #include <QComboBox>
 #include <QCheckBox>
@@ -58,37 +60,7 @@ private:
 
 };
 
-class Tab : public QWidget
-{
-    Q_OBJECT
-public:
-    virtual void loadSettings() = 0;
-    virtual void writeSettings() = 0;
-};
-
-class Settings : public QDialog
-{
-    Q_OBJECT
-
-public:
-    Settings();
-
-protected:
-    void changeEvent(QEvent *e);
-
-private:
-    QTabWidget *tabs;
-    QVector<Tab*> tab;
-    QDialogButtonBox *dialogBtns;
-
-signals:
-    void settingsChanged();
-
-private slots:
-    void writeSettings();
-};
-
-class GeneralTab : public Tab
+class GeneralTab : public QWidget
 {
     Q_OBJECT
 
@@ -119,6 +91,29 @@ private slots:
     void installedPluginSelected(const QModelIndex &index);
     void moveUpBtnClicked();
     void moveDownBtnClicked();
+};
+
+class Settings : public QDialog
+{
+    Q_OBJECT
+
+public:
+    Settings(QVector<Plugin> *plugins);
+
+protected:
+    void changeEvent(QEvent *e);
+
+private:
+    QTabWidget *tabs;
+    GeneralTab *generalTab;
+    QVector<Plugin> *plugins;
+    QDialogButtonBox *dialogBtns;
+
+signals:
+    void settingsChanged();
+
+private slots:
+    void writeSettings();
 };
 
 #endif // SETTINGS_H

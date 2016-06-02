@@ -14,6 +14,8 @@ Player::Player(QObject *parent) :
 
     QPushButton *btn = new QPushButton("Hello Player plugin!", bigFrame);
     bigFrame->layout()->addWidget(btn);
+
+    settingsTab = new QWidget;
 }
 
 Player::~Player()
@@ -25,3 +27,24 @@ QWidget *Player::getBigFrame()
 {
     return bigFrame;
 }
+
+QWidget *Player::getSettingsTab()
+{
+    return settingsTab;
+}
+
+QString Player::getPluginName()
+{
+    return tr("Player");
+}
+
+void Player::loadSettings()
+{
+
+}
+
+void Player::writeSettings()
+{
+
+}
+

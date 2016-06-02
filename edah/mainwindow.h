@@ -32,6 +32,13 @@
 
 #include <QPluginLoader>
 
+struct Plugin
+{
+    QString id;
+    QPluginLoader *loader;
+    IPlugin *plugin;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -49,13 +56,6 @@ protected:
     void changeEvent(QEvent *e);
 
 private:
-    struct Plugin
-    {
-        QString id;
-        QPluginLoader *loader;
-        IPlugin *plugin;
-    };
-
     bool loadPlugin(const QString &id, Plugin *plugin);
     void loadPlugins();
     void refreshPlugins();

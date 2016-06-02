@@ -559,7 +559,7 @@ void MainWindow::showMenu()
 
 void MainWindow::showSettings()
 {
-    Settings *settings = new Settings;
+    Settings *settings = new Settings(&plugins);
     settings->setAttribute(Qt::WA_DeleteOnClose);
     connect(settings, &Settings::settingsChanged, this, &MainWindow::settingsChanged);
     settings->exec();

@@ -38,14 +38,24 @@
 
 #include <QDebug>
 
-Settings::Settings()
+Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
 {
     this->setLayout(new QVBoxLayout);
 
     tabs = new QTabWidget(this);
 
-    tab.push_back(new GeneralTab);
-    tabs->addTab(tab.back(), "General");
+    generalTab = new GeneralTab;
+    tabs->addTab(generalTab, "General");
+
+    foreach(Plugin p, *plugins)
+    {
+        QWidget *t = p.plugin->getSettingsTab();
+        if(t)
+        {
+            tabs->addTab(t, p.plugin->getPluginName());
+        }
+    }
+
     this->layout()->addWidget(tabs);
 
     dialogBtns = new QDialogButtonBox(QDialogButtonBox::Ok |
@@ -62,9 +72,10 @@ Settings::Settings()
 
     this->layout()->addWidget(dialogBtns);
 
-    foreach(Tab *t, tab)
+    generalTab->loadSettings();
+    foreach(Plugin p, *plugins)
     {
-        t->loadSettings();
+        p.plugin->loadSettings();
     }
 
     QEvent langEvent(QEvent::LanguageChange);
@@ -87,9 +98,10 @@ void Settings::changeEvent(QEvent *e)
 
 void Settings::writeSettings()
 {
-    foreach(Tab *t, tab)
+    generalTab->writeSettings();
+    foreach(Plugin p, *plugins)
     {
-        t->writeSettings();
+        p.plugin->writeSettings();
     }
 
     emit settingsChanged();

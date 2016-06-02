@@ -49,7 +49,17 @@ protected:
     void changeEvent(QEvent *e);
 
 private:
+    struct Plugin
+    {
+        QString id;
+        QPluginLoader *loader;
+        IPlugin *plugin;
+    };
+
+    bool loadPlugin(const QString &id, Plugin *plugin);
     void loadPlugins();
+    void refreshPlugins();
+    void settingsChanged();
 
     void addShadowEffect(QWidget *widget, QColor color);
     void createTitleBar(QWidget *parent);
@@ -79,13 +89,8 @@ private:
     QPoint movePos;
     QTimer timer;
 
-    struct Plugin
-    {
-        QPluginLoader *loader;
-        IPlugin *plugin;
-    };
-
     QVector<Plugin> plugins;
+    QVector<QWidget*> lines;
 
 public slots:
     void newProcess(const QString &message);

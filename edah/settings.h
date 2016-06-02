@@ -24,6 +24,9 @@
 #include <QCheckBox>
 #include <QTableView>
 #include <QTextEdit>
+#include <QFile>
+#include <QDialogButtonBox>
+#include <QLabel>
 
 class PluginTableModel : public QAbstractTableModel
 {
@@ -40,11 +43,14 @@ public:
     };
 
     void load(QString lang);
+    PluginInfo loadFromFile(QFile &file, const QString &lang);
+    void retranslate(const QString &lang);
     int rowCount(const QModelIndex &parent) const;
     int columnCount(const QModelIndex &parent) const;
     QVariant data(const QModelIndex &index, int role) const;
+    void swapEntries(int pos1, int pos2);
 
-    PluginInfo &getPluginInfo(int i);
+    PluginInfo getPluginInfo(int i);
     void toggleChecked(int i);
 
 private:
@@ -67,8 +73,16 @@ class Settings : public QDialog
 public:
     Settings();
 
+protected:
+    void changeEvent(QEvent *e);
+
 private:
+    QTabWidget *tabs;
     QVector<Tab*> tab;
+    QDialogButtonBox *dialogBtns;
+
+signals:
+    void settingsChanged();
 
 private slots:
     void writeSettings();
@@ -83,11 +97,19 @@ public:
     void loadSettings();
     void writeSettings();
 
+protected:
+    void changeEvent(QEvent *e);
+
 private:
+    QLabel *langLbl;
     QComboBox *langBox;
     QCheckBox *fullscreenChk;
     QTableView *pluginsTbl;
     PluginTableModel *pluginsModel;
+    QLabel *installedPluginsLbl;
+    QLabel *availPluginsLbl;
+    QPushButton *moveUpBtn;
+    QPushButton *moveDownBtn;
 
     QTextEdit *pluginDesc;
 
@@ -95,6 +117,8 @@ private:
 
 private slots:
     void installedPluginSelected(const QModelIndex &index);
+    void moveUpBtnClicked();
+    void moveDownBtnClicked();
 };
 
 #endif // SETTINGS_H

@@ -4,6 +4,8 @@
 #include <QPushButton>
 #include <QGridLayout>
 
+#include <QDebug>
+
 Player::Player(QObject *parent) :
     QObject(parent)
 {

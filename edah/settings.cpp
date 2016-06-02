@@ -22,11 +22,12 @@
 
 #include <QVBoxLayout>
 #include <QTabWidget>
-#include <QDialogButtonBox>
+
 #include <QPushButton>
 #include <QFormLayout>
 #include <QStandardItem>
-#include <QLabel>
+#include <QEvent>
+#include <QApplication>
 
 #include <QDir>
 #include <QJsonDocument>
@@ -39,36 +40,48 @@
 
 Settings::Settings()
 {
-    this->setWindowTitle(tr("Settings"));
-
     this->setLayout(new QVBoxLayout);
 
-    QTabWidget *tabs = new QTabWidget(this);
+    tabs = new QTabWidget(this);
 
     tab.push_back(new GeneralTab);
-    tabs->addTab(tab.back(), tr("General"));
+    tabs->addTab(tab.back(), "General");
     this->layout()->addWidget(tabs);
 
-    QDialogButtonBox *btns = new QDialogButtonBox(QDialogButtonBox::Ok |
-                                                  QDialogButtonBox::Cancel |
-                                                  QDialogButtonBox::Apply);
-    btns->button(QDialogButtonBox::Ok)->setText(tr("OK"));
-    btns->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    btns->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
+    dialogBtns = new QDialogButtonBox(QDialogButtonBox::Ok |
+                                      QDialogButtonBox::Cancel |
+                                      QDialogButtonBox::Apply);
 
-    connect(btns, &QDialogButtonBox::accepted, this, [this]() {
+    connect(dialogBtns, &QDialogButtonBox::accepted, this, [this]() {
         this->writeSettings();
         this->close();
     });
-    connect(btns, &QDialogButtonBox::rejected, this, &Settings::close);
-    connect(btns->button(QDialogButtonBox::Apply), &QPushButton::clicked,
+    connect(dialogBtns, &QDialogButtonBox::rejected, this, &Settings::close);
+    connect(dialogBtns->button(QDialogButtonBox::Apply), &QPushButton::clicked,
             this, &Settings::writeSettings);
 
-    this->layout()->addWidget(btns);
+    this->layout()->addWidget(dialogBtns);
 
     foreach(Tab *t, tab)
     {
         t->loadSettings();
+    }
+
+    QEvent langEvent(QEvent::LanguageChange);
+    this->changeEvent(&langEvent);
+}
+
+void Settings::changeEvent(QEvent *e)
+{
+    if(e->type() == QEvent::LanguageChange)
+    {
+        this->setWindowTitle(tr("Settings"));
+
+        tabs->setTabText(0, tr("General"));
+
+        dialogBtns->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+        dialogBtns->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
+        dialogBtns->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
     }
 }
 
@@ -78,6 +91,8 @@ void Settings::writeSettings()
     {
         t->writeSettings();
     }
+
+    emit settingsChanged();
 }
 
 GeneralTab::GeneralTab()
@@ -85,13 +100,15 @@ GeneralTab::GeneralTab()
     QFormLayout *layout = new QFormLayout;
     this->setLayout(layout);
 
+    langLbl = new QLabel(this);
+
     langBox = new QComboBox(this);
     langBox->addItem("English", "en");
     langBox->addItem("polski", "pl");
 
-    layout->addRow(tr("Language:"), langBox);
+    layout->addRow(langLbl, langBox);
 
-    fullscreenChk = new QCheckBox(tr("Show main window on full-screen"), this);
+    fullscreenChk = new QCheckBox(this);
     layout->addRow(fullscreenChk);
 
     QHBoxLayout *pluginsLayout = new QHBoxLayout;
@@ -100,7 +117,7 @@ GeneralTab::GeneralTab()
     QVBoxLayout *installedPluginsLayout = new QVBoxLayout;
     pluginsLayout->addLayout(installedPluginsLayout);
 
-    QLabel *installedPluginsLbl = new QLabel(tr("Installed plugins:"), this);
+    installedPluginsLbl = new QLabel(this);
     installedPluginsLayout->addWidget(installedPluginsLbl);
 
     pluginsTbl = new QTableView(this);
@@ -123,12 +140,62 @@ GeneralTab::GeneralTab()
     QVBoxLayout *availPluginsLayout = new QVBoxLayout;
     pluginsLayout->addLayout(availPluginsLayout);
 
-    QLabel *availPluginsLbl = new QLabel(tr("Available plugins:"), this);
+    availPluginsLbl = new QLabel(this);
     availPluginsLayout->addWidget(availPluginsLbl);
+
+    QHBoxLayout *pluginsBtnsLayout = new QHBoxLayout;
+    layout->addRow(pluginsBtnsLayout);
+
+    moveUpBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_ArrowUp), "", this);
+    connect(moveUpBtn, &QPushButton::clicked, this, &GeneralTab::moveUpBtnClicked);
+    pluginsBtnsLayout->addWidget(moveUpBtn);
+
+    moveDownBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_ArrowDown), "", this);
+    connect(moveDownBtn, &QPushButton::clicked, this, &GeneralTab::moveDownBtnClicked);
+    pluginsBtnsLayout->addWidget(moveDownBtn);
 
     pluginDesc = new QTextEdit(this);
     pluginDesc->setReadOnly(true);
     layout->addRow(pluginDesc);
+
+    QEvent langEvent(QEvent::LanguageChange);
+    this->changeEvent(&langEvent);
+}
+
+void GeneralTab::changeEvent(QEvent *e)
+{
+    if(e->type() == QEvent::LanguageChange)
+    {
+        langLbl->setText(tr("Language:"));
+        fullscreenChk->setText(tr("Show main window on full-screen"));
+        installedPluginsLbl->setText(tr("Installed plugins:"));
+        availPluginsLbl->setText(tr("Available plugins:"));
+        moveUpBtn->setText(tr("Move up"));
+        moveDownBtn->setText(tr("Move down"));
+
+        pluginsModel->retranslate(langBox->currentData().toString());
+        this->installedPluginSelected(pluginsModel->index(pluginsTbl->currentIndex().row(), 1));
+    }
+}
+
+void GeneralTab::moveUpBtnClicked()
+{
+    int currRow = pluginsTbl->currentIndex().row();
+    if(currRow < 1) return;
+
+    pluginsModel->swapEntries(currRow, currRow-1);
+    QModelIndex idx = pluginsModel->index(currRow-1, 0, QModelIndex());
+    pluginsTbl->setCurrentIndex(idx);
+}
+
+void GeneralTab::moveDownBtnClicked()
+{
+    int currRow = pluginsTbl->currentIndex().row();
+    if(currRow < 0 || currRow >= pluginsModel->rowCount(QModelIndex())-1) return;
+
+    pluginsModel->swapEntries(currRow, currRow+1);
+    QModelIndex idx = pluginsModel->index(currRow+1, 0, QModelIndex());
+    pluginsTbl->setCurrentIndex(idx);
 }
 
 void GeneralTab::installedPluginSelected(const QModelIndex &index)
@@ -139,8 +206,8 @@ void GeneralTab::installedPluginSelected(const QModelIndex &index)
     }
 
     QString text = "<b>" + pluginsModel->getPluginInfo(index.row()).name + "</b>";
+    text += " <b>" + pluginsModel->getPluginInfo(index.row()).version + "</b>";
     text += "<br/><br/>" + pluginsModel->getPluginInfo(index.row()).desc;
-    text += "<br/><br/>" + tr("Installed version: ") + pluginsModel->getPluginInfo(index.row()).version;
 
     pluginDesc->setText(text);
 }
@@ -195,35 +262,88 @@ void PluginTableModel::load(QString lang)
 {
     emit layoutAboutToBeChanged();
 
+    QVector<QString> pluginsId;
     plugins.clear();
+
+    QSqlQuery q(db->db);
+    q.prepare("SELECT `plugin_id`, `enabled` FROM `plugins` ORDER BY `order`");
+    q.exec();
+    while(q.next())
+    {
+        QString pluginDir = q.value(0).toString();
+        QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
+
+        if(!file.exists())
+        {
+            continue;
+        }
+
+        PluginInfo pi = this->loadFromFile(file, lang);
+        pi.enabled = q.value(1).toBool();
+
+        plugins.push_back(pi);
+        pluginsId.push_back(pi.id);
+    }
 
     QStringList pluginsList = QDir(utils->getDataDir()+"/plugins").entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
     for(int i=0; i<pluginsList.size(); i++)
     {
         QString pluginDir = pluginsList[i];
-        QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
-        file.open(QIODevice::ReadOnly | QIODevice::Text);
-        QJsonObject info = QJsonDocument::fromJson(file.readAll()).object();
-        QJsonObject infoLang = info.value(lang).toObject();
-        if(infoLang.isEmpty())
+
+        if(pluginsId.contains(pluginDir))
         {
-            infoLang = info.value("en").toObject();
+            continue;
         }
 
-        QSqlQuery q(db->db);
-        q.prepare("SELECT `enabled` FROM `plugins` WHERE `plugin_id`=:plugin_id");
-        q.bindValue(":plugin_id", info.value("id"));
-        q.exec();
-        q.first();
+        QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
 
-        PluginInfo pi;
-        pi.enabled = q.value(0).toBool();
-        pi.id = info.value("id").toString();
-        pi.name = infoLang.value("name").toString();
-        pi.desc = infoLang.value("desc").toString();
-        pi.version = info.value("version").toString();
+        PluginInfo pi = this->loadFromFile(file, lang);
+        pi.enabled = false;
 
         plugins.push_back(pi);
+    }
+
+    emit layoutChanged();
+    emit dataChanged(createIndex(0, 0), createIndex(plugins.size()-1, 2));
+}
+
+PluginTableModel::PluginInfo PluginTableModel::loadFromFile(QFile &file, const QString &lang)
+{
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    QJsonObject info = QJsonDocument::fromJson(file.readAll()).object();
+    QJsonObject infoLang = info.value(lang).toObject();
+    if(infoLang.isEmpty())
+    {
+        infoLang = info.value("en").toObject();
+    }
+
+    PluginInfo pi;
+    pi.id = info.value("id").toString();
+    pi.name = infoLang.value("name").toString();
+    pi.desc = infoLang.value("desc").toString();
+    pi.version = info.value("version").toString();
+
+    return pi;
+}
+
+void PluginTableModel::retranslate(const QString &lang)
+{
+    emit layoutAboutToBeChanged();
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        QString pluginDir = plugins[i].id;
+        QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
+
+        if(!file.exists())
+        {
+            continue;
+        }
+
+        PluginInfo pi = this->loadFromFile(file, lang);
+
+        plugins[i].name = pi.name;
+        plugins[i].desc = pi.desc;
     }
 
     emit layoutChanged();
@@ -263,8 +383,13 @@ QVariant PluginTableModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-PluginTableModel::PluginInfo &PluginTableModel::getPluginInfo(int i)
+PluginTableModel::PluginInfo PluginTableModel::getPluginInfo(int i)
 {
+    if(i<0 || i>=plugins.size())
+    {
+        return PluginInfo();
+    }
+
     return plugins[i];
 }
 
@@ -273,4 +398,9 @@ void PluginTableModel::toggleChecked(int i)
     plugins[i].enabled = !plugins[i].enabled;
 
     emit dataChanged(createIndex(i, 0), createIndex(i, 2));
+}
+
+void PluginTableModel::swapEntries(int pos1, int pos2)
+{
+    qSwap(plugins[pos1], plugins[pos2]);
 }

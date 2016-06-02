@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent)
         container->setObjectName("container");
         container->setLayout(new QVBoxLayout);
         container->layout()->setSpacing(0);
-        container->layout()->setMargin(0);
+        container->layout()->setContentsMargins(QMargins());
         {
             this->createTitleBar(container);
             container->layout()->addWidget(titleBar);
@@ -107,6 +107,7 @@ MainWindow::MainWindow(QWidget *parent)
             pluginContainer = new QWidget(container);
             pluginContainer->setObjectName("pluginContainer");
             pluginContainer->setLayout(new QHBoxLayout);
+            pluginContainer->layout()->setSpacing(0);
             container->layout()->addWidget(pluginContainer);
 
             this->createBottomBar(container);
@@ -142,6 +143,20 @@ MainWindow::MainWindow(QWidget *parent)
     this->loadPlugins();
 }
 
+bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
+{
+    plugin->id = id;
+    plugin->loader = new QPluginLoader(utils->getPluginPath(id), this);
+    plugin->plugin = qobject_cast<IPlugin*>(plugin->loader->instance());
+
+    if(!plugin->plugin)
+    {
+        LOG(QString("Couldn't load plugin \"%1\"").arg(utils->getPluginPath(id)));
+    }
+
+    return plugin->plugin;
+}
+
 void MainWindow::loadPlugins()
 {
     db->db.exec("CREATE TABLE IF NOT EXISTS plugins (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `plugin_id` TEXT, `order` INTEGER, `enabled` INTEGER)");
@@ -153,21 +168,117 @@ void MainWindow::loadPlugins()
     while(q.next())
     {
         Plugin plugin;
-        plugin.loader = new QPluginLoader(utils->getPluginPath(q.value(0).toString()), this);
-        plugin.plugin = qobject_cast<IPlugin*>(plugin.loader->instance());
 
-        if(plugin.plugin)
+        if(this->loadPlugin(q.value(0).toString(), &plugin))
         {
             plugins.push_back(plugin);
         }
+    }
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        if(i!=0)
+        {
+            QWidget *line = new QWidget(this);
+            line->setObjectName("line");
+            line->setFixedWidth(2);
+            lines.push_back(line);
+            pluginContainer->layout()->addWidget(line);
+        }
+
+        pluginContainer->layout()->addWidget(plugins[i].plugin->getBigFrame());
+    }
+}
+
+void MainWindow::refreshPlugins()
+{
+    QVector<QString> pluginsId;
+    QVector<Plugin> newPlugins;
+
+    QSqlQuery q(db->db);
+    q.prepare("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
+    q.exec();
+
+    while(q.next())
+    {
+        QString pluginId = q.value(0).toString();
+
+        int idx = -1;
+        for(int i=0; i<plugins.size(); i++)
+        {
+            if(plugins[i].id == pluginId)
+            {
+                idx = i;
+                break;
+            }
+        }
+
+        if(idx != -1)
+        {
+            newPlugins.push_back(plugins[idx]);
+        }
         else
         {
-            LOG(QString("Couldn't load plugin \"%1\"").arg(utils->getPluginPath(q.value(0).toString())));
+            Plugin plugin;
+
+            if(this->loadPlugin(pluginId, &plugin))
+            {
+                newPlugins.push_back(plugin);
+            }
+        }
+
+        pluginsId.push_back(pluginId);
+    }
+
+    QMap<QString, QWidget*> pluginsWidgets;
+    for(int i=0; i<plugins.size(); i++)
+    {
+        if(pluginsId.contains(plugins[i].id))
+        {
+            pluginsWidgets.insert(plugins[i].id, pluginContainer->layout()->itemAt(i*2)->widget());
         }
     }
 
-    if(!plugins.isEmpty())
-        pluginContainer->layout()->addWidget(plugins[0].plugin->getBigFrame());
+    for(int i=0; i<plugins.size(); i++)
+    {
+        if(!pluginsId.contains(plugins[i].id))
+        {
+            plugins[i].loader->unload();
+        }
+    }
+
+    plugins = newPlugins;
+
+    QLayoutItem *i;
+    while((i = pluginContainer->layout()->takeAt(0)) != 0)
+    {
+        if(i->widget()->objectName() == "line")
+        {
+            delete i->widget();
+        }
+        delete i;
+    }
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        if(i!=0)
+        {
+            QWidget *line = new QWidget(this);
+            line->setObjectName("line");
+            line->setFixedWidth(2);
+            lines.push_back(line);
+            pluginContainer->layout()->addWidget(line);
+        }
+
+        if(pluginsWidgets.contains(plugins[i].id))
+        {
+            pluginContainer->layout()->addWidget(pluginsWidgets[plugins[i].id]);
+        }
+        else
+        {
+            pluginContainer->layout()->addWidget(plugins[i].plugin->getBigFrame());
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -450,11 +561,14 @@ void MainWindow::showSettings()
 {
     Settings *settings = new Settings;
     settings->setAttribute(Qt::WA_DeleteOnClose);
+    connect(settings, &Settings::settingsChanged, this, &MainWindow::settingsChanged);
     settings->exec();
+}
 
+void MainWindow::settingsChanged()
+{
     QLocale locale = QLocale(db->getValue("lang", "").toString());
     translator->load(locale, "lang", ".", ":/lang");
-    qApp->installTranslator(translator);
 
     bool fullscreen = db->getValue("fullscreen", false).toBool();
     if(fullscreen != this->isFullScreen())
@@ -463,6 +577,8 @@ void MainWindow::showSettings()
         bottomBar->setVisible(fullscreen);
         fullscreen ? this->showFullScreen() : this->showNormal();
     }
+
+    this->refreshPlugins();
 }
 
 void MainWindow::showAbout()

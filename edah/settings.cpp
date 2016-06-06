@@ -38,6 +38,10 @@
 
 #include <QDebug>
 
+////////////////
+/// Settings ///
+////////////////
+
 Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
 {
     this->setLayout(new QVBoxLayout);
@@ -46,6 +50,7 @@ Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
 
     generalTab = new GeneralTab;
     tabs->addTab(generalTab, "General");
+    generalTab->loadSettings();
 
     foreach(Plugin p, *plugins)
     {
@@ -53,6 +58,7 @@ Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
         if(t)
         {
             tabs->addTab(t, p.plugin->getPluginName());
+            p.plugin->loadSettings();
         }
     }
 
@@ -71,12 +77,6 @@ Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
             this, &Settings::writeSettings);
 
     this->layout()->addWidget(dialogBtns);
-
-    generalTab->loadSettings();
-    foreach(Plugin p, *plugins)
-    {
-        p.plugin->loadSettings();
-    }
 
     QEvent langEvent(QEvent::LanguageChange);
     this->changeEvent(&langEvent);
@@ -106,6 +106,10 @@ void Settings::writeSettings()
 
     emit settingsChanged();
 }
+
+//////////////////
+/// GeneralTab ///
+//////////////////
 
 GeneralTab::GeneralTab()
 {
@@ -269,6 +273,10 @@ void GeneralTab::writeSettings()
         q.exec();
     }
 }
+
+////////////////////////
+/// PluginTableModel ///
+////////////////////////
 
 void PluginTableModel::load(QString lang)
 {

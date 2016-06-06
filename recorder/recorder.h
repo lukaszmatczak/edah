@@ -1,10 +1,10 @@
 #ifndef RECORDER_H
 #define RECORDER_H
 
-#include <QObject>
-
 #include <edah/iplugin.h>
 
+#include <QObject>
+#include <QLabel>
 
 class Recorder : public QObject, public IPlugin
 {
@@ -16,7 +16,8 @@ public:
     Recorder(QObject *parent = 0);
     virtual ~Recorder();
 
-    QWidget *getBigFrame();
+    QWidget *getBigWidget();
+    QWidget *getSmallWidget();
     QWidget *getSettingsTab();
     QString getPluginName();
 
@@ -25,6 +26,7 @@ public:
 
 private:
     QWidget *bigFrame;
+    QWidget *smallWidget;
 };
 
 #endif // RECORDER_H

@@ -14,6 +14,8 @@ Recorder::Recorder(QObject *parent) :
 
     QPushButton *btn = new QPushButton("Hello Recorder plugin!", bigFrame);
     bigFrame->layout()->addWidget(btn);
+
+    smallWidget = new QLabel(this->getPluginName());
 }
 
 Recorder::~Recorder()
@@ -21,9 +23,14 @@ Recorder::~Recorder()
     delete bigFrame;
 }
 
-QWidget *Recorder::getBigFrame()
+QWidget *Recorder::getBigWidget()
 {
     return bigFrame;
+}
+
+QWidget *Recorder::getSmallWidget()
+{
+    return smallWidget;
 }
 
 QWidget *Recorder::getSettingsTab()

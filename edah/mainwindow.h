@@ -29,6 +29,7 @@
 #include <QToolButton>
 #include <QTimer>
 #include <QTranslator>
+#include <QPushButton>
 
 #include <QPluginLoader>
 
@@ -37,6 +38,10 @@ struct Plugin
     QString id;
     QPluginLoader *loader;
     IPlugin *plugin;
+
+    QWidget* widget;
+    bool isBig;
+    //QPushButton *smallWidgetBtn;
 };
 
 class MainWindow : public QMainWindow
@@ -60,6 +65,8 @@ private:
     void loadPlugins();
     void refreshPlugins();
     void settingsChanged();
+    void changeActivePlugin(int pluginIdx);
+    void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
 
     void addShadowEffect(QWidget *widget, QColor color);
     void createTitleBar(QWidget *parent);
@@ -72,6 +79,7 @@ private:
     WinFrame *winFrame;
     QFrame *container;
     QWidget *pluginContainer;
+    QHBoxLayout *pluginLayout;
 
     QFrame *titleBar;
     QToolButton *menuBtn;
@@ -90,7 +98,7 @@ private:
     QTimer timer;
 
     QVector<Plugin> plugins;
-    QVector<QWidget*> lines;
+    int activePlugin;
 
 public slots:
     void newProcess(const QString &message);

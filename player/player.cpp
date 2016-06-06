@@ -3,11 +3,11 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QGridLayout>
+#include <QLabel>
 
 #include <QDebug>
 
-Player::Player(QObject *parent) :
-    QObject(parent)
+Player::Player()
 {
     bigFrame = new QWidget;
     bigFrame->setLayout(new QGridLayout);
@@ -16,6 +16,8 @@ Player::Player(QObject *parent) :
     bigFrame->layout()->addWidget(btn);
 
     settingsTab = new QWidget;
+
+    smallWidget = new QLabel(this->getPluginName());
 }
 
 Player::~Player()
@@ -23,9 +25,14 @@ Player::~Player()
     delete bigFrame;
 }
 
-QWidget *Player::getBigFrame()
+QWidget *Player::getBigWidget()
 {
     return bigFrame;
+}
+
+QWidget *Player::getSmallWidget()
+{
+    return smallWidget;
 }
 
 QWidget *Player::getSettingsTab()

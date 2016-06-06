@@ -12,10 +12,11 @@ class Player : public QObject, public IPlugin
     Q_INTERFACES(IPlugin)
 
 public:
-    Player(QObject *parent = 0);
+    Player();
     virtual ~Player();
 
-    QWidget *getBigFrame();
+    QWidget *getBigWidget();
+    QWidget *getSmallWidget();
     QWidget *getSettingsTab();
     QString getPluginName();
 
@@ -24,6 +25,7 @@ public:
 
 private:
     QWidget *bigFrame;
+    QWidget *smallWidget;
     QWidget *settingsTab;
 };
 

@@ -19,10 +19,13 @@
 #ifndef IPLUGIN_H
 #define IPLUGIN_H
 
+#include <QWidget>
+
 class IPlugin
 {
 public:
-    virtual QWidget *getBigFrame() = 0;
+    virtual QWidget *getBigWidget() = 0;
+    virtual QWidget *getSmallWidget() = 0;
     virtual QWidget *getSettingsTab() = 0;
     virtual QString getPluginName() = 0;
 

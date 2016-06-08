@@ -21,6 +21,7 @@ Recorder::Recorder(QObject *parent) :
 Recorder::~Recorder()
 {
     delete bigFrame;
+    delete smallWidget;
 }
 
 QWidget *Recorder::getBigWidget()

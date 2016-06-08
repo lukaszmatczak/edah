@@ -99,6 +99,7 @@ class Settings : public QDialog
 
 public:
     Settings(QVector<Plugin> *plugins);
+    virtual ~Settings();
 
 protected:
     void changeEvent(QEvent *e);

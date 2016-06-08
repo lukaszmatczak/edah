@@ -39,9 +39,8 @@ struct Plugin
     QPluginLoader *loader;
     IPlugin *plugin;
 
-    QWidget* widget;
+    QWidget *widget;
     bool isBig;
-    //QPushButton *smallWidgetBtn;
 };
 
 class MainWindow : public QMainWindow

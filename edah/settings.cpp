@@ -66,7 +66,7 @@ Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
 
     dialogBtns = new QDialogButtonBox(QDialogButtonBox::Ok |
                                       QDialogButtonBox::Cancel |
-                                      QDialogButtonBox::Apply);
+                                      QDialogButtonBox::Apply, this);
 
     connect(dialogBtns, &QDialogButtonBox::accepted, this, [this]() {
         this->writeSettings();
@@ -80,6 +80,14 @@ Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
 
     QEvent langEvent(QEvent::LanguageChange);
     this->changeEvent(&langEvent);
+}
+
+Settings::~Settings()
+{
+    for(int i=1; i<tabs->count(); i++)
+    {
+        tabs->widget(i)->setParent(0);
+    }
 }
 
 void Settings::changeEvent(QEvent *e)
@@ -105,6 +113,8 @@ void Settings::writeSettings()
     }
 
     emit settingsChanged();
+
+    // TODO: reload tabs
 }
 
 //////////////////

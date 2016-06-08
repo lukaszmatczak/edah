@@ -244,7 +244,6 @@ void MainWindow::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, in
 
 void MainWindow::changeActivePlugin(int pluginIdx)
 {
-
     for(int i=0; i<plugins.size(); i++)
     {
         plugins[i].isBig = true;
@@ -308,8 +307,29 @@ void MainWindow::changeActivePlugin(int pluginIdx)
 
 void MainWindow::refreshPlugins()
 {
+    QLayoutItem *i;
+    while((i = pluginLayout->takeAt(0)) != 0)
+    {
+        i->widget()->hide();
+        if(i->widget()->objectName() == "line")
+        {
+            delete i->widget();
+        }
+        delete i;
+    }
+
     QVector<QString> pluginsId;
     QVector<Plugin> newPlugins;
+
+    QString bigId;
+    foreach(const Plugin &p, plugins)
+    {
+        if(p.isBig)
+        {
+            bigId = p.id;
+            break;
+        }
+    }
 
     QSqlQuery q(db->db);
     q.prepare("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
@@ -331,6 +351,7 @@ void MainWindow::refreshPlugins()
 
         if(idx != -1)
         {
+            plugins[idx].isBig = (plugins[idx].id == bigId);
             newPlugins.push_back(plugins[idx]);
         }
         else
@@ -339,6 +360,8 @@ void MainWindow::refreshPlugins()
 
             if(this->loadPlugin(pluginId, &plugin))
             {
+                plugin.widget = nullptr;
+                plugin.isBig = false;
                 newPlugins.push_back(plugin);
             }
         }
@@ -346,13 +369,16 @@ void MainWindow::refreshPlugins()
         pluginsId.push_back(pluginId);
     }
 
-    QMap<QString, QWidget*> pluginsWidgets;
-    for(int i=0; i<plugins.size(); i++)
+    if(!pluginsId.contains(bigId) && (newPlugins.size() > 0))
     {
-        if(pluginsId.contains(plugins[i].id))
-        {
-            pluginsWidgets.insert(plugins[i].id, pluginLayout->itemAt(i*2)->widget());
-        }
+        newPlugins[0].isBig = true;
+    }
+
+    for(int i=0; i<newPlugins.size(); i++)
+    {
+        newPlugins[i].widget = newPlugins[i].isBig ?
+                    newPlugins[i].plugin->getBigWidget() :
+                    newPlugins[i].plugin->getSmallWidget();
     }
 
     for(int i=0; i<plugins.size(); i++)
@@ -363,17 +389,7 @@ void MainWindow::refreshPlugins()
         }
     }
 
-    plugins = newPlugins;
-
-    QLayoutItem *i;
-    while((i = pluginLayout->takeAt(0)) != 0)
-    {
-        if(i->widget()->objectName() == "line")
-        {
-            delete i->widget();
-        }
-        delete i;
-    }
+    plugins.swap(newPlugins);
 
     for(int i=0; i<plugins.size(); i++)
     {
@@ -382,19 +398,14 @@ void MainWindow::refreshPlugins()
             QWidget *line = new QWidget(this);
             line->setObjectName("line");
             line->setFixedWidth(2);
-            //lines.push_back(line);
             pluginLayout->addWidget(line);
         }
 
-        if(pluginsWidgets.contains(plugins[i].id))
-        {
-            pluginLayout->addWidget(pluginsWidgets[plugins[i].id]);
-        }
-        else
-        {
-            pluginLayout->addWidget(plugins[i].plugin->getBigWidget());
-        }
+        pluginLayout->addWidget(plugins[i].widget);
+        plugins[i].widget->show();
     }
+
+    this->recalcSizes(this->size());
 }
 
 MainWindow::~MainWindow()

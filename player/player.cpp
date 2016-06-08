@@ -23,6 +23,8 @@ Player::Player()
 Player::~Player()
 {
     delete bigFrame;
+    delete smallWidget;
+    delete settingsTab;
 }
 
 QWidget *Player::getBigWidget()

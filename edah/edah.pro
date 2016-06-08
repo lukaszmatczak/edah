@@ -16,7 +16,6 @@ include(../qtsingleapplication/src/qtsingleapplication.pri)
 SOURCES += main.cpp\
         mainwindow.cpp \
     mypushbutton.cpp \
-    logger.cpp \
     winframe.cpp \
     aboutdialog.cpp \
     settings.cpp \
@@ -24,23 +23,14 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     mypushbutton.h \
-    osutils.h \
-    logger.h \
     winframe.h \
     aboutdialog.h \
     settings.h \
-    database.h \
-    iplugin.h
+    database.h
 
 INCLUDEPATH += ..
 
-linux: SOURCES += linuxutils.cpp
-
-linux: HEADERS += linuxutils.h
-
-win32: SOURCES += windowsutils.cpp
-
-win32: HEADERS += windowsutils.h
+LIBS += -L$$PWD/../../build-libedah-Qt5-Debug -ledah
 
 RESOURCES += \
     common.qrc

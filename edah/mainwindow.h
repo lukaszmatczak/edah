@@ -20,7 +20,7 @@
 #define MAINWINDOW_H
 
 #include "winframe.h"
-#include "iplugin.h"
+#include <libedah/iplugin.h>
 
 #include <QMainWindow>
 #include <QVBoxLayout>

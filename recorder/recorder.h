@@ -1,7 +1,7 @@
 #ifndef RECORDER_H
 #define RECORDER_H
 
-#include <edah/iplugin.h>
+#include <libedah/iplugin.h>
 
 #include <QObject>
 #include <QLabel>

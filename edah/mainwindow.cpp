@@ -17,19 +17,13 @@
 */
 
 #include "mainwindow.h"
-#include "osutils.h"
-#include "logger.h"
 #include "database.h"
 #include "mypushbutton.h"
 #include "aboutdialog.h"
 #include "settings.h"
 
-#ifdef Q_OS_LINUX
-#include "linuxutils.h"
-#endif
-#ifdef Q_OS_WIN
-#include "windowsutils.h"
-#endif
+#include <libedah/logger.h>
+#include <libedah/utils.h>
 
 #include <QPushButton>
 #include <QResizeEvent>
@@ -48,21 +42,14 @@
 #include <QMessageBox>
 
 #include <QDebug>
+#include <QDir>
 
-OSUtils *utils;
-Logger *logger;
 Database *db;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-#ifdef Q_OS_LINUX
-    utils = new LinuxUtils;
-#endif
-#ifdef Q_OS_WIN
-    utils = new WindowsUtils;
-#endif
-
+    utils = new Utils;
     logger = new Logger;
     db = new Database;
 
@@ -156,7 +143,7 @@ bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
 
     if(!plugin->plugin)
     {
-        LOG(QString("Couldn't load plugin \"%1\"").arg(utils->getPluginPath(id)));
+        LOG(plugin->loader->errorString());
     }
 
     return plugin->plugin;

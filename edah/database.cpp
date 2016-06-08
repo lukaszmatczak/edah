@@ -17,7 +17,7 @@
 */
 
 #include "database.h"
-#include "logger.h"
+#include <libedah/logger.h>
 
 #include <QSqlQuery>
 #include <QSqlError>

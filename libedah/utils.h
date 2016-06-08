@@ -16,34 +16,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "linuxutils.h"
+#ifndef UTILS_H
+#define UTILS_H
 
-#include <QProcessEnvironment>
+#include <QObject>
 
-LinuxUtils::LinuxUtils()
+#if defined(LIBEDAH_LIBRARY)
+#  define UTILSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define UTILSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+class UTILSSHARED_EXPORT Utils : public QObject
 {
+    Q_OBJECT
 
-}
+public:
+    Utils();
 
-QString LinuxUtils::getLogDir()
-{
-    return "/var/log/";
-}
+    QString getLogDir();
+    QString getUsername();
+    QString getDataDir();
+    QString getPluginPath(QString plugin);
+};
 
-QString LinuxUtils::getUsername()
-{
-    return QProcessEnvironment::systemEnvironment().value("USER");
-}
+extern Utils *utils;
 
-QString LinuxUtils::getDataDir()
-{
-    return ".."; //return "/usr/share/edah/";
-}
-
-QString LinuxUtils::getPluginPath(QString plugin)
-{
-    return QString("%1/plugins/%2/lib%3.so")
-            .arg(this->getDataDir())
-            .arg(plugin)
-            .arg(plugin);
-}
+#endif // UTILS_H

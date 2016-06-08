@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include <edah/iplugin.h>
+#include <libedah/iplugin.h>
 
 class Player : public QObject, public IPlugin
 {

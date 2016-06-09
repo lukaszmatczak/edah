@@ -39,9 +39,14 @@ QWidget *Recorder::getSettingsTab()
     return nullptr;
 }
 
-QString Recorder::getPluginName()
+QString Recorder::getPluginName() const
 {
     return tr("Recorder");
+}
+
+QString Recorder::getPluginId() const
+{
+    return "recorder";
 }
 
 void Recorder::loadSettings()

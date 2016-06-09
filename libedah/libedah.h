@@ -1,0 +1,10 @@
+#ifndef LIBEDAH_H
+#define LIBEDAH_H
+
+#if defined(LIBEDAH_LIBRARY)
+#  define LIBEDAHSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define LIBEDAHSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // LIBEDAH_H

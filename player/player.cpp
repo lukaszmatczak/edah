@@ -1,5 +1,7 @@
 #include "player.h"
 
+#include <libedah/database.h>
+
 #include <QWidget>
 #include <QPushButton>
 #include <QGridLayout>
@@ -42,9 +44,14 @@ QWidget *Player::getSettingsTab()
     return settingsTab;
 }
 
-QString Player::getPluginName()
+QString Player::getPluginName() const
 {
     return tr("Player");
+}
+
+QString Player::getPluginId() const
+{
+    return "player";
 }
 
 void Player::loadSettings()

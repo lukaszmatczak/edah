@@ -17,13 +17,13 @@
 */
 
 #include "mainwindow.h"
-#include "database.h"
 #include "mypushbutton.h"
 #include "aboutdialog.h"
 #include "settings.h"
 
 #include <libedah/logger.h>
 #include <libedah/utils.h>
+#include <libedah/database.h>
 
 #include <QtMath>
 
@@ -46,8 +46,6 @@
 #include <QDebug>
 #include <QDir>
 
-Database *db;
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -59,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     this->setGeometry(100, 100, 400, 300);
 
-    this->restoreGeometry(db->getValue("MainWindow_geometry").toByteArray());
+    this->restoreGeometry(db->value(nullptr, "MainWindow_geometry").toByteArray());
 
     this->setMinimumSize(200, 100);
 
@@ -112,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     translator = new QTranslator(this);
     QLocale locale = QLocale(QLocale::system().name().left(2));
-    QString localeStr = db->getValue("lang", "").toString();
+    QString localeStr = db->value(nullptr, "lang", "").toString();
     if(!localeStr.isEmpty())
     {
         locale = QLocale(localeStr);
@@ -120,7 +118,7 @@ MainWindow::MainWindow(QWidget *parent)
     translator->load(locale, "lang", ".", ":/lang");
     qApp->installTranslator(translator);
 
-    if(db->getValue("fullscreen", false).toBool())
+    if(db->value(nullptr, "fullscreen", false).toBool())
     {
         titleBar->setVisible(false);
         this->showFullScreen();
@@ -401,7 +399,7 @@ MainWindow::~MainWindow()
 {
     if(!this->isFullScreen())
     {
-        db->setValue("MainWindow_geometry", this->saveGeometry());
+        db->setValue(nullptr, "MainWindow_geometry", this->saveGeometry());
     }
 
     foreach (Plugin plugin, plugins)
@@ -731,10 +729,10 @@ void MainWindow::showSettings()
 
 void MainWindow::settingsChanged()
 {
-    QLocale locale = QLocale(db->getValue("lang", "").toString());
+    QLocale locale = QLocale(db->value(nullptr, "lang", "").toString());
     translator->load(locale, "lang", ".", ":/lang");
 
-    bool fullscreen = db->getValue("fullscreen", false).toBool();
+    bool fullscreen = db->value(nullptr, "fullscreen", false).toBool();
     if(fullscreen != this->isFullScreen())
     {
         titleBar->setVisible(!fullscreen);

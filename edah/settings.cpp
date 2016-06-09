@@ -241,7 +241,7 @@ void GeneralTab::installedPluginSelected(const QModelIndex &index)
 
 void GeneralTab::loadSettings()
 {
-    QString lang = db->getValue("lang", "").toString();
+    QString lang = db->value(nullptr, "lang", "").toString();
     if(lang.isEmpty())
     {
         lang = QLocale::system().name().left(2);
@@ -260,15 +260,15 @@ void GeneralTab::loadSettings()
     }
     langBox->setCurrentIndex(idx);
 
-    fullscreenChk->setChecked(db->getValue("fullscreen", false).toBool());
+    fullscreenChk->setChecked(db->value(nullptr, "fullscreen", false).toBool());
 
     pluginsModel->load(currLang);
 }
 
 void GeneralTab::writeSettings()
 {
-    db->setValue("lang", langBox->currentData());
-    db->setValue("fullscreen", fullscreenChk->isChecked());
+    db->setValue(nullptr, "lang", langBox->currentData());
+    db->setValue(nullptr, "fullscreen", fullscreenChk->isChecked());
 
     db->db.exec("DELETE FROM `plugins`");
 

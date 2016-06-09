@@ -19,19 +19,22 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include "iplugin.h"
+#include "libedah.h"
+
 #include <QObject>
 #include <QSqlDatabase>
 #include <QVariant>
 
-class Database : public QObject
+class LIBEDAHSHARED_EXPORT Database : public QObject
 {
     Q_OBJECT
 public:
     explicit Database(QObject *parent = 0);
     virtual ~Database();
 
-    QVariant getValue(const QString &key, const QVariant &defaultValue = QVariant());
-    void setValue(const QString &key, const QVariant &value);
+    QVariant value(const IPlugin *plugin, const QString &key, const QVariant &defaultValue = QVariant());
+    void setValue(const IPlugin *plugin, const QString &key, const QVariant &value);
 
     QSqlDatabase db;
 };

@@ -18,15 +18,13 @@ SOURCES += main.cpp\
     mypushbutton.cpp \
     winframe.cpp \
     aboutdialog.cpp \
-    settings.cpp \
-    database.cpp
+    settings.cpp
 
 HEADERS  += mainwindow.h \
     mypushbutton.h \
     winframe.h \
     aboutdialog.h \
-    settings.h \
-    database.h
+    settings.h
 
 INCLUDEPATH += ..
 

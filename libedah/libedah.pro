@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       -= gui
+QT       += gui widgets sql
 
 TARGET = edah
 TEMPLATE = lib
@@ -12,11 +12,14 @@ TEMPLATE = lib
 DEFINES += LIBEDAH_LIBRARY
 
 SOURCES += logger.cpp \
-    utils.cpp
+    utils.cpp \
+    database.cpp
 
-HEADERS += iplugin.h\
+HEADERS += iplugin.h \
         logger.h \
-    utils.h
+        utils.h \
+        database.h \
+    libedah.h
 
 unix {
     target.path = /usr/lib

@@ -18,7 +18,8 @@ public:
     QWidget *getBigWidget();
     QWidget *getSmallWidget();
     QWidget *getSettingsTab();
-    QString getPluginName();
+    QString getPluginName() const;
+    QString getPluginId() const;
 
     void loadSettings();
     void writeSettings();

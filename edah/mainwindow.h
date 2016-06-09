@@ -77,7 +77,7 @@ private:
     QWidget *centralWidget;
     WinFrame *winFrame;
     QFrame *container;
-    QWidget *pluginContainer;
+    QLabel *pluginContainer;
     QHBoxLayout *pluginLayout;
 
     QFrame *titleBar;

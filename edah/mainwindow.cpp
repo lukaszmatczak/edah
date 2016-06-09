@@ -25,6 +25,8 @@
 #include <libedah/logger.h>
 #include <libedah/utils.h>
 
+#include <QtMath>
+
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QStyle>
@@ -95,8 +97,9 @@ MainWindow::MainWindow(QWidget *parent)
             this->createTitleBar(container);
             container->layout()->addWidget(titleBar);
 
-            pluginContainer = new QWidget(container);
+            pluginContainer = new QLabel(container);
             pluginContainer->setObjectName("pluginContainer");
+            pluginContainer->setAlignment(Qt::AlignCenter | Qt::AlignHCenter);
             pluginLayout = new QHBoxLayout;
             pluginContainer->setLayout(pluginLayout);
             pluginLayout->setSpacing(0);
@@ -202,7 +205,6 @@ void MainWindow::loadPlugins()
 
     activePlugin = 0;
     this->changeActivePlugin(0);
-
 }
 
 void MainWindow::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
@@ -251,8 +253,8 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         plugins[pluginIdx].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
         connect(timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
-            plugins[activePlugin].widget->setFixedWidth(smallWidth + (bigWidth-smallWidth)*(100.0f-frame)/100.0f);
-            plugins[pluginIdx].widget->setFixedWidth(smallWidth + (bigWidth-smallWidth)*(frame/100.0f));
+            plugins[activePlugin].widget->setFixedWidth(smallWidth + qFloor((bigWidth-smallWidth)*(100.0f-frame)/100.0f));
+            plugins[pluginIdx].widget->setFixedWidth(smallWidth + qCeil((bigWidth-smallWidth)*(frame/100.0f)));
         });
         timeLine->start();
 
@@ -471,6 +473,15 @@ void MainWindow::changeEvent(QEvent *e)
         closeBtn_bottom->setToolTip(tr("Close"));
         minimizeBtn_bottom->setToolTip(tr("Minimize"));
         menuBtn_bottom->setToolTip(tr("Menu"));
+
+        if(plugins.size() == 0)
+        {
+            pluginContainer->setText(tr("There aren't any plugins selected!<br/>Go to: &#x2630; > Settings..."));
+        }
+        else
+        {
+            pluginContainer->setText("");
+        }
     }
     else
     {
@@ -559,8 +570,21 @@ void MainWindow::recalcSizes(QSize size)
     minimizeBtn_bottom->setIconSize(iconSize);
     menuBtn_bottom->setIconSize(iconSize);
 
+    int fontSize = height/1.5f;
     clockLbl->setStyleSheet(QString("font-size: %1px")
-                            .arg((int)(height/1.5f)));
+                            .arg(fontSize));
+
+    pluginContainer->setStyleSheet(QString("font-size: %1px")
+                                   .arg(fontSize));
+
+    if(plugins.size() == 0)
+    {
+        pluginContainer->setText(tr("There aren't any plugins selected!<br/>Go to: &#x2630; > Settings..."));
+    }
+    else
+    {
+        pluginContainer->setText("");
+    }
 
     for(int i=0; i<plugins.size(); i++)
     {

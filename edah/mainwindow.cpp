@@ -170,7 +170,7 @@ void MainWindow::loadPlugins()
 
     for(int i=0; i<plugins.size(); i++)
     {
-        if(i!=0)
+        if((pluginLayout->count() > 0) && plugins[i].plugin->hasPanel())
         {
             QWidget *line = new QWidget(this);
             line->setObjectName("line");
@@ -178,31 +178,44 @@ void MainWindow::loadPlugins()
             pluginLayout->addWidget(line);
         }
 
-        if(i==0)
+        plugins[i].isBig = false;
+
+        if(pluginLayout->count() == 0)
         {
-            QWidget *small = plugins[i].plugin->getSmallWidget();
+            QWidget *small = plugins[i].plugin->smallPanel();
+            plugins[i].widget = plugins[i].plugin->bigPanel();
+
+            if(!plugins[i].plugin->hasPanel())
+            {
+                continue;
+            }
+
             small->setParent(pluginContainer);
             small->hide();
 
-            plugins[i].widget = plugins[i].plugin->getBigWidget();
+            activePlugin = i;
+
             plugins[i].isBig = true;
         }
         else
         {
-            QWidget *big = plugins[i].plugin->getBigWidget();
+            QWidget *big = plugins[i].plugin->bigPanel();
+            plugins[i].widget = plugins[i].plugin->smallPanel();
+
+            if(!plugins[i].plugin->hasPanel())
+            {
+                continue;
+            }
+
             big->setParent(pluginContainer);
             big->hide();
-
-            plugins[i].widget = plugins[i].plugin->getSmallWidget();
-            plugins[i].isBig = false;
         }
 
         plugins[i].widget->setParent(pluginContainer);
         pluginLayout->addWidget(plugins[i].widget);
     }
 
-    activePlugin = 0;
-    this->changeActivePlugin(0);
+    //this->changeActivePlugin(activePlugin);
 }
 
 void MainWindow::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
@@ -231,6 +244,7 @@ void MainWindow::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, in
 
 void MainWindow::changeActivePlugin(int pluginIdx)
 {
+    // prevent changing active plugin during another change
     for(int i=0; i<plugins.size(); i++)
     {
         plugins[i].isBig = true;
@@ -261,24 +275,28 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         loop.exec();
 
         plugins[pluginIdx].widget->hide();
+        int idx = pluginLayout->indexOf(plugins[pluginIdx].widget);
         pluginLayout->removeWidget(plugins[pluginIdx].widget);
-        QWidget *newBigWidget = plugins[pluginIdx].plugin->getBigWidget();
+        QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
         newBigWidget->setParent(pluginContainer);
-        pluginLayout->insertWidget(pluginIdx*2, newBigWidget);
+        pluginLayout->insertWidget(idx, newBigWidget);
         newBigWidget->setFixedWidth(bigWidth);
         newBigWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         newBigWidget->show();
+
         plugins[pluginIdx].widget = newBigWidget;
 
         plugins[activePlugin].widget->hide();
+        idx = pluginLayout->indexOf(plugins[activePlugin].widget);
         pluginLayout->removeWidget(plugins[activePlugin].widget);
-        QWidget *newSmallWidget = plugins[activePlugin].plugin->getSmallWidget();
+        QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
         newSmallWidget->setParent(pluginContainer);
-        pluginLayout->insertWidget(activePlugin*2, newSmallWidget);
+        pluginLayout->insertWidget(idx, newSmallWidget);
         newSmallWidget->setMinimumWidth(1);
         newSmallWidget->setMaximumWidth(32768);
         newSmallWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
         newSmallWidget->show();
+
         plugins[activePlugin].widget = newSmallWidget;
 
         this->fadeInOut(plugins[activePlugin].widget, plugins[pluginIdx].widget, 250, 0, 255);
@@ -356,16 +374,23 @@ void MainWindow::refreshPlugins()
         pluginsId.push_back(pluginId);
     }
 
-    if(!pluginsId.contains(bigId) && (newPlugins.size() > 0))
+    if(!pluginsId.contains(bigId))
     {
-        newPlugins[0].isBig = true;
+        for(int i=0; i<newPlugins.size(); i++)
+        {
+            if(newPlugins[i].plugin->hasPanel())
+            {
+                newPlugins[i].isBig = true;
+                break;
+            }
+        }
     }
 
     for(int i=0; i<newPlugins.size(); i++)
     {
         newPlugins[i].widget = newPlugins[i].isBig ?
-                    newPlugins[i].plugin->getBigWidget() :
-                    newPlugins[i].plugin->getSmallWidget();
+                    newPlugins[i].plugin->bigPanel() :
+                    newPlugins[i].plugin->smallPanel();
     }
 
     for(int i=0; i<plugins.size(); i++)
@@ -380,7 +405,12 @@ void MainWindow::refreshPlugins()
 
     for(int i=0; i<plugins.size(); i++)
     {
-        if(i!=0)
+        if(!plugins[i].plugin->hasPanel())
+        {
+            continue;
+        }
+
+        if(pluginLayout->count() > 0)
         {
             QWidget *line = new QWidget(this);
             line->setObjectName("line");
@@ -390,6 +420,11 @@ void MainWindow::refreshPlugins()
 
         pluginLayout->addWidget(plugins[i].widget);
         plugins[i].widget->show();
+
+        if(plugins[i].isBig)
+        {
+            activePlugin = i;
+        }
     }
 
     this->recalcSizes(this->size());
@@ -493,7 +528,7 @@ void MainWindow::mousePressEvent(QMouseEvent *e)
 
     for(int i=0; i<plugins.size(); i++)
     {
-        if(!plugins[i].isBig && plugins[i].widget->underMouse())
+        if(!plugins[i].isBig && plugins[i].plugin->hasPanel() && plugins[i].widget->underMouse())
         {
             this->changeActivePlugin(i);
             break;
@@ -584,10 +619,21 @@ void MainWindow::recalcSizes(QSize size)
         pluginContainer->setText("");
     }
 
+    int visiblePluginsCount = 0;
     for(int i=0; i<plugins.size(); i++)
     {
-        int count = plugins.size();
-        int width = pluginContainer->contentsRect().width()/(count+3);
+        if(plugins[i].plugin->hasPanel())
+            visiblePluginsCount++;
+    }
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
+        if(!plugins[i].plugin->hasPanel())
+        {
+            continue;
+        }
+
         if(plugins[i].isBig)
         {
             plugins[i].widget->setFixedWidth(width*4);

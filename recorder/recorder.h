@@ -16,8 +16,9 @@ public:
     Recorder(QObject *parent = 0);
     virtual ~Recorder();
 
-    QWidget *getBigWidget();
-    QWidget *getSmallWidget();
+    QWidget *bigPanel();
+    QWidget *smallPanel();
+    bool hasPanel() const;
     QWidget *getSettingsTab();
     QString getPluginName() const;
     QString getPluginId() const;

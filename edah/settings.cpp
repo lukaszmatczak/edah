@@ -17,9 +17,9 @@
 */
 
 #include "settings.h"
-#include "database.h"
 
 #include <libedah/utils.h>
+#include <libedah/database.h>
 
 #include <QVBoxLayout>
 #include <QTabWidget>

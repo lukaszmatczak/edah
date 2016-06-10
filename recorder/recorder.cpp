@@ -24,14 +24,19 @@ Recorder::~Recorder()
     delete smallWidget;
 }
 
-QWidget *Recorder::getBigWidget()
+QWidget *Recorder::bigPanel()
 {
     return bigFrame;
 }
 
-QWidget *Recorder::getSmallWidget()
+QWidget *Recorder::smallPanel()
 {
     return smallWidget;
+}
+
+bool Recorder::hasPanel() const
+{
+    return true;
 }
 
 QWidget *Recorder::getSettingsTab()

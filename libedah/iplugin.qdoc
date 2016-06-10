@@ -1,0 +1,55 @@
+/*!
+    \class IPlugin
+    \brief Main interface you should implement to create plugin.
+    \inmodule Edah
+    
+    When you're implementing this interface you should include following
+    code at the beginning of your derrived class declaration, for example:
+    
+    \code
+class Player : public QObject, public IPlugin
+{
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID "edah.iplugin")
+    Q_INTERFACES(IPlugin)
+
+public:
+    ...
+    \endcode
+ */
+
+/*!
+    \fn QWidget *IPlugin::getBigWidget()
+    
+    Returns widget to show on main window when plugin is expanded or 
+    \c nullptr if plugin doesn't appear on main window.
+    
+    This method is called every time when show mode is changing to expanded.
+    
+    \warning This method mustn't return \c nullptr if getSmallWidget()
+    returned proper pointer.
+    
+    \warning Plugins shouldn't change geometry of this widget itself.
+ */
+
+/*!
+    \fn QWidget *IPlugin::getSmallWidget()
+    
+    Returns widget to show on main window when plugin is collapsed or 
+    \c nullptr if plugin doesn't appear on main window.
+    
+    This method is called every time when show mode is changing to collapsed.
+    
+    \warning This method mustn't return \c nullptr if getBigWidget()
+    returned proper pointer.
+    
+    \warning Plugins shouldn't change geometry of this widget itself.
+ */
+
+/*!
+    \fn QString IPlugin::getPluginName()
+    
+    Returns plugin name visible to user.
+    
+    \note Name should be translated to user's language.
+ */

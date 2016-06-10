@@ -29,14 +29,19 @@ Player::~Player()
     delete settingsTab;
 }
 
-QWidget *Player::getBigWidget()
+QWidget *Player::bigPanel()
 {
     return bigFrame;
 }
 
-QWidget *Player::getSmallWidget()
+QWidget *Player::smallPanel()
 {
     return smallWidget;
+}
+
+bool Player::hasPanel() const
+{
+    return true;
 }
 
 QWidget *Player::getSettingsTab()

@@ -15,8 +15,9 @@ public:
     Player();
     virtual ~Player();
 
-    QWidget *getBigWidget();
-    QWidget *getSmallWidget();
+    QWidget *bigPanel();
+    QWidget *smallPanel();
+    bool hasPanel() const;
     QWidget *getSettingsTab();
     QString getPluginName() const;
     QString getPluginId() const;

@@ -39,6 +39,6 @@ public:
     QSqlDatabase db;
 };
 
-extern Database *db;
+LIBEDAHSHARED_EXPORT extern Database *db;
 
 #endif // DATABASE_H

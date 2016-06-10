@@ -36,6 +36,6 @@ private:
     QString username;
 };
 
-extern Logger *logger;
+LIBEDAHSHARED_EXPORT extern Logger *logger;
 
 #endif // LOGGER_H

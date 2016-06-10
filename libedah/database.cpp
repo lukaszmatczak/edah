@@ -24,7 +24,7 @@
 #include <QStandardPaths>
 #include <QDir>
 
-Database *db;
+LIBEDAHSHARED_EXPORT Database *db;
 
 /*!
  \class Database

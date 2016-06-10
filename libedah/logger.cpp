@@ -22,7 +22,7 @@
 #include <QDateTime>
 //TODO: repair permissions to /var/log/edah.log
 
-Logger *logger;
+LIBEDAHSHARED_EXPORT Logger *logger;
 
 /*!
  \class Logger

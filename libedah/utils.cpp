@@ -24,8 +24,9 @@
 #include <QGraphicsOpacityEffect>
 #include <QEventLoop>
 #include <QStyle>
+#include <QApplication>
 
-Utils *utils;
+LIBEDAHSHARED_EXPORT Utils *utils;
 
 Utils::Utils()
 {

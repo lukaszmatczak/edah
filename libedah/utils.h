@@ -19,6 +19,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "libedah.h"
+
 #include <QObject>
 
 #if defined(LIBEDAH_LIBRARY)
@@ -44,6 +46,6 @@ public:
     void updateStyle(QWidget *widget);
 };
 
-extern Utils *utils;
+LIBEDAHSHARED_EXPORT extern Utils *utils;
 
 #endif // UTILS_H

@@ -36,8 +36,6 @@
 
 #include <QDebug>
 
-// TODO: F1..F12 shortcut
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -222,6 +220,28 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *e)
         this->titleBar->geometry().contains(e->pos()))
     {
         this->onMaximizeBtnClicked();
+    }
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *e)
+{
+    if((e->key() >= Qt::Key_F1) && (e->key() <= Qt::Key_F35))
+    {
+        int key = e->key()-Qt::Key_F1;
+
+        int idx = 0;
+        for(int i=0; i<plugins.size(); i++)
+        {
+            if(plugins[i].plugin->hasPanel())
+            {
+                if(key == idx)
+                {
+                    this->changeActivePlugin(i);
+                    break;
+                }
+                idx++;
+            }
+        }
     }
 }
 
@@ -426,10 +446,14 @@ void MainWindow::swapWidgets(QWidget *first, QWidget *second)
 void MainWindow::changeActivePlugin(int pluginIdx)
 {
     // prevent changing active plugin during another change
-    for(int i=0; i<plugins.size(); i++)
+    static bool isDuringChanging;
+
+    if(isDuringChanging)
     {
-        plugins[i].isBig = true;
+        return;
     }
+
+    isDuringChanging = true;
 
     if(activePlugin != pluginIdx)
     {
@@ -481,6 +505,8 @@ void MainWindow::changeActivePlugin(int pluginIdx)
     }
 
     activePlugin = pluginIdx;
+
+    isDuringChanging = false;
 }
 
 void MainWindow::createTitleBar(QWidget *parent)

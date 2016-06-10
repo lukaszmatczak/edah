@@ -58,6 +58,7 @@ protected:
     void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void mouseDoubleClickEvent(QMouseEvent *e);
+    void keyReleaseEvent(QKeyEvent *e);
 
 private:
     bool loadPlugin(const QString &id, Plugin *plugin);

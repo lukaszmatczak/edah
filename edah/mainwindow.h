@@ -53,26 +53,25 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *e);
+    void showEvent(QShowEvent *e);
+    void changeEvent(QEvent *e);
     void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void mouseDoubleClickEvent(QMouseEvent *e);
-    void showEvent(QShowEvent *e);
-    void changeEvent(QEvent *e);
 
 private:
     bool loadPlugin(const QString &id, Plugin *plugin);
     void loadPlugins();
-    void refreshPlugins();
-    void settingsChanged();
+    void unloadPlugin(Plugin *plugin);
+    bool findPlugin(const QString &id, Plugin *plugin);
+    void reloadPlugins();
+    void swapWidgets(QWidget *first, QWidget *second);
     void changeActivePlugin(int pluginIdx);
-    void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
 
-    void addShadowEffect(QWidget *widget, QColor color);
     void createTitleBar(QWidget *parent);
     void createBottomBar(QWidget *parent);
-    void updateStyle(QWidget *widget);
 
-    QTranslator *translator;
+    QTranslator translator;
 
     QWidget *centralWidget;
     WinFrame *winFrame;
@@ -104,17 +103,13 @@ public slots:
 
 private slots:
     void timerSlot();
-
     void onFocusChanged(QWidget *old, QWidget *now);
-
     void recalcSizes(QSize size);
-
+    void settingsChanged();
     void onMaximizeBtnClicked();
     void showMenu();
-
     void showAbout();
     void showSettings();
-
 };
 
 #endif // MAINWINDOW_H

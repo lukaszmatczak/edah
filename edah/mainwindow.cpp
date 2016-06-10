@@ -17,7 +17,6 @@
 */
 
 #include "mainwindow.h"
-#include "mypushbutton.h"
 #include "aboutdialog.h"
 #include "settings.h"
 
@@ -25,26 +24,19 @@
 #include <libedah/utils.h>
 #include <libedah/database.h>
 
-#include <QtMath>
-
-#include <QPushButton>
 #include <QResizeEvent>
-#include <QStyle>
 #include <QFontDatabase>
 #include <QTime>
-#include <QGraphicsDropShadowEffect>
 #include <QApplication>
+#include <QDir>
+#include <QGraphicsDropShadowEffect>
 #include <QSqlQuery>
-
 #include <QTimeLine>
-#include <QParallelAnimationGroup>
-#include <QPropertyAnimation>
-
 #include <QMenu>
-#include <QMessageBox>
 
 #include <QDebug>
-#include <QDir>
+
+// TODO: F1..F12 shortcut
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -53,27 +45,27 @@ MainWindow::MainWindow(QWidget *parent)
     logger = new Logger;
     db = new Database;
 
-    QFontDatabase::addApplicationFont(utils->getDataDir() + "/OpenSans-Light.ttf");
+    const QString fontFilename = utils->getDataDir() + "/OpenSans-Light.ttf";
+    if(QFontDatabase::addApplicationFont(fontFilename) == -1)
+    {
+        LOG(QString("Couldn't load font \"%1\"").arg(fontFilename));
+    }
 
-    this->setGeometry(100, 100, 400, 300);
-
+    this->setGeometry(100, 100, 600, 338);
     this->restoreGeometry(db->value(nullptr, "MainWindow_geometry").toByteArray());
-
-    this->setMinimumSize(200, 100);
+    this->setMinimumSize(600, 338);
 
     QFile fstyle(":/style.qss");
     if(!fstyle.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         LOG(QString("Couldn't open file \"%1\"").arg(fstyle.fileName()));
     }
-
     QString style = fstyle.readAll();
     this->setStyleSheet(style);
 
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AcceptTouchEvents);
     this->setWindowFlags(Qt::FramelessWindowHint/* | Qt::WindowMinimizeButtonHint*/);
-
     this->grabGesture(Qt::TapGesture);
 
     centralWidget = new QWidget(this);
@@ -99,8 +91,8 @@ MainWindow::MainWindow(QWidget *parent)
             pluginContainer->setObjectName("pluginContainer");
             pluginContainer->setAlignment(Qt::AlignCenter | Qt::AlignHCenter);
             pluginLayout = new QHBoxLayout;
-            pluginContainer->setLayout(pluginLayout);
             pluginLayout->setSpacing(0);
+            pluginContainer->setLayout(pluginLayout);
             container->layout()->addWidget(pluginContainer);
 
             this->createBottomBar(container);
@@ -108,15 +100,16 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 
-    translator = new QTranslator(this);
-    QLocale locale = QLocale(QLocale::system().name().left(2));
     QString localeStr = db->value(nullptr, "lang", "").toString();
-    if(!localeStr.isEmpty())
+    if(localeStr.isEmpty())
     {
-        locale = QLocale(localeStr);
+        localeStr = QLocale::system().name().left(2);
     }
-    translator->load(locale, "lang", ".", ":/lang");
-    qApp->installTranslator(translator);
+    if(!(translator.load(QLocale(localeStr), "lang", ".", ":/lang") &&
+         qApp->installTranslator(&translator)))
+    {
+        LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
+    }
 
     if(db->value(nullptr, "fullscreen", false).toBool())
     {
@@ -136,300 +129,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->loadPlugins();
 }
 
-bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
-{
-    plugin->id = id;
-    plugin->loader = new QPluginLoader(utils->getPluginPath(id), this);
-    plugin->plugin = qobject_cast<IPlugin*>(plugin->loader->instance());
-
-    if(!plugin->plugin)
-    {
-        LOG(plugin->loader->errorString());
-    }
-
-    return plugin->plugin;
-}
-
-void MainWindow::loadPlugins()
-{
-    db->db.exec("CREATE TABLE IF NOT EXISTS plugins (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `plugin_id` TEXT, `order` INTEGER, `enabled` INTEGER)");
-
-    QSqlQuery q(db->db);
-    q.prepare("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
-    q.exec();
-
-    while(q.next())
-    {
-        Plugin plugin;
-
-        if(this->loadPlugin(q.value(0).toString(), &plugin))
-        {
-            plugins.push_back(plugin);
-        }
-    }
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        if((pluginLayout->count() > 0) && plugins[i].plugin->hasPanel())
-        {
-            QWidget *line = new QWidget(this);
-            line->setObjectName("line");
-            line->setFixedWidth(2);
-            pluginLayout->addWidget(line);
-        }
-
-        plugins[i].isBig = false;
-
-        if(pluginLayout->count() == 0)
-        {
-            QWidget *small = plugins[i].plugin->smallPanel();
-            plugins[i].widget = plugins[i].plugin->bigPanel();
-
-            if(!plugins[i].plugin->hasPanel())
-            {
-                continue;
-            }
-
-            small->setParent(pluginContainer);
-            small->hide();
-
-            activePlugin = i;
-
-            plugins[i].isBig = true;
-        }
-        else
-        {
-            QWidget *big = plugins[i].plugin->bigPanel();
-            plugins[i].widget = plugins[i].plugin->smallPanel();
-
-            if(!plugins[i].plugin->hasPanel())
-            {
-                continue;
-            }
-
-            big->setParent(pluginContainer);
-            big->hide();
-        }
-
-        plugins[i].widget->setParent(pluginContainer);
-        pluginLayout->addWidget(plugins[i].widget);
-    }
-
-    //this->changeActivePlugin(activePlugin);
-}
-
-void MainWindow::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
-{
-    QTimeLine *timeLine = new QTimeLine(duration);
-    QGraphicsOpacityEffect *effect1 = new QGraphicsOpacityEffect;
-    QGraphicsOpacityEffect *effect2 = new QGraphicsOpacityEffect;
-
-    effect1->setOpacity(start/255.0);
-    effect2->setOpacity(start/255.0);
-    w1->setGraphicsEffect(effect1);
-    w2->setGraphicsEffect(effect2);
-
-    timeLine->setFrameRange(start, stop);
-    connect(timeLine, &QTimeLine::frameChanged, this, [effect1, effect2](int frame) {
-        const float opacity = frame/255.0;
-        effect1->setOpacity(opacity);
-        effect2->setOpacity(opacity);
-    });
-    timeLine->start();
-
-    QEventLoop loop;
-    connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
-    loop.exec();
-}
-
-void MainWindow::changeActivePlugin(int pluginIdx)
-{
-    // prevent changing active plugin during another change
-    for(int i=0; i<plugins.size(); i++)
-    {
-        plugins[i].isBig = true;
-    }
-
-    if(activePlugin != pluginIdx)
-    {
-        this->fadeInOut(plugins[activePlugin].widget, plugins[pluginIdx].widget, 250, 255, 0);
-
-        QTimeLine *timeLine = new QTimeLine(350);
-        timeLine->setEasingCurve(QEasingCurve::InOutSine);
-        timeLine->setFrameRange(0, 100);
-
-        int smallWidth = plugins[pluginIdx].widget->width();
-        int bigWidth = plugins[activePlugin].widget->width();
-
-        plugins[activePlugin].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        plugins[pluginIdx].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-
-        connect(timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
-            plugins[activePlugin].widget->setFixedWidth(smallWidth + qFloor((bigWidth-smallWidth)*(100.0f-frame)/100.0f));
-            plugins[pluginIdx].widget->setFixedWidth(smallWidth + qCeil((bigWidth-smallWidth)*(frame/100.0f)));
-        });
-        timeLine->start();
-
-        QEventLoop loop;
-        connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
-        loop.exec();
-
-        plugins[pluginIdx].widget->hide();
-        int idx = pluginLayout->indexOf(plugins[pluginIdx].widget);
-        pluginLayout->removeWidget(plugins[pluginIdx].widget);
-        QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
-        newBigWidget->setParent(pluginContainer);
-        pluginLayout->insertWidget(idx, newBigWidget);
-        newBigWidget->setFixedWidth(bigWidth);
-        newBigWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        newBigWidget->show();
-
-        plugins[pluginIdx].widget = newBigWidget;
-
-        plugins[activePlugin].widget->hide();
-        idx = pluginLayout->indexOf(plugins[activePlugin].widget);
-        pluginLayout->removeWidget(plugins[activePlugin].widget);
-        QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
-        newSmallWidget->setParent(pluginContainer);
-        pluginLayout->insertWidget(idx, newSmallWidget);
-        newSmallWidget->setMinimumWidth(1);
-        newSmallWidget->setMaximumWidth(32768);
-        newSmallWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-        newSmallWidget->show();
-
-        plugins[activePlugin].widget = newSmallWidget;
-
-        this->fadeInOut(plugins[activePlugin].widget, plugins[pluginIdx].widget, 250, 0, 255);
-    }
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        plugins[i].isBig = (i == pluginIdx);
-    }
-
-    activePlugin = pluginIdx;
-}
-
-void MainWindow::refreshPlugins()
-{
-    QLayoutItem *i;
-    while((i = pluginLayout->takeAt(0)) != 0)
-    {
-        i->widget()->hide();
-        if(i->widget()->objectName() == "line")
-        {
-            delete i->widget();
-        }
-        delete i;
-    }
-
-    QVector<QString> pluginsId;
-    QVector<Plugin> newPlugins;
-
-    QString bigId;
-    foreach(const Plugin &p, plugins)
-    {
-        if(p.isBig)
-        {
-            bigId = p.id;
-            break;
-        }
-    }
-
-    QSqlQuery q(db->db);
-    q.prepare("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
-    q.exec();
-
-    while(q.next())
-    {
-        QString pluginId = q.value(0).toString();
-
-        int idx = -1;
-        for(int i=0; i<plugins.size(); i++)
-        {
-            if(plugins[i].id == pluginId)
-            {
-                idx = i;
-                break;
-            }
-        }
-
-        if(idx != -1)
-        {
-            plugins[idx].isBig = (plugins[idx].id == bigId);
-            newPlugins.push_back(plugins[idx]);
-        }
-        else
-        {
-            Plugin plugin;
-
-            if(this->loadPlugin(pluginId, &plugin))
-            {
-                plugin.widget = nullptr;
-                plugin.isBig = false;
-                newPlugins.push_back(plugin);
-            }
-        }
-
-        pluginsId.push_back(pluginId);
-    }
-
-    if(!pluginsId.contains(bigId))
-    {
-        for(int i=0; i<newPlugins.size(); i++)
-        {
-            if(newPlugins[i].plugin->hasPanel())
-            {
-                newPlugins[i].isBig = true;
-                break;
-            }
-        }
-    }
-
-    for(int i=0; i<newPlugins.size(); i++)
-    {
-        newPlugins[i].widget = newPlugins[i].isBig ?
-                    newPlugins[i].plugin->bigPanel() :
-                    newPlugins[i].plugin->smallPanel();
-    }
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        if(!pluginsId.contains(plugins[i].id))
-        {
-            plugins[i].loader->unload();
-        }
-    }
-
-    plugins.swap(newPlugins);
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        if(!plugins[i].plugin->hasPanel())
-        {
-            continue;
-        }
-
-        if(pluginLayout->count() > 0)
-        {
-            QWidget *line = new QWidget(this);
-            line->setObjectName("line");
-            line->setFixedWidth(2);
-            pluginLayout->addWidget(line);
-        }
-
-        pluginLayout->addWidget(plugins[i].widget);
-        plugins[i].widget->show();
-
-        if(plugins[i].isBig)
-        {
-            activePlugin = i;
-        }
-    }
-
-    this->recalcSizes(this->size());
-}
-
 MainWindow::~MainWindow()
 {
     if(!this->isFullScreen())
@@ -437,9 +136,9 @@ MainWindow::~MainWindow()
         db->setValue(nullptr, "MainWindow_geometry", this->saveGeometry());
     }
 
-    foreach (Plugin plugin, plugins)
+    foreach(Plugin plugin, plugins)
     {
-        plugin.loader->unload();
+        this->unloadPlugin(&plugin);
     }
 
     delete db;
@@ -447,52 +146,18 @@ MainWindow::~MainWindow()
     delete utils;
 }
 
-void MainWindow::addShadowEffect(QWidget *widget, QColor color)
-{
-    QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect(widget);
-    effect->setBlurRadius(30);
-    effect->setColor(color);
-    effect->setOffset(0,0);
-    widget->setGraphicsEffect(effect);
-}
-
-void MainWindow::newProcess(const QString &message)
-{
-    // TODO
-}
-
-void MainWindow::timerSlot()
-{
-    clockLbl->setText(QTime::currentTime().toString(tr("hh:mm AP")));
-}
-
-void MainWindow::onFocusChanged(QWidget *old, QWidget *now)
-{
-    Q_UNUSED(old); Q_UNUSED(now);
-
-    winFrame->setProperty("hasFocus", this->isActiveWindow());
-    updateStyle(winFrame);
-
-    titleBar->setProperty("hasFocus", this->isActiveWindow());
-    updateStyle(titleBar);
-
-    QGraphicsDropShadowEffect *shadow = dynamic_cast<QGraphicsDropShadowEffect*>(titleBar->graphicsEffect());
-    if(shadow)
-    {
-        shadow->setBlurRadius(this->isActiveWindow() ? 30 : 0);
-    }
-}
-
-void MainWindow::showEvent(QShowEvent *e)
-{
-    recalcSizes(this->size());
-}
-
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
     maximizeBtn->setToolTip(this->isMaximized() ? tr("Restore") : tr("Maximize"));
 
     recalcSizes(e->size());
+}
+
+void MainWindow::showEvent(QShowEvent *e)
+{
+    Q_UNUSED(e);
+
+    recalcSizes(this->size());
 }
 
 void MainWindow::changeEvent(QEvent *e)
@@ -509,7 +174,8 @@ void MainWindow::changeEvent(QEvent *e)
 
         if(plugins.size() == 0)
         {
-            pluginContainer->setText(tr("There aren't any plugins selected!<br/>Go to: &#x2630; > Settings..."));
+            pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
+                                        "Go to: &#x2630; > Settings..."));
         }
         else
         {
@@ -528,7 +194,9 @@ void MainWindow::mousePressEvent(QMouseEvent *e)
 
     for(int i=0; i<plugins.size(); i++)
     {
-        if(!plugins[i].isBig && plugins[i].plugin->hasPanel() && plugins[i].widget->underMouse())
+        if(!plugins[i].isBig &&
+                plugins[i].plugin->hasPanel() &&
+                plugins[i].widget->underMouse())
         {
             this->changeActivePlugin(i);
             break;
@@ -557,95 +225,262 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *e)
     }
 }
 
-void MainWindow::updateStyle(QWidget *widget)
+bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
 {
-    widget->style()->unpolish(widget);
-    widget->style()->polish(widget);
-    widget->update();
+    plugin->id = id;
+    plugin->loader = new QPluginLoader(utils->getPluginPath(id), this);
+    plugin->plugin = qobject_cast<IPlugin*>(plugin->loader->instance());
+
+    plugin->widget = nullptr;
+    plugin->isBig = false;
+
+    if(!plugin->plugin)
+    {
+        LOG(plugin->loader->errorString());
+    }
+
+    return plugin->plugin;
 }
 
-void MainWindow::recalcSizes(QSize size)
+void MainWindow::unloadPlugin(Plugin *plugin)
 {
-    QVector<QWidget*> vec;
-    vec.push_back(titleBar);
-    vec.push_back(container);
-    vec.push_back(pluginContainer);
-    //foreach(QWidget *widget, QVector<QWidget*>({titleBar, container, pluginContainer}))
-    foreach (QWidget *widget, vec)
-    {
-        widget->setProperty("isMaximized", this->isMaximized() || this->isFullScreen());
-        updateStyle(widget);
-    }
+    plugin->loader->unload();
+    delete plugin->loader;
+}
 
-    if(this->isMaximized() || this->isFullScreen())
-    {
-        winFrame->hide();
-        container->setGeometry(0, 0, size.width(), size.height());
-    }
-    else
-    {
-        winFrame->setGeometry(0, 0, size.width(), size.height());
-        winFrame->show();
-
-        container->setGeometry(3, 4, size.width()-6, size.height()-6);
-    }
-
-    titleLbl->setStyleSheet(QString("color: qlineargradient(spread:pad, x1:0, y1:0, x2:%1, y2:0,"
-                            "stop:0 rgba(255, 255, 255, 255),"
-                            "stop:0.95 rgba(255,255,255,255),"
-                            "stop:1 rgba(0, 0, 0, 0));")
-                            .arg(titleLbl->width()));
-
-    int height = size.height()*this->logicalDpiY()/2048;
-    bottomBar->setFixedHeight(height);
-    QSize iconSize = QSize(height*2, height/2);
-    closeBtn_bottom->setIconSize(iconSize);
-    minimizeBtn_bottom->setIconSize(iconSize);
-    menuBtn_bottom->setIconSize(iconSize);
-
-    int fontSize = height/1.5f;
-    clockLbl->setStyleSheet(QString("font-size: %1px")
-                            .arg(fontSize));
-
-    pluginContainer->setStyleSheet(QString("font-size: %1px")
-                                   .arg(fontSize));
-
-    if(plugins.size() == 0)
-    {
-        pluginContainer->setText(tr("There aren't any plugins selected!<br/>Go to: &#x2630; > Settings..."));
-    }
-    else
-    {
-        pluginContainer->setText("");
-    }
-
-    int visiblePluginsCount = 0;
+bool MainWindow::findPlugin(const QString &id, Plugin *plugin)
+{
     for(int i=0; i<plugins.size(); i++)
     {
-        if(plugins[i].plugin->hasPanel())
-            visiblePluginsCount++;
+        if(plugins[i].id == id)
+        {
+            *plugin = plugins[i];
+            return true;
+        }
     }
 
+    return false;
+}
+
+void MainWindow::loadPlugins()
+{
+    db->db.exec("CREATE TABLE IF NOT EXISTS plugins ("
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT,"
+                "`plugin_id` TEXT,"
+                "`order` INTEGER,"
+                "`enabled` INTEGER)");
+
+    QSqlQuery q(db->db);
+    q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
+
+    while(q.next())
+    {
+        Plugin plugin;
+
+        if(this->loadPlugin(q.value(0).toString(), &plugin))
+        {
+            if((pluginLayout->count() > 0) && plugin.plugin->hasPanel())
+            {
+                QWidget *line = new QWidget(this);
+                line->setObjectName("line");
+                line->setFixedWidth(2);
+                pluginLayout->addWidget(line);
+            }
+
+            QWidget *invisibleWidget;
+
+            if(pluginLayout->count() == 0) // first plugin is big by default
+            {
+                if(!plugin.plugin->hasPanel())
+                {
+                    continue;
+                }
+
+                invisibleWidget = plugin.plugin->smallPanel();
+                plugin.widget = plugin.plugin->bigPanel();
+
+                activePlugin = plugins.size();
+                plugin.isBig = true;
+            }
+            else
+            {
+                if(!plugin.plugin->hasPanel())
+                {
+                    continue;
+                }
+
+                invisibleWidget = plugin.plugin->bigPanel();
+                plugin.widget = plugin.plugin->smallPanel();
+            }
+
+            invisibleWidget->setParent(pluginContainer);
+            invisibleWidget->hide();
+
+            plugin.widget->setParent(pluginContainer);
+            pluginLayout->addWidget(plugin.widget);
+
+            plugins.push_back(plugin);
+        }
+    }
+}
+
+void MainWindow::reloadPlugins()
+{
+    QVector<QString> newPluginsId;
+    QVector<Plugin> newPlugins;
+
+    // delete all items in pluginLayout
+    QLayoutItem *i;
+    while((i = pluginLayout->takeAt(0)) != 0)
+    {
+        i->widget()->hide();
+        if(i->widget()->objectName() == "line")
+        {
+            delete i->widget();
+        }
+        delete i;
+    }
+
+    // load new plugins
+    QSqlQuery q(db->db);
+    q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
+    while(q.next())
+    {
+        QString pluginId = q.value(0).toString();
+
+        Plugin p;
+
+        if(this->findPlugin(pluginId, &p) || this->loadPlugin(pluginId, &p))
+        {
+            newPlugins.push_back(p);
+            newPluginsId.push_back(pluginId);
+        }
+    }
+
+    // select new big widget
+    if(!newPluginsId.contains(plugins[activePlugin].id))
+    {
+        for(int i=0; i<newPlugins.size(); i++)
+        {
+            if(newPlugins[i].plugin->hasPanel())
+            {
+                newPlugins[i].isBig = true;
+                break;
+            }
+        }
+    }
+
+    // unload old plugins
     for(int i=0; i<plugins.size(); i++)
     {
-        int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
+        if(!newPluginsId.contains(plugins[i].id))
+        {
+            this->unloadPlugin(&plugins[i]);
+        }
+    }
+
+    plugins.swap(newPlugins);
+
+    // insert plugins' widgets to pluginLayout
+    for(int i=0; i<plugins.size(); i++)
+    {
         if(!plugins[i].plugin->hasPanel())
         {
             continue;
         }
 
+        if(pluginLayout->count() > 0)
+        {
+            QWidget *line = new QWidget(this);
+            line->setObjectName("line");
+            line->setFixedWidth(2);
+            pluginLayout->addWidget(line);
+        }
+
+        plugins[i].widget = plugins[i].isBig ?
+                    plugins[i].plugin->bigPanel() :
+                    plugins[i].plugin->smallPanel();
+
+        pluginLayout->addWidget(plugins[i].widget);
+        plugins[i].widget->show();
+
         if(plugins[i].isBig)
         {
-            plugins[i].widget->setFixedWidth(width*4);
-            plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        }
-        else
-        {
-            plugins[i].widget->setMaximumWidth(32768);
-            plugins[i].widget->setMinimumWidth(1);
-            plugins[i].widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+            activePlugin = i;
         }
     }
+
+    this->recalcSizes(this->size());
+}
+
+void MainWindow::swapWidgets(QWidget *first, QWidget *second)
+{
+    first->hide();
+    int idx = pluginLayout->indexOf(first);
+    pluginLayout->removeWidget(first);
+    second->setParent(pluginContainer);
+    pluginLayout->insertWidget(idx, second);
+    second->show();
+}
+
+void MainWindow::changeActivePlugin(int pluginIdx)
+{
+    // prevent changing active plugin during another change
+    for(int i=0; i<plugins.size(); i++)
+    {
+        plugins[i].isBig = true;
+    }
+
+    if(activePlugin != pluginIdx)
+    {
+        utils->fadeInOut(plugins[activePlugin].widget,
+                         plugins[pluginIdx].widget,
+                         250, 255, 0);
+
+        QTimeLine *timeLine = new QTimeLine(350);
+        timeLine->setEasingCurve(QEasingCurve::InOutSine);
+
+        int smallWidth = plugins[pluginIdx].widget->width();
+        int bigWidth = plugins[activePlugin].widget->width();
+        timeLine->setFrameRange(smallWidth, bigWidth);
+
+        plugins[activePlugin].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        plugins[pluginIdx].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+
+        connect(timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
+            plugins[activePlugin].widget->setFixedWidth(bigWidth-(frame-smallWidth));
+            plugins[pluginIdx].widget->setFixedWidth(frame);
+        });
+        timeLine->start();
+
+        QEventLoop loop;
+        connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
+        loop.exec();
+
+        QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
+        this->swapWidgets(plugins[pluginIdx].widget, newBigWidget);
+        newBigWidget->setFixedWidth(bigWidth);
+        newBigWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        plugins[pluginIdx].widget = newBigWidget;
+
+        QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
+        this->swapWidgets(plugins[activePlugin].widget, newSmallWidget);
+        newSmallWidget->setMinimumWidth(1);
+        newSmallWidget->setMaximumWidth(32768);
+        newSmallWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        plugins[activePlugin].widget = newSmallWidget;
+
+        utils->fadeInOut(plugins[activePlugin].widget,
+                         plugins[pluginIdx].widget,
+                         250, 0, 255);
+    }
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        plugins[i].isBig = (i == pluginIdx);
+    }
+
+    activePlugin = pluginIdx;
 }
 
 void MainWindow::createTitleBar(QWidget *parent)
@@ -671,7 +506,7 @@ void MainWindow::createTitleBar(QWidget *parent)
 
     this->setWindowTitle("Edah");
     titleLbl = new QLabel("Edah", titleBar);
-    this->addShadowEffect(titleLbl, Qt::white);
+    utils->addShadowEffect(titleLbl, Qt::white);
     ((QHBoxLayout*)titleBar->layout())->addWidget(titleLbl, 1);
 
     minimizeBtn = new QToolButton(titleBar);
@@ -737,6 +572,135 @@ void MainWindow::createBottomBar(QWidget *parent)
     ((QHBoxLayout*)bottomBar->layout())->addStretch(1);
 }
 
+void MainWindow::newProcess(const QString &message)
+{
+    // TODO
+}
+
+void MainWindow::timerSlot()
+{
+    clockLbl->setText(QTime::currentTime().toString(tr("hh:mm AP")));
+}
+
+void MainWindow::onFocusChanged(QWidget *old, QWidget *now)
+{
+    Q_UNUSED(old); Q_UNUSED(now);
+
+    winFrame->setProperty("hasFocus", this->isActiveWindow());
+    utils->updateStyle(winFrame);
+
+    titleBar->setProperty("hasFocus", this->isActiveWindow());
+    utils->updateStyle(titleBar);
+
+    QGraphicsDropShadowEffect *shadow = dynamic_cast<QGraphicsDropShadowEffect*>(titleBar->graphicsEffect());
+    if(shadow)
+    {
+        shadow->setBlurRadius(this->isActiveWindow() ? 30 : 0);
+    }
+}
+
+void MainWindow::recalcSizes(QSize size)
+{
+    QVector<QWidget*> vec;
+    vec.push_back(titleBar);
+    vec.push_back(container);
+    vec.push_back(pluginContainer);
+
+    foreach(QWidget *widget, vec)
+    {
+        widget->setProperty("isMaximized", this->isMaximized() || this->isFullScreen());
+        utils->updateStyle(widget);
+    }
+
+    if(this->isMaximized() || this->isFullScreen())
+    {
+        winFrame->hide();
+        container->setGeometry(0, 0, size.width(), size.height());
+    }
+    else
+    {
+        winFrame->setGeometry(0, 0, size.width(), size.height());
+        winFrame->show();
+
+        container->setGeometry(3, 4, size.width()-6, size.height()-6);
+    }
+
+    titleLbl->setStyleSheet(QString("color: qlineargradient(spread:pad, x1:0, y1:0, x2:%1, y2:0,"
+                            "stop:0 rgba(255, 255, 255, 255),"
+                            "stop:0.95 rgba(255,255,255,255),"
+                            "stop:1 rgba(0, 0, 0, 0));")
+                            .arg(titleLbl->width()));
+
+    int height = size.height()*this->logicalDpiY()/2048;
+    bottomBar->setFixedHeight(height);
+    QSize iconSize = QSize(height*2, height/2);
+    closeBtn_bottom->setIconSize(iconSize);
+    minimizeBtn_bottom->setIconSize(iconSize);
+    menuBtn_bottom->setIconSize(iconSize);
+
+    int fontSize = height/1.5f;
+    clockLbl->setStyleSheet(QString("font-size: %1px")
+                            .arg(fontSize));
+
+    pluginContainer->setStyleSheet(QString("#pluginContainer { font-size: %1px; }")
+                                   .arg(fontSize));
+
+    if(plugins.size() == 0)
+    {
+        pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
+                                    "Go to: &#x2630; > Settings..."));
+    }
+    else
+    {
+        pluginContainer->setText("");
+    }
+
+    int visiblePluginsCount = 0;
+    for(int i=0; i<plugins.size(); i++)
+    {
+        if(plugins[i].plugin->hasPanel())
+            visiblePluginsCount++;
+    }
+
+    int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        if(!plugins[i].plugin->hasPanel())
+        {
+            continue;
+        }
+
+        if(plugins[i].isBig)
+        {
+            plugins[i].widget->setFixedWidth(width*4);
+            plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        }
+        else
+        {
+            plugins[i].widget->setMaximumWidth(32768);
+            plugins[i].widget->setMinimumWidth(1);
+            plugins[i].widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        }
+    }
+}
+
+void MainWindow::settingsChanged()
+{
+    QLocale locale = QLocale(db->value(nullptr, "lang", "").toString());
+    translator.load(locale, "lang", ".", ":/lang");
+
+    bool fullscreen = db->value(nullptr, "fullscreen", false).toBool();
+    if(fullscreen != this->isFullScreen())
+    {
+        titleBar->setVisible(!fullscreen);
+        bottomBar->setVisible(fullscreen);
+        fullscreen ? this->showFullScreen() : this->showNormal();
+    }
+
+    this->reloadPlugins();
+}
+
 void MainWindow::onMaximizeBtnClicked()
 {
     if(this->isMaximized())
@@ -765,33 +729,17 @@ void MainWindow::showMenu()
     }
 }
 
+void MainWindow::showAbout()
+{
+    AboutDialog *dialog = new AboutDialog;
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
+}
+
 void MainWindow::showSettings()
 {
     Settings *settings = new Settings(&plugins);
     settings->setAttribute(Qt::WA_DeleteOnClose);
     connect(settings, &Settings::settingsChanged, this, &MainWindow::settingsChanged);
     settings->exec();
-}
-
-void MainWindow::settingsChanged()
-{
-    QLocale locale = QLocale(db->value(nullptr, "lang", "").toString());
-    translator->load(locale, "lang", ".", ":/lang");
-
-    bool fullscreen = db->value(nullptr, "fullscreen", false).toBool();
-    if(fullscreen != this->isFullScreen())
-    {
-        titleBar->setVisible(!fullscreen);
-        bottomBar->setVisible(fullscreen);
-        fullscreen ? this->showFullScreen() : this->showNormal();
-    }
-
-    this->refreshPlugins();
-}
-
-void MainWindow::showAbout()
-{
-    AboutDialog *dialog = new AboutDialog;
-    dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->show();
 }

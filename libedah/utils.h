@@ -38,6 +38,10 @@ public:
     QString getUsername();
     QString getDataDir();
     QString getPluginPath(QString plugin);
+
+    void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
+    void addShadowEffect(QWidget *widget, QColor color);
+    void updateStyle(QWidget *widget);
 };
 
 extern Utils *utils;

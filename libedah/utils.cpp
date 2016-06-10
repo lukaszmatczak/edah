@@ -19,6 +19,11 @@
 #include "utils.h"
 
 #include <QProcessEnvironment>
+#include <QWidget>
+#include <QTimeLine>
+#include <QGraphicsOpacityEffect>
+#include <QEventLoop>
+#include <QStyle>
 
 Utils *utils;
 
@@ -70,5 +75,45 @@ QString Utils::getPluginPath(QString plugin)
             .arg(this->getDataDir())
             .arg(plugin)
             .arg(plugin);
+}
+
+void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
+{
+    QTimeLine *timeLine = new QTimeLine(duration);
+    QGraphicsOpacityEffect *effect1 = new QGraphicsOpacityEffect;
+    QGraphicsOpacityEffect *effect2 = new QGraphicsOpacityEffect;
+
+    effect1->setOpacity(start/255.0);
+    effect2->setOpacity(start/255.0);
+    w1->setGraphicsEffect(effect1);
+    w2->setGraphicsEffect(effect2);
+
+    timeLine->setFrameRange(start, stop);
+    connect(timeLine, &QTimeLine::frameChanged, this, [effect1, effect2](int frame) {
+        const float opacity = frame/255.0;
+        effect1->setOpacity(opacity);
+        effect2->setOpacity(opacity);
+    });
+    timeLine->start();
+
+    QEventLoop loop;
+    connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+}
+
+void Utils::addShadowEffect(QWidget *widget, QColor color)
+{
+    QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect(widget);
+    effect->setBlurRadius(30);
+    effect->setColor(color);
+    effect->setOffset(0,0);
+    widget->setGraphicsEffect(effect);
+}
+
+void Utils::updateStyle(QWidget *widget)
+{
+    widget->style()->unpolish(widget);
+    widget->style()->polish(widget);
+    widget->update();
 }
 

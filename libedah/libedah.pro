@@ -9,6 +9,8 @@ QT       += gui widgets sql
 TARGET = edah
 TEMPLATE = lib
 
+CONFIG += c++11
+
 DEFINES += LIBEDAH_LIBRARY
 
 SOURCES += logger.cpp \

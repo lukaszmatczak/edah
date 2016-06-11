@@ -677,6 +677,9 @@ void MainWindow::recalcSizes(QSize size)
 
     int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
 
+    height = width*2.66;
+    pluginContainer->setMargin((size.height()-height)/2);
+
     for(int i=0; i<plugins.size(); i++)
     {
         if(!plugins[i].plugin->hasPanel())
@@ -687,7 +690,8 @@ void MainWindow::recalcSizes(QSize size)
         if(i == activePlugin)
         {
             plugins[i].widget->setFixedWidth(width*4);
-            plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+            plugins[i].widget->setFixedHeight(qMin<int>(width*2.66, pluginContainer->height()));
+            plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         }
         else
         {

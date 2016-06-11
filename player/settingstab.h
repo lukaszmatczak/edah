@@ -16,26 +16,29 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MYPUSHBUTTON_H
-#define MYPUSHBUTTON_H
+#ifndef SETTINGSTAB_H
+#define SETTINGSTAB_H
 
-#include <QPushButton>
-#include <QTimer>
+#include <libedah/iplugin.h>
 
-class MyPushButton : public QPushButton
+#include <QWidget>
+#include <QLineEdit>
+
+class SettingsTab : public QWidget
 {
+    Q_OBJECT
 public:
-    MyPushButton(const QString & text, QWidget * parent = 0);
+    explicit SettingsTab(IPlugin *parent);
 
-protected:
-    bool event(QEvent *e);
+    void loadSettings();
+    void writeSettings();
 
 private:
-    QTimer timer;
-    int hoverColor;
+    IPlugin *plugin;
+    QLineEdit *songsDir;
 
 private slots:
-    void timerTimeout();
+    void songsDirBtn_clicked();
 };
 
-#endif // MYPUSHBUTTON_H
+#endif // SETTINGSTAB_H

@@ -15,13 +15,11 @@ include(../qtsingleapplication/src/qtsingleapplication.pri)
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    mypushbutton.cpp \
     winframe.cpp \
     aboutdialog.cpp \
     settings.cpp
 
 HEADERS  += mainwindow.h \
-    mypushbutton.h \
     winframe.h \
     aboutdialog.h \
     settings.h

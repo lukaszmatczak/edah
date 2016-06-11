@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets sql
+QT       += core gui widgets sql multimedia
 
 TARGET = player
 TEMPLATE = lib
@@ -14,8 +14,14 @@ DESTDIR = ../plugins/player
 
 INCLUDEPATH += ..
 
-SOURCES += player.cpp
+SOURCES += player.cpp \
+    bigpanel.cpp \
+    settingstab.cpp
 
-HEADERS += player.h
+HEADERS += player.h \
+    bigpanel.h \
+    settingstab.h
 
 DISTFILES += player.json
+
+LIBS += -ltag

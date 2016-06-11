@@ -24,9 +24,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QEventLoop>
 #include <QStyle>
-#include <QApplication>
 
-LIBEDAHSHARED_EXPORT Utils *utils;
+Utils *utils;
 
 Utils::Utils()
 {
@@ -80,7 +79,7 @@ QString Utils::getPluginPath(QString plugin)
 
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
 {
-    QTimeLine *timeLine = new QTimeLine(duration);
+    QTimeLine timeLine(duration);
     QGraphicsOpacityEffect *effect1 = new QGraphicsOpacityEffect;
     QGraphicsOpacityEffect *effect2 = new QGraphicsOpacityEffect;
 
@@ -89,16 +88,16 @@ void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int sto
     w1->setGraphicsEffect(effect1);
     w2->setGraphicsEffect(effect2);
 
-    timeLine->setFrameRange(start, stop);
-    connect(timeLine, &QTimeLine::frameChanged, this, [effect1, effect2](int frame) {
+    timeLine.setFrameRange(start, stop);
+    connect(&timeLine, &QTimeLine::frameChanged, this, [effect1, effect2](int frame) {
         const float opacity = frame/255.0;
         effect1->setOpacity(opacity);
         effect2->setOpacity(opacity);
     });
-    timeLine->start();
+    timeLine.start();
 
     QEventLoop loop;
-    connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
+    connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
     loop.exec();
 }
 

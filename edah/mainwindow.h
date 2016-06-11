@@ -38,9 +38,7 @@ struct Plugin
     QString id;
     QPluginLoader *loader;
     IPlugin *plugin;
-
     QWidget *widget;
-    bool isBig;
 };
 
 class MainWindow : public QMainWindow

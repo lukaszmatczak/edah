@@ -192,9 +192,7 @@ void MainWindow::mousePressEvent(QMouseEvent *e)
 
     for(int i=0; i<plugins.size(); i++)
     {
-        if(!plugins[i].isBig &&
-                plugins[i].plugin->hasPanel() &&
-                plugins[i].widget->underMouse())
+        if(plugins[i].plugin->hasPanel() && plugins[i].widget->underMouse())
         {
             this->changeActivePlugin(i);
             break;
@@ -252,7 +250,6 @@ bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
     plugin->plugin = qobject_cast<IPlugin*>(plugin->loader->instance());
 
     plugin->widget = nullptr;
-    plugin->isBig = false;
 
     if(!plugin->plugin)
     {
@@ -320,7 +317,6 @@ void MainWindow::loadPlugins()
                 plugin.widget = plugin.plugin->bigPanel();
 
                 activePlugin = plugins.size();
-                plugin.isBig = true;
             }
             else
             {
@@ -378,13 +374,14 @@ void MainWindow::reloadPlugins()
     }
 
     // select new big widget
-    if(!newPluginsId.contains(plugins[activePlugin].id))
+    activePlugin = newPluginsId.indexOf(plugins[activePlugin].id);
+    if(activePlugin == -1)
     {
         for(int i=0; i<newPlugins.size(); i++)
         {
             if(newPlugins[i].plugin->hasPanel())
             {
-                newPlugins[i].isBig = true;
+                activePlugin = i;
                 break;
             }
         }
@@ -417,17 +414,12 @@ void MainWindow::reloadPlugins()
             pluginLayout->addWidget(line);
         }
 
-        plugins[i].widget = plugins[i].isBig ?
+        plugins[i].widget = (i == activePlugin) ?
                     plugins[i].plugin->bigPanel() :
                     plugins[i].plugin->smallPanel();
 
         pluginLayout->addWidget(plugins[i].widget);
         plugins[i].widget->show();
-
-        if(plugins[i].isBig)
-        {
-            activePlugin = i;
-        }
     }
 
     this->recalcSizes(this->size());
@@ -461,24 +453,24 @@ void MainWindow::changeActivePlugin(int pluginIdx)
                          plugins[pluginIdx].widget,
                          250, 255, 0);
 
-        QTimeLine *timeLine = new QTimeLine(350);
-        timeLine->setEasingCurve(QEasingCurve::InOutSine);
+        QTimeLine timeLine(350);
+        timeLine.setEasingCurve(QEasingCurve::InOutSine);
 
         int smallWidth = plugins[pluginIdx].widget->width();
         int bigWidth = plugins[activePlugin].widget->width();
-        timeLine->setFrameRange(smallWidth, bigWidth);
+        timeLine.setFrameRange(smallWidth, bigWidth);
 
         plugins[activePlugin].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         plugins[pluginIdx].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-        connect(timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
+        connect(&timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
             plugins[activePlugin].widget->setFixedWidth(bigWidth-(frame-smallWidth));
             plugins[pluginIdx].widget->setFixedWidth(frame);
         });
-        timeLine->start();
+        timeLine.start();
 
         QEventLoop loop;
-        connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
+        connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
         loop.exec();
 
         QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
@@ -497,11 +489,6 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         utils->fadeInOut(plugins[activePlugin].widget,
                          plugins[pluginIdx].widget,
                          250, 0, 255);
-    }
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        plugins[i].isBig = (i == pluginIdx);
     }
 
     activePlugin = pluginIdx;
@@ -697,7 +684,7 @@ void MainWindow::recalcSizes(QSize size)
             continue;
         }
 
-        if(plugins[i].isBig)
+        if(i == activePlugin)
         {
             plugins[i].widget->setFixedWidth(width*4);
             plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);

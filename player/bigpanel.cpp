@@ -22,7 +22,9 @@
 #include <QFrame>
 #include <QResizeEvent>
 
-BigPanel::BigPanel(Player *parent) : QWidget(0), parent(parent)
+#include <QDebug>
+
+BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
 {
     layout = new QGridLayout(this);
     this->setLayout(layout);
@@ -60,12 +62,30 @@ BigPanel::BigPanel(Player *parent) : QWidget(0), parent(parent)
     numberLbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
     songInfoFrm->layout()->addWidget(numberLbl);
 
+    titleLine = new QWidget(this);
+    titleLine->setObjectName("titleLine");
+    titleLine->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    titleLine->setFixedWidth(1);
+    titleLine->hide();
+    songInfoFrm->layout()->addWidget(titleLine);
+
     titleLbl = new QLabel(this);
     titleLbl->setObjectName("titleLbl");
     titleLbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
     titleLbl->setWordWrap(true);
     titleLbl->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     songInfoFrm->layout()->addWidget(titleLbl);
+
+    playBtn = new MyPushButton("|>", this);
+    playBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    connect(playBtn, &MyPushButton::clicked, this, &BigPanel::playBtn_clicked);
+    layout->addWidget(playBtn, 1, 3, 2, 2);
+
+    leftPeak = new QProgressBar(this);
+    leftPeak->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    leftPeak->setRange(0, 100);
+    leftPeak->setOrientation(Qt::Vertical);
+    layout->addWidget(leftPeak, 1, 5, 2, 1);
 
     for(int i=0; i<layout->columnCount(); i++)
     {
@@ -78,12 +98,26 @@ BigPanel::BigPanel(Player *parent) : QWidget(0), parent(parent)
     }
 }
 
+void BigPanel::showEvent(QShowEvent *e)
+{
+    Q_UNUSED(e);
+
+    recalcSizes(this->size());
+}
+
 void BigPanel::resizeEvent(QResizeEvent *e)
 {
-    layout->setSpacing((e->size().width()+e->size().height())/128);
+    this->recalcSizes(e->size());
+
+}
+
+void BigPanel::recalcSizes(const QSize &size)
+{
+    layout->setSpacing((size.width()+size.height())/128);
 
     QFontMetrics fm = QFontMetrics(numberLbl->font());
     numberLbl->setFixedWidth(fm.width("000"));
+    titleLine->setFixedHeight(fm.height());
 
     this->setStyleSheet(QString("#songInfoFrm { background-color: rgb(40,40,40);"
                                 "border-color:  rgb(0,0,0);"
@@ -97,19 +131,31 @@ void BigPanel::resizeEvent(QResizeEvent *e)
                                 "font-size: %1px;"
                                 "font-weight: 900;"
                                 "}"
+                                "#titleLine {"
+                                "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
+                                "stop:0 rgba(255, 255, 255, 0),"
+                                "stop:0.5 rgba(255,255,255,255),"
+                                "stop:1 rgba(255,255,255,0));"
+                                "border-style: none;"
+                                "}"
                                 "#titleLbl {"
                                 "font-size: %2px;"
                                 "color: white;"
                                 "}")
-                        .arg(numberBtns[0]->width()/3)
-                        .arg(numberBtns[0]->width()/6));
+                        .arg(qMax(1, numberBtns[0]->width()/3))
+                        .arg(qMax(1, numberBtns[0]->width()/6)));
+}
 
+void BigPanel::setPeak(float left, float right)
+{
+    qDebug() << left << right;
+    leftPeak->setValue(left*100);
 }
 
 void BigPanel::numberBtn_clicked()
 {
-    //if (playRecAudio->isPlaying())
-    //    return;
+    if (player->isPlaying())
+        return;
 
     QString digit = ((MyPushButton*)QObject::sender())->text();
 
@@ -120,8 +166,8 @@ void BigPanel::numberBtn_clicked()
 
     int maxSong = -1;
 
-    if(!parent->songs.isEmpty())
-        maxSong = parent->songs.lastKey();
+    if(!player->songs.isEmpty())
+        maxSong = player->songs.lastKey();
 
     if (newNumber <= maxSong)
     {
@@ -133,9 +179,8 @@ void BigPanel::numberBtn_clicked()
 
 void BigPanel::btnBack_clicked()
 {
-    //if (playRecAudio->isPlaying())
-    //    return;
-
+    if (player->isPlaying())
+        return;
 
     if (numberLbl->text().length() > 0)
        numberLbl->setText(numberLbl->text().left(numberLbl->text().length() - 1));
@@ -151,14 +196,35 @@ void BigPanel::btnBack_clicked()
 
 void BigPanel::updateTitle(int number)
 {
-    if(number > 0)
+    if(player->songs.contains(number))
     {
-        titleLbl->setText(parent->songs[number].title);
-        //ui->playline->setVisible(true);
+        titleLbl->setText(player->songs[number].title);
+        numberLbl->setStyleSheet("");
+        titleLine->setVisible(true);
     }
     else
     {
+        numberLbl->setStyleSheet("color: rgb(127, 127, 127);");
         titleLbl->setText("");
-        //ui->playline->setVisible(false);
+        titleLine->setVisible(false);
     }
+}
+
+void BigPanel::playBtn_clicked()
+{
+    if(player->isPlaying())
+    {
+        //setNonstop(false);
+        emit stop();
+    }
+    else
+    {
+        int number = numberLbl->text().toInt();
+        if(number == 0) return;
+        //ui->PlayBtn->setIcon(iconStop);
+        //qApp->processEvents();
+        emit play(number);
+    }
+
+    //update();
 }

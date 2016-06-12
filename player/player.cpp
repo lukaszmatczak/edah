@@ -19,6 +19,7 @@
 #include "player.h"
 
 #include <libedah/database.h>
+#include <libedah/logger.h>
 
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
@@ -28,7 +29,6 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QSqlQuery>
-#include <QDir>
 #include <QEventLoop>
 
 #include <QtMultimedia/QAudioDecoder>
@@ -37,9 +37,21 @@
 
 Player::Player()
 {
+    songsDir = QDir(db->value(this, "songsDir").toString());
+
     bPanel = new BigPanel(this);
+    connect(bPanel, &BigPanel::play, this, &Player::play);
+    connect(bPanel, &BigPanel::stop, this, &Player::stop);
+
     settingsTab = new SettingsTab(this);
     smallWidget = new QLabel(this->getPluginName());
+
+    mediaPlayer = new QMediaPlayer(this);
+    mediaPlayer->setVolume(100);
+
+    audioProbe = new QAudioProbe(this);
+    audioProbe->setSource(mediaPlayer);
+    connect(audioProbe, &QAudioProbe::audioBufferProbed, this, &Player::calcPeak);
 
     this->loadSongs();
 }
@@ -111,7 +123,6 @@ void Player::loadSongs()
         songs.insert(q.value("id").toInt(), s);
     }
 
-    QDir songsDir(db->value(this, "songsDir").toString());
     QStringList songsFilenames = songsDir.entryList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
 
     db->db.transaction();
@@ -182,4 +193,64 @@ void Player::loadSongs()
     }
 
     db->db.commit();
+}
+
+bool Player::isPlaying()
+{
+    return (mediaPlayer->state() == QMediaPlayer::PlayingState);
+}
+
+void Player::play(int number)
+{
+    qDebug() << "play" << number;
+    mediaPlayer->setMedia(QUrl::fromLocalFile(songsDir.filePath(songs[number].filename)));
+    mediaPlayer->play();
+    bPanel->setPeak(50, 50);
+}
+
+void Player::stop()
+{
+    qDebug() << "stop";
+    mediaPlayer->stop();
+}
+
+void Player::calcPeak(QAudioBuffer buffer)
+{
+    float peak[2] = {2.0f, 2.0f};
+
+    QAudioFormat format = buffer.format();
+
+    for(int i=0; i<qMin(2, format.channelCount()); i++)
+    {
+        if(format.sampleType() == QAudioFormat::SignedInt)
+        {
+            if(format.sampleSize() == 8)       peak[i] = this->calcMax<qint8>(buffer, i);
+            else if(format.sampleSize() == 16) peak[i] = this->calcMax<qint16>(buffer, i);
+            else if(format.sampleSize() == 32) peak[i] = this->calcMax<qint32>(buffer, i);
+        }
+        else if(format.sampleType() == QAudioFormat::UnSignedInt)
+        {
+            if(format.sampleSize() == 8)       peak[i] = this->calcMax<quint8>(buffer, i);
+            else if(format.sampleSize() == 16) peak[i] = this->calcMax<quint16>(buffer, i);
+            else if(format.sampleSize() == 32) peak[i] = this->calcMax<quint32>(buffer, i);
+        }
+        else if(format.sampleType() == QAudioFormat::Float)
+        {
+            peak[i] = this->calcMax<float>(buffer, i);
+        }
+    }
+
+    if(peak[0] == 2.0f)
+    {
+        LOG(QString("Unsupported format (sampleType=%1, sampleSize=%2")
+            .arg(format.sampleType())
+            .arg(format.sampleSize()));
+    }
+
+    if(format.channelCount() == 1)
+    {
+        peak[1] = peak[0];
+    }
+
+    bPanel->setPeak(peak[0], peak[1]);
 }

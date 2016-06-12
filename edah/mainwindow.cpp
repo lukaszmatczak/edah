@@ -432,6 +432,11 @@ void MainWindow::swapWidgets(QWidget *first, QWidget *second)
     pluginLayout->removeWidget(first);
     second->setParent(pluginContainer);
     pluginLayout->insertWidget(idx, second);
+
+    QGraphicsOpacityEffect *effect = new QGraphicsOpacityEffect;
+    effect->setOpacity(0.0);
+    second->setGraphicsEffect(effect);
+
     second->show();
 }
 
@@ -453,11 +458,21 @@ void MainWindow::changeActivePlugin(int pluginIdx)
                          plugins[pluginIdx].widget,
                          250, 255, 0);
 
-        QTimeLine timeLine(350);
-        timeLine.setEasingCurve(QEasingCurve::InOutSine);
-
         int smallWidth = plugins[pluginIdx].widget->width();
         int bigWidth = plugins[activePlugin].widget->width();
+
+        QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
+        this->swapWidgets(plugins[pluginIdx].widget, newBigWidget);
+        newBigWidget->setFixedWidth(smallWidth);
+        plugins[pluginIdx].widget = newBigWidget;
+
+        QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
+        this->swapWidgets(plugins[activePlugin].widget, newSmallWidget);
+        newSmallWidget->setFixedWidth(bigWidth);
+        plugins[activePlugin].widget = newSmallWidget;
+
+        QTimeLine timeLine(350);
+        timeLine.setEasingCurve(QEasingCurve::InOutSine);
         timeLine.setFrameRange(smallWidth, bigWidth);
 
         plugins[activePlugin].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
@@ -472,19 +487,6 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         QEventLoop loop;
         connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
         loop.exec();
-
-        QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
-        this->swapWidgets(plugins[pluginIdx].widget, newBigWidget);
-        newBigWidget->setFixedWidth(bigWidth);
-        newBigWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        plugins[pluginIdx].widget = newBigWidget;
-
-        QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
-        this->swapWidgets(plugins[activePlugin].widget, newSmallWidget);
-        newSmallWidget->setMinimumWidth(1);
-        newSmallWidget->setMaximumWidth(32768);
-        newSmallWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-        plugins[activePlugin].widget = newSmallWidget;
 
         utils->fadeInOut(plugins[activePlugin].widget,
                          plugins[pluginIdx].widget,

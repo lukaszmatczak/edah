@@ -24,6 +24,7 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QLabel>
+#include <QProgressBar>
 
 class Player;
 
@@ -31,24 +32,36 @@ class BigPanel : public QWidget
 {
     Q_OBJECT
 public:
-    explicit BigPanel(Player *parent);
+    explicit BigPanel(Player *player);
+    void setPeak(float left, float right);
 
 protected:
+    void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
 
 private:
+    void recalcSizes(const QSize &size);
     void updateTitle(int number);
 
-    Player *parent;
+    Player *player;
 
     QGridLayout *layout;
     QVector<MyPushButton*> numberBtns;
     QLabel *numberLbl;
+    QWidget *titleLine;
     QLabel *titleLbl;
+    MyPushButton *playBtn;
+
+    QProgressBar *leftPeak;
 
 private slots:
     void numberBtn_clicked();
     void btnBack_clicked();
+    void playBtn_clicked();
+
+signals:
+    void play(int number);
+    void stop();
 };
 
 #endif // BIGPANEL_H

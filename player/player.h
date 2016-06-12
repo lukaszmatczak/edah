@@ -25,6 +25,10 @@
 #include <libedah/iplugin.h>
 
 #include <QObject>
+#include <QDir>
+
+#include <QMediaPlayer>
+#include <QAudioProbe>
 
 struct Song
 {
@@ -52,14 +56,47 @@ public:
     void loadSettings();
     void writeSettings();
 
+    bool isPlaying();
     QMap<int, Song> songs;
 
 private:
     void loadSongs();
 
+    template <typename T>
+    float calcMax(const QAudioBuffer &buffer, int channel)
+    {
+        const T *data = buffer.data<T>();
+        T ret = 0;
+
+        const int count = buffer.frameCount();
+        const int channelCount = buffer.format().channelCount();
+
+        for(int i=0; i<count-channelCount; i+=channelCount)
+        {
+            ret = qMax(ret, data[i+channel]);
+        }
+
+        if(std::is_same<T, float>::value)
+        {
+            return ret;
+        }
+
+        return ret / (float)std::numeric_limits<T>::max();
+    }
+
     BigPanel *bPanel;
     QWidget *smallWidget;
     SettingsTab *settingsTab;
+
+    QDir songsDir;
+    QMediaPlayer *mediaPlayer;
+    QAudioProbe *audioProbe;
+
+private slots:
+    void play(int number);
+    void stop();
+
+    void calcPeak(QAudioBuffer buffer);
 };
 
 #endif // PLAYER_H

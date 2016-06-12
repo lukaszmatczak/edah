@@ -148,7 +148,6 @@ void BigPanel::recalcSizes(const QSize &size)
 
 void BigPanel::setPeak(float left, float right)
 {
-    qDebug() << left << right;
     leftPeak->setValue(left*100);
 }
 

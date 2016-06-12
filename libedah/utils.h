@@ -23,13 +23,7 @@
 
 #include <QObject>
 
-#if defined(LIBEDAH_LIBRARY)
-#  define UTILSSHARED_EXPORT Q_DECL_EXPORT
-#else
-#  define UTILSSHARED_EXPORT Q_DECL_IMPORT
-#endif
-
-class UTILSSHARED_EXPORT Utils : public QObject
+class LIBEDAHSHARED_EXPORT Utils : public QObject
 {
     Q_OBJECT
 

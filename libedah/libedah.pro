@@ -15,15 +15,15 @@ DEFINES += LIBEDAH_LIBRARY
 
 SOURCES += logger.cpp \
     utils.cpp \
-    database.cpp \
-    mypushbutton.cpp
+    mypushbutton.cpp \
+    database.cpp
 
 HEADERS += iplugin.h \
         logger.h \
         utils.h \
         database.h \
-    libedah.h \
-    mypushbutton.h
+    mypushbutton.h \
+    libedah.h
 
 unix {
     target.path = /usr/lib

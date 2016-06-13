@@ -20,6 +20,7 @@
 #define BIGPANEL_H
 
 #include <libedah/mypushbutton.h>
+#include <libedah/peakmeter.h>
 
 #include <QWidget>
 #include <QGridLayout>
@@ -52,7 +53,7 @@ private:
     QLabel *titleLbl;
     MyPushButton *playBtn;
 
-    QProgressBar *leftPeak;
+    PeakMeter *peakMeter;
 
 private slots:
     void numberBtn_clicked();

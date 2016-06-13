@@ -163,7 +163,8 @@ void Player::loadSongs()
             {
                 s.title = rx.cap(2);
             }
-/*
+// http://doc.qt.io/qt-5/audiooverview.html#decoding-compressed-audio-to-memory
+            /*
             QAudioDecoder *decoder = new QAudioDecoder;
             decoder->setSourceFilename(songsDir.filePath(filename));
             decoder->start();
@@ -205,7 +206,6 @@ void Player::play(int number)
     qDebug() << "play" << number;
     mediaPlayer->setMedia(QUrl::fromLocalFile(songsDir.filePath(songs[number].filename)));
     mediaPlayer->play();
-    bPanel->setPeak(50, 50);
 }
 
 void Player::stop()

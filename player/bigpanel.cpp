@@ -21,6 +21,7 @@
 
 #include <QFrame>
 #include <QResizeEvent>
+#include <QGraphicsDropShadowEffect>
 
 #include <QDebug>
 
@@ -81,11 +82,12 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     connect(playBtn, &MyPushButton::clicked, this, &BigPanel::playBtn_clicked);
     layout->addWidget(playBtn, 1, 3, 2, 2);
 
-    leftPeak = new QProgressBar(this);
-    leftPeak->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    leftPeak->setRange(0, 100);
-    leftPeak->setOrientation(Qt::Vertical);
-    layout->addWidget(leftPeak, 1, 5, 2, 1);
+    peakMeter = new PeakMeter(this);
+    peakMeter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
+    //leftPeak->setRange(0, 100);
+    //leftPeak->setOrientation(Qt::Vertical);
+    layout->addWidget(peakMeter, 1, 5, 2, 1);
 
     for(int i=0; i<layout->columnCount(); i++)
     {
@@ -148,7 +150,7 @@ void BigPanel::recalcSizes(const QSize &size)
 
 void BigPanel::setPeak(float left, float right)
 {
-    leftPeak->setValue(left*100);
+    peakMeter->setPeakLevel(left, right);
 }
 
 void BigPanel::numberBtn_clicked()

@@ -103,11 +103,15 @@ MainWindow::MainWindow(QWidget *parent)
     {
         localeStr = QLocale::system().name().left(2);
     }
-    if(!(translator.load(QLocale(localeStr), "lang", ".", ":/lang") &&
-         qApp->installTranslator(&translator)))
+    if(localeStr != "en")
     {
-        LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
+        if(!translator.load(QLocale(localeStr), "lang", ".", ":/lang"))
+        {
+            LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
+        }
     }
+
+    qApp->installTranslator(&translator);
 
     if(db->value(nullptr, "fullscreen", false).toBool())
     {

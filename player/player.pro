@@ -24,4 +24,5 @@ HEADERS += player.h \
 
 DISTFILES += player.json
 
-LIBS += -ltag -ledah
+LIBS += -ltag
+win32: LIBS += -ledah

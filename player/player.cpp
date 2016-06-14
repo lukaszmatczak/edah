@@ -31,7 +31,7 @@
 #include <QSqlQuery>
 #include <QEventLoop>
 
-#include <QtMultimedia/QAudioDecoder>
+#include <QAudioDecoder>
 
 #include <QDebug>
 
@@ -48,10 +48,15 @@ Player::Player()
 
     mediaPlayer = new QMediaPlayer(this);
     mediaPlayer->setVolume(100);
+    connect(mediaPlayer, &QMediaPlayer::stateChanged, this, &Player::playerStateChanged);
+
+    peakMeter = new PeakMeter;
+    peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
+    bPanel->addPeakMeter(peakMeter);
 
     audioProbe = new QAudioProbe(this);
     audioProbe->setSource(mediaPlayer);
-    connect(audioProbe, &QAudioProbe::audioBufferProbed, this, &Player::calcPeak);
+    connect(audioProbe, &QAudioProbe::audioBufferProbed, peakMeter, &PeakMeter::setPeakLevel);
 
     this->loadSongs();
 }
@@ -214,43 +219,10 @@ void Player::stop()
     mediaPlayer->stop();
 }
 
-void Player::calcPeak(QAudioBuffer buffer)
+void Player::playerStateChanged(QMediaPlayer::State state)
 {
-    float peak[2] = {2.0f, 2.0f};
-
-    QAudioFormat format = buffer.format();
-
-    for(int i=0; i<qMin(2, format.channelCount()); i++)
+    if(state == QMediaPlayer::StoppedState)
     {
-        if(format.sampleType() == QAudioFormat::SignedInt)
-        {
-            if(format.sampleSize() == 8)       peak[i] = this->calcMax<qint8>(buffer, i);
-            else if(format.sampleSize() == 16) peak[i] = this->calcMax<qint16>(buffer, i);
-            else if(format.sampleSize() == 32) peak[i] = this->calcMax<qint32>(buffer, i);
-        }
-        else if(format.sampleType() == QAudioFormat::UnSignedInt)
-        {
-            if(format.sampleSize() == 8)       peak[i] = this->calcMax<quint8>(buffer, i);
-            else if(format.sampleSize() == 16) peak[i] = this->calcMax<quint16>(buffer, i);
-            else if(format.sampleSize() == 32) peak[i] = this->calcMax<quint32>(buffer, i);
-        }
-        else if(format.sampleType() == QAudioFormat::Float)
-        {
-            peak[i] = this->calcMax<float>(buffer, i);
-        }
+        peakMeter->stop();
     }
-
-    if(peak[0] == 2.0f)
-    {
-        LOG(QString("Unsupported format (sampleType=%1, sampleSize=%2")
-            .arg(format.sampleType())
-            .arg(format.sampleSize()));
-    }
-
-    if(format.channelCount() == 1)
-    {
-        peak[1] = peak[0];
-    }
-
-    bPanel->setPeak(peak[0], peak[1]);
 }

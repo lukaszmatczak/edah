@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += gui widgets sql
+QT       += gui widgets sql multimedia
 
 TARGET = edah
 TEMPLATE = lib

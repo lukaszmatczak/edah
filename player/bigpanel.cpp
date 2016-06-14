@@ -82,13 +82,6 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     connect(playBtn, &MyPushButton::clicked, this, &BigPanel::playBtn_clicked);
     layout->addWidget(playBtn, 1, 3, 2, 2);
 
-    peakMeter = new PeakMeter(this);
-    peakMeter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
-    //leftPeak->setRange(0, 100);
-    //leftPeak->setOrientation(Qt::Vertical);
-    layout->addWidget(peakMeter, 1, 5, 2, 1);
-
     for(int i=0; i<layout->columnCount(); i++)
     {
         layout->setColumnStretch(i, 1);
@@ -98,6 +91,12 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     {
         layout->setRowStretch(i, 1);
     }
+}
+
+void BigPanel::addPeakMeter(PeakMeter *peakMeter)
+{
+    peakMeter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    layout->addWidget(peakMeter, 1, 5, 2, 1);
 }
 
 void BigPanel::showEvent(QShowEvent *e)
@@ -110,7 +109,6 @@ void BigPanel::showEvent(QShowEvent *e)
 void BigPanel::resizeEvent(QResizeEvent *e)
 {
     this->recalcSizes(e->size());
-
 }
 
 void BigPanel::recalcSizes(const QSize &size)
@@ -146,11 +144,6 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "}")
                         .arg(qMax(1, numberBtns[0]->width()/3))
                         .arg(qMax(1, numberBtns[0]->width()/6)));
-}
-
-void BigPanel::setPeak(float left, float right)
-{
-    peakMeter->setPeakLevel(left, right);
 }
 
 void BigPanel::numberBtn_clicked()

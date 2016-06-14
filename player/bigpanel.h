@@ -34,7 +34,7 @@ class BigPanel : public QWidget
     Q_OBJECT
 public:
     explicit BigPanel(Player *player);
-    void setPeak(float left, float right);
+    void addPeakMeter(PeakMeter *peakMeter);
 
 protected:
     void showEvent(QShowEvent *e);
@@ -52,8 +52,6 @@ private:
     QWidget *titleLine;
     QLabel *titleLbl;
     MyPushButton *playBtn;
-
-    PeakMeter *peakMeter;
 
 private slots:
     void numberBtn_clicked();

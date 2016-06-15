@@ -26,3 +26,6 @@ DISTFILES += player.json
 
 LIBS += -ltag
 win32: LIBS += -ledah
+
+RESOURCES += \
+    common.qrc

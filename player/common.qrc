@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>player-img/play.svg</file>
+        <file>player-img/stop.svg</file>
+        <file>player-img/back.svg</file>
+        <file>player-img/random.svg</file>
+    </qresource>
+</RCC>

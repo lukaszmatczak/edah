@@ -35,7 +35,8 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     layout->addWidget(btn0, 3, 1);
     numberBtns.push_back(btn0);
 
-    MyPushButton *btnBack = new MyPushButton("<-", this);
+    btnBack = new MyPushButton("", this);
+    btnBack->setIcon(QIcon(":/player-img/back.svg"));
     btnBack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     connect(btnBack, &MyPushButton::clicked, this, &BigPanel::btnBack_clicked);
     layout->addWidget(btnBack, 3, 2);
@@ -77,7 +78,8 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     titleLbl->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     songInfoFrm->layout()->addWidget(titleLbl);
 
-    playBtn = new MyPushButton("|>", this);
+    playBtn = new MyPushButton("", this);
+    playBtn->setIcon(QIcon(":/player-img/play.svg"));
     playBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     connect(playBtn, &MyPushButton::clicked, this, &BigPanel::playBtn_clicked);
     layout->addWidget(playBtn, 1, 3, 2, 2);
@@ -144,6 +146,12 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "}")
                         .arg(qMax(1, numberBtns[0]->width()/3))
                         .arg(qMax(1, numberBtns[0]->width()/6)));
+
+    QSize iconSize = QSize(playBtn->width()/3, playBtn->width()/3);
+    playBtn->setIconSize(iconSize);
+
+    iconSize = QSize(btnBack->width()/2, btnBack->width()/2);
+    btnBack->setIconSize(iconSize);
 }
 
 void BigPanel::numberBtn_clicked()
@@ -221,4 +229,16 @@ void BigPanel::playBtn_clicked()
     }
 
     //update();
+}
+
+void BigPanel::playerStateChanged(QMediaPlayer::State state)
+{
+    if(state == QMediaPlayer::PlayingState)
+    {
+        playBtn->setIcon(QIcon(":/player-img/stop.svg"));
+    }
+    else
+    {
+        playBtn->setIcon(QIcon(":/player-img/play.svg"));
+    }
 }

@@ -27,6 +27,8 @@
 #include <QLabel>
 #include <QProgressBar>
 
+#include <QMediaPlayer>
+
 class Player;
 
 class BigPanel : public QWidget
@@ -51,7 +53,11 @@ private:
     QLabel *numberLbl;
     QWidget *titleLine;
     QLabel *titleLbl;
+    MyPushButton *btnBack;
     MyPushButton *playBtn;
+
+public slots:
+    void playerStateChanged(QMediaPlayer::State state);
 
 private slots:
     void numberBtn_clicked();

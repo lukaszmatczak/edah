@@ -49,6 +49,7 @@ Player::Player()
     mediaPlayer = new QMediaPlayer(this);
     mediaPlayer->setVolume(100);
     connect(mediaPlayer, &QMediaPlayer::stateChanged, this, &Player::playerStateChanged);
+    connect(mediaPlayer, &QMediaPlayer::stateChanged, bPanel, &BigPanel::playerStateChanged);
 
     peakMeter = new PeakMeter;
     peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));

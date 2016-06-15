@@ -35,10 +35,10 @@ private:
         const T *data = buffer.data<T>();
         T ret = 0;
 
-        const int count = buffer.frameCount();
+        const int count = buffer.sampleCount();
         const int channelCount = buffer.format().channelCount();
 
-        for(int i=0; i<count-channelCount; i+=channelCount)
+        for(int i=0; i<=count-channelCount; i+=channelCount)
         {
             ret = qMax(ret, data[i+channel]);
         }

@@ -10,7 +10,8 @@ PeakMeter::PeakMeter(QWidget *parent) : QWidget(parent), stopped(false)
 {
     for(int i=0; i<2; i++)
     {
-        peaks[i] = max[i] = speed[i] = 0.0f;
+        peaks[i] = speed[i] = 0.0f;
+        max[i] = -1.0f;
     }
 
     this->setColors(qRgb(0, 0, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
@@ -149,12 +150,18 @@ void PeakMeter::timerTimeout()
     for(int i=0; i<2; i++)
     {
         max[i] = qMax(0.0f, max[i]-(float)qPow(speed[i],12.0f));
+
         speed[i] += 0.008f;
 
         if(max[i] < peaks[i])
         {
             max[i] = qCeil(peaks[i]*32)/32.0f;
             speed[i] = 0.0f;
+        }
+
+        if(max[i] <= 1/32.0f)
+        {
+            max[i] = -1.0f;
         }
 
         peaks[i] = qMax(0.0f, peaks[i]-0.04f);

@@ -38,13 +38,17 @@ public:
     explicit BigPanel(Player *player);
     void addPeakMeter(PeakMeter *peakMeter);
 
+    void playerPositionChanged(qint64 pos, qint64 duration);
+
 protected:
     void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
+    void keyReleaseEvent(QKeyEvent *e);
 
 private:
     void recalcSizes(const QSize &size);
     void updateTitle(int number);
+    void addDigit(int digit);
 
     Player *player;
 
@@ -55,6 +59,7 @@ private:
     QLabel *titleLbl;
     MyPushButton *btnBack;
     MyPushButton *playBtn;
+    QLabel *posLbl;
 
 public slots:
     void playerStateChanged(QMediaPlayer::State state);

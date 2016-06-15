@@ -49,6 +49,7 @@ Player::Player()
     mediaPlayer = new QMediaPlayer(this);
     mediaPlayer->setVolume(100);
     connect(mediaPlayer, &QMediaPlayer::stateChanged, this, &Player::playerStateChanged);
+    connect(mediaPlayer, &QMediaPlayer::positionChanged, this, &Player::playerPositionChanged);
     connect(mediaPlayer, &QMediaPlayer::stateChanged, bPanel, &BigPanel::playerStateChanged);
 
     peakMeter = new PeakMeter;
@@ -226,4 +227,9 @@ void Player::playerStateChanged(QMediaPlayer::State state)
     {
         peakMeter->stop();
     }
+}
+
+void Player::playerPositionChanged(qint64 position)
+{
+    bPanel->playerPositionChanged(position, mediaPlayer->duration());
 }

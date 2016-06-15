@@ -319,6 +319,7 @@ void MainWindow::loadPlugins()
 
                 invisibleWidget = plugin.plugin->smallPanel();
                 plugin.widget = plugin.plugin->bigPanel();
+                plugin.widget->grabKeyboard();
 
                 activePlugin = plugins.size();
             }
@@ -496,6 +497,8 @@ void MainWindow::changeActivePlugin(int pluginIdx)
                          plugins[pluginIdx].widget,
                          250, 0, 255);
     }
+
+    plugins[pluginIdx].widget->grabKeyboard();
 
     activePlugin = pluginIdx;
 

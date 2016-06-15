@@ -22,6 +22,7 @@
 #include <QFrame>
 #include <QResizeEvent>
 #include <QGraphicsDropShadowEffect>
+#include <QTime>
 
 #include <QDebug>
 
@@ -84,6 +85,14 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     connect(playBtn, &MyPushButton::clicked, this, &BigPanel::playBtn_clicked);
     layout->addWidget(playBtn, 1, 3, 2, 2);
 
+    QFrame *posFrame = new QFrame(this);
+    QGridLayout *posLayout = new QGridLayout(posFrame);
+    posFrame->setLayout(posLayout);
+    layout->addWidget(posFrame, 3, 3, 1, 3);
+
+    posLbl = new QLabel("-:--/-:--", this);
+    posLayout->addWidget(posLbl, 0, 1, 1, 1, Qt::AlignRight);
+
     for(int i=0; i<layout->columnCount(); i++)
     {
         layout->setColumnStretch(i, 1);
@@ -111,6 +120,27 @@ void BigPanel::showEvent(QShowEvent *e)
 void BigPanel::resizeEvent(QResizeEvent *e)
 {
     this->recalcSizes(e->size());
+}
+
+void BigPanel::keyReleaseEvent(QKeyEvent *e)
+{
+    e->setAccepted(false);
+
+    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9))
+    {
+        this->addDigit(e->key() - Qt::Key_0);
+        e->setAccepted(true);
+    }
+    else if(e->key() == Qt::Key_Backspace)
+    {
+        this->btnBack_clicked();
+        e->setAccepted(true);
+    }
+    else if(e->key() == Qt::Key_Enter)
+    {
+        this->playBtn_clicked();
+        e->setAccepted(true);
+    }
 }
 
 void BigPanel::recalcSizes(const QSize &size)
@@ -154,16 +184,14 @@ void BigPanel::recalcSizes(const QSize &size)
     btnBack->setIconSize(iconSize);
 }
 
-void BigPanel::numberBtn_clicked()
+void BigPanel::addDigit(int digit)
 {
     if (player->isPlaying())
         return;
 
-    QString digit = ((MyPushButton*)QObject::sender())->text();
+    int newNumber = (numberLbl->text() + QString::number(digit)).toInt();
 
-    int newNumber = (numberLbl->text() + digit).toInt();
-
-    if (digit == "0" && newNumber == 0)
+    if (digit == 0 && newNumber == 0)
        return;
 
     int maxSong = -1;
@@ -177,6 +205,11 @@ void BigPanel::numberBtn_clicked()
        updateTitle(newNumber);
     }
     //setNonstop(false);
+}
+
+void BigPanel::numberBtn_clicked()
+{
+    this->addDigit(((MyPushButton*)QObject::sender())->text().toInt());
 }
 
 void BigPanel::btnBack_clicked()
@@ -241,4 +274,12 @@ void BigPanel::playerStateChanged(QMediaPlayer::State state)
     {
         playBtn->setIcon(QIcon(":/player-img/play.svg"));
     }
+}
+
+void BigPanel::playerPositionChanged(qint64 pos, qint64 duration)
+{
+    QString posStr = QTime(0, 0).addMSecs(pos).toString("m:ss");
+    QString durationStr = "/-:--";
+    if(duration > -1) durationStr = QTime(0, 0).addMSecs(duration).toString("/m:ss");
+    posLbl->setText(posStr + durationStr);
 }

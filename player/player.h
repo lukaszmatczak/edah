@@ -77,6 +77,7 @@ private slots:
     void stop();
 
     void playerStateChanged(QMediaPlayer::State state);
+    void playerPositionChanged(qint64 position);
 };
 
 #endif // PLAYER_H

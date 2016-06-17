@@ -93,6 +93,12 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     posLbl = new QLabel("-:--/-:--", this);
     posLayout->addWidget(posLbl, 0, 1, 1, 1, Qt::AlignRight);
 
+    posBar = new Waveform(this);
+    posBar->setObjectName("posBar");
+    posBar->setOrientation(Qt::Horizontal);
+    posBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    posLayout->addWidget(posBar, 1, 0, 1, 2);
+
     for(int i=0; i<layout->columnCount(); i++)
     {
         layout->setColumnStretch(i, 1);
@@ -136,7 +142,7 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
         this->btnBack_clicked();
         e->setAccepted(true);
     }
-    else if(e->key() == Qt::Key_Enter)
+    else if((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return))
     {
         this->playBtn_clicked();
         e->setAccepted(true);
@@ -173,6 +179,27 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "#titleLbl {"
                                 "font-size: %2px;"
                                 "color: white;"
+                                "}"
+                                "#posBar {"
+                                "background-color: rgb(36,36,36);"
+                                "border-color:  rgb(0,0,0);"
+                                "border-top-color: rgb(70, 70, 70);"
+                                "border-left-color:  rgb(70, 70, 70);"
+                                "border-width : 0px;"//"border-width : 2 4 4 2px;"
+                                "border-style: solid;"
+                                "border-radius: 0px;"
+                                "}"
+                                "#posBar::groove:horizontal {"
+                                "border-radius: 0px;"
+                                "}"
+                                "#posBar::sub-page:horizontal {"
+                                "background-color: rgb(0,80,255);"
+                                "}"
+                                "#posBar::add-page:horizontal {"
+                                "}"
+                                "#posBar::handle:horizontal {"
+                                "background-color: rgb(36,36,36);"
+                                "width: 1px;"
                                 "}")
                         .arg(qMax(1, numberBtns[0]->width()/3))
                         .arg(qMax(1, numberBtns[0]->width()/6)));
@@ -236,12 +263,16 @@ void BigPanel::updateTitle(int number)
         titleLbl->setText(player->songs[number].title);
         numberLbl->setStyleSheet("");
         titleLine->setVisible(true);
+
+        posBar->setWaveform(&player->songs[number].waveform);
     }
     else
     {
         numberLbl->setStyleSheet("color: rgb(127, 127, 127);");
         titleLbl->setText("");
         titleLine->setVisible(false);
+
+        posBar->setWaveform(nullptr);
     }
 }
 
@@ -282,4 +313,7 @@ void BigPanel::playerPositionChanged(qint64 pos, qint64 duration)
     QString durationStr = "/-:--";
     if(duration > -1) durationStr = QTime(0, 0).addMSecs(duration).toString("/m:ss");
     posLbl->setText(posStr + durationStr);
+
+    posBar->setValue(pos);
+    posBar->setMaximum(duration);
 }

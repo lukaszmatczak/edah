@@ -35,6 +35,7 @@ struct Song
 {
     QString filename;
     QString title;
+    QByteArray waveform;
 };
 
 class Player : public QObject, public IPlugin

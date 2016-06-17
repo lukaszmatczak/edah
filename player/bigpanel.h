@@ -19,6 +19,8 @@
 #ifndef BIGPANEL_H
 #define BIGPANEL_H
 
+#include "waveform.h"
+
 #include <libedah/mypushbutton.h>
 #include <libedah/peakmeter.h>
 
@@ -60,6 +62,7 @@ private:
     MyPushButton *btnBack;
     MyPushButton *playBtn;
     QLabel *posLbl;
+    Waveform *posBar;
 
 public slots:
     void playerStateChanged(QMediaPlayer::State state);

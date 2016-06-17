@@ -47,6 +47,7 @@ Player::Player()
     smallWidget = new QLabel(this->getPluginName());
 
     mediaPlayer = new QMediaPlayer(this);
+    mediaPlayer->setNotifyInterval(16);
     mediaPlayer->setVolume(100);
     connect(mediaPlayer, &QMediaPlayer::stateChanged, this, &Player::playerStateChanged);
     connect(mediaPlayer, &QMediaPlayer::positionChanged, this, &Player::playerPositionChanged);
@@ -109,22 +110,24 @@ void Player::writeSettings()
 {
     settingsTab->writeSettings();
 }
-
+#include <QtMath>
 void Player::loadSongs()
 {
     db->db.exec("CREATE TABLE IF NOT EXISTS player_songs ("
                 "`id` INTEGER PRIMARY KEY,"
                 "`filename` TEXT,"
-                "`title` TEXT)");
+                "`title` TEXT,"
+                "`waveform` BINARY)");
 
     QSqlQuery q(db->db);
-    q.exec("SELECT `id`, `filename`, `title` FROM `player_songs`");
+    q.exec("SELECT `id`, `filename`, `title`, `waveform` FROM `player_songs`");
 
     while(q.next())
     {
         Song s;
         s.filename = q.value("filename").toString();
         s.title = q.value("title").toString();
+        s.waveform = q.value("waveform").toByteArray();
 
         //qDebug() << q.value("id").toInt() << s.filename << s.title;
         songs.insert(q.value("id").toInt(), s);
@@ -132,7 +135,7 @@ void Player::loadSongs()
 
     QStringList songsFilenames = songsDir.entryList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
 
-    db->db.transaction();
+    //db->db.transaction();
 
     for(int i=0; i<songsFilenames.size(); i++)
     {
@@ -164,43 +167,79 @@ void Player::loadSongs()
             if(tag) s.title = QString::fromUtf8(tag->title().toCString(true));
 #endif
 
-            QRegExp rx("\\d{3}(-. |-|_)(.*)");
+            QRegExp rx("\\d{3}(-. |-|_| )(.*)");
             int pos = rx.indexIn(s.title);
             if(pos > -1)
             {
                 s.title = rx.cap(2);
             }
-// http://doc.qt.io/qt-5/audiooverview.html#decoding-compressed-audio-to-memory
-            /*
+            qDebug() << filename << s.title;
+
+            QAudioFormat format;
+            format.setChannelCount(1);
+            format.setCodec("audio/x-raw");
+            format.setSampleType(QAudioFormat::UnSignedInt);
+            format.setSampleRate(8000);
+            format.setSampleSize(8);
+
             QAudioDecoder *decoder = new QAudioDecoder;
+            decoder->setAudioFormat(format);
             decoder->setSourceFilename(songsDir.filePath(filename));
             decoder->start();
 
-            connect(decoder, &QAudioDecoder::bufferReady, this, [decoder]() {
-                //QAudioBuffer::S16S *buf = decoder->read().data<QAudioBuffer::S16S>();
-                //qDebug() << decoder->read().format().codec();
-                //qDebug() << decoder->position() << decoder->read().byteCount();
+            QByteArray samples;
+
+            connect(decoder, &QAudioDecoder::bufferReady, this, [decoder, &samples]() {
+                const QAudioBuffer &buf = decoder->read();
+                const quint8 *data = buf.data<quint8>();
+                samples += QByteArray((const char*)data, buf.sampleCount());
             });
             QEventLoop loop;
             connect(decoder, &QAudioDecoder::finished, &loop, &QEventLoop::quit);
             loop.exec();
+// TODO: memory leak
+            QByteArray form;
+            int size = samples.size();
+            quint8 max = std::numeric_limits<quint8>::min();
+            quint8 min = std::numeric_limits<quint8>::max();
+            for(int i=0; i<size; i++)
+            {
+                max = qMax<quint8>(max, samples[i]);
+                min = qMin<quint8>(min, samples[i]);
+
+                if(!(i % qCeil(size/1023.0f)))
+                {
+                    form.append(max);
+                    form.append(min);
+
+                    max = std::numeric_limits<quint8>::min();
+                    min = std::numeric_limits<quint8>::max();
+                }
+            }
+
+            form.append(max);
+            form.append(min);
+
+            s.waveform = form;
+
+            decoder->stop();
+            delete decoder;
 
             //qDebug() << decoder.position() << decoder.read().byteCount();
-*/
+
             QSqlQuery q(db->db);
-            q.prepare("INSERT INTO `player_songs` VALUES(:id, :filename, :title)");
+            q.prepare("INSERT INTO `player_songs` VALUES(:id, :filename, :title, :form)");
             q.bindValue(":id", number);
             q.bindValue(":filename", s.filename);
             q.bindValue(":title", s.title);
+            q.bindValue(":form", form);
             q.exec();
 
             songs.insert(number, s);
-
-            //qDebug() << filename << s.title;
         }
     }
 
-    db->db.commit();
+    //db->db.commit();
 }
 
 bool Player::isPlaying()

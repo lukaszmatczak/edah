@@ -498,7 +498,8 @@ void MainWindow::changeActivePlugin(int pluginIdx)
                          250, 0, 255);
     }
 
-    plugins[pluginIdx].widget->grabKeyboard();
+    //plugins[pluginIdx].widget->grabKeyboard();
+    plugins[pluginIdx].widget->setFocus();
 
     activePlugin = pluginIdx;
 

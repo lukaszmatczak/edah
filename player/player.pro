@@ -16,11 +16,13 @@ INCLUDEPATH += ..
 
 SOURCES += player.cpp \
     bigpanel.cpp \
-    settingstab.cpp
+    settingstab.cpp \
+    waveform.cpp
 
 HEADERS += player.h \
     bigpanel.h \
-    settingstab.h
+    settingstab.h \
+    waveform.h
 
 DISTFILES += player.json
 

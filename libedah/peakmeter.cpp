@@ -6,7 +6,7 @@
 #include <QtMath>
 #include <QDebug>
 
-PeakMeter::PeakMeter(QWidget *parent) : QWidget(parent), stopped(false)
+PeakMeter::PeakMeter(QWidget *parent) : QWidget(parent)
 {
     for(int i=0; i<2; i++)
     {
@@ -36,56 +36,8 @@ int PeakMeter::heightForWidth(int width) const
     return width*2;
 }
 
-void PeakMeter::stop()
-{
-    stopped = true;
-}
-
-void PeakMeter::setPeakLevel(QAudioBuffer buffer)
-{
-    float peak[2] = {2.0f, 2.0f};
-
-    QAudioFormat format = buffer.format();
-
-    for(int i=0; i<qMin(2, format.channelCount()); i++)
-    {
-        if(format.sampleType() == QAudioFormat::SignedInt)
-        {
-            if(format.sampleSize() == 8)       peak[i] = this->calcMax<qint8>(buffer, i);
-            else if(format.sampleSize() == 16) peak[i] = this->calcMax<qint16>(buffer, i);
-            else if(format.sampleSize() == 32) peak[i] = this->calcMax<qint32>(buffer, i);
-        }
-        else if(format.sampleType() == QAudioFormat::UnSignedInt)
-        {
-            if(format.sampleSize() == 8)       peak[i] = this->calcMax<quint8>(buffer, i);
-            else if(format.sampleSize() == 16) peak[i] = this->calcMax<quint16>(buffer, i);
-            else if(format.sampleSize() == 32) peak[i] = this->calcMax<quint32>(buffer, i);
-        }
-        else if(format.sampleType() == QAudioFormat::Float)
-        {
-            peak[i] = this->calcMax<float>(buffer, i);
-        }
-    }
-
-    if(peak[0] == 2.0f)
-    {
-        LOG(QString("Unsupported format (sampleType=%1, sampleSize=%2")
-            .arg(format.sampleType())
-            .arg(format.sampleSize()));
-    }
-
-    if(format.channelCount() == 1)
-    {
-        peak[1] = peak[0];
-    }
-
-    this->setPeakStereo(peak[0], peak[1]);
-}
-
 void PeakMeter::setPeakStereo(float left, float right)
 {
-    stopped = false;
-
     peaks[0] = qMax(peaks[0], left);
     peaks[1] = qMax(peaks[1], right);
 
@@ -165,14 +117,5 @@ void PeakMeter::timerTimeout()
         }
 
         peaks[i] = qMax(0.0f, peaks[i]-0.04f);
-    }
-
-    if(stopped)
-    {
-        this->update();
-        if((max[0] == 0.0f) && (max[1] == 0.0f))
-        {
-            stopped = false;
-        }
     }
 }

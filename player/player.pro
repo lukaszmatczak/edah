@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets sql multimedia
+QT       += core gui widgets sql
 
 TARGET = player
 TEMPLATE = lib
@@ -26,7 +26,7 @@ HEADERS += player.h \
 
 DISTFILES += player.json
 
-LIBS += -ltag
+LIBS += -ltag -lbass
 win32: LIBS += -ledah
 
 RESOURCES += \

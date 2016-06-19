@@ -25,11 +25,10 @@
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
 
+#include <bass.h>
+
 #include <QObject>
 #include <QDir>
-
-#include <QMediaPlayer>
-#include <QAudioProbe>
 
 struct Song
 {
@@ -70,15 +69,20 @@ private:
 
     QDir songsDir;
     PeakMeter *peakMeter;
-    QMediaPlayer *mediaPlayer;
-    QAudioProbe *audioProbe;
+
+    HSTREAM playStream;
+    bool playing;
+
+    QTimer timer;
 
 private slots:
     void play(int number);
     void stop();
 
-    void playerStateChanged(QMediaPlayer::State state);
-    void playerPositionChanged(qint64 position);
+    void refreshState();
+
+signals:
+    void stateChanged(bool isPlaying);
 };
 
 #endif // PLAYER_H

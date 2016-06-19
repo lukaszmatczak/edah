@@ -30,8 +30,8 @@
 #include <QLabel>
 #include <QSqlQuery>
 #include <QEventLoop>
-
-#include <QAudioDecoder>
+#include <QMessageBox>
+#include <QUrl>
 
 #include <QDebug>
 
@@ -46,20 +46,52 @@ Player::Player()
     settingsTab = new SettingsTab(this);
     smallWidget = new QLabel(this->getPluginName());
 
-    mediaPlayer = new QMediaPlayer(this);
+    QString playDev = "Default"; // TODO: get it from config
+    int playDevNo = -1;
+
+    BASS_DEVICEINFO info;
+    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
+    {
+        if(playDev == info.name)
+        {
+            playDevNo = i;
+            break;
+        }
+    }
+
+    if(!BASS_Init(playDevNo, 44100, 0, nullptr, nullptr))
+    {
+        int code = BASS_ErrorGetCode();
+        QString text = "BASS error: " + QString::number(code);
+        LOG(text);
+
+        if(code == 23)
+            text += QString::fromUtf8("\nProblem z urządzeniem \"") + playDev + "\"!";
+
+        QMessageBox msg(QMessageBox::Critical, "Error!", text);
+        msg.exec();
+        exit(-1);
+    }
+
+    BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
+    BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
+
+    connect(this, &Player::stateChanged, bPanel, &BigPanel::playerStateChanged);
+
+    timer.setInterval(35);
+    connect(&timer, &QTimer::timeout, this, &Player::refreshState);
+    timer.start();
+
+    /*mediaPlayer = new QMediaPlayer(this);
     mediaPlayer->setNotifyInterval(16);
     mediaPlayer->setVolume(100);
     connect(mediaPlayer, &QMediaPlayer::stateChanged, this, &Player::playerStateChanged);
     connect(mediaPlayer, &QMediaPlayer::positionChanged, this, &Player::playerPositionChanged);
-    connect(mediaPlayer, &QMediaPlayer::stateChanged, bPanel, &BigPanel::playerStateChanged);
+    connect(mediaPlayer, &QMediaPlayer::stateChanged, bPanel, &BigPanel::playerStateChanged);*/
 
     peakMeter = new PeakMeter;
     peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
     bPanel->addPeakMeter(peakMeter);
-
-    audioProbe = new QAudioProbe(this);
-    audioProbe->setSource(mediaPlayer);
-    connect(audioProbe, &QAudioProbe::audioBufferProbed, peakMeter, &PeakMeter::setPeakLevel);
 
     this->loadSongs();
 }
@@ -69,6 +101,8 @@ Player::~Player()
     delete bPanel;
     delete smallWidget;
     delete settingsTab;
+
+    BASS_Free();
 }
 
 QWidget *Player::bigPanel()
@@ -175,57 +209,61 @@ void Player::loadSongs()
             }
             qDebug() << filename << s.title;
 
-            QAudioFormat format;
-            format.setChannelCount(1);
-            format.setCodec("audio/x-raw");
-            format.setSampleType(QAudioFormat::UnSignedInt);
-            format.setSampleRate(8000);
-            format.setSampleSize(8);
-
-            QAudioDecoder *decoder = new QAudioDecoder;
-            decoder->setAudioFormat(format);
-            decoder->setSourceFilename(songsDir.filePath(filename));
-            decoder->start();
-
-            QByteArray samples;
-
-            connect(decoder, &QAudioDecoder::bufferReady, this, [decoder, &samples]() {
-                const QAudioBuffer &buf = decoder->read();
-                const quint8 *data = buf.data<quint8>();
-                samples += QByteArray((const char*)data, buf.sampleCount());
-            });
-            QEventLoop loop;
-            connect(decoder, &QAudioDecoder::finished, &loop, &QEventLoop::quit);
-            loop.exec();
-// TODO: memory leak
+            HSTREAM stream;
+            float buf[1024];
             QByteArray form;
-            int size = samples.size();
-            quint8 max = std::numeric_limits<quint8>::min();
-            quint8 min = std::numeric_limits<quint8>::max();
-            for(int i=0; i<size; i++)
+#ifdef Q_OS_WIN
+            if(stream = BASS_StreamCreateFile(FALSE,
+                                              songsDir.filePath(filename).toStdWString().c_str(),
+                                              0,
+                                              0,
+                                              BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT | BASS_UNICODE))
+#endif
+#ifdef Q_OS_LINUX
+            if(stream = BASS_StreamCreateFile(FALSE,
+                                                  songsDir.filePath(filename).toStdString().c_str(),
+                                                  0,
+                                                  0,
+                                                  BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT))
+#endif
             {
-                max = qMax<quint8>(max, samples[i]);
-                min = qMin<quint8>(min, samples[i]);
+                QWORD length = BASS_ChannelGetLength(stream, BASS_POS_BYTE);
 
-                if(!(i % qCeil(size/1023.0f)))
+                QVector<qint8> samples;
+                samples.reserve(length/4);
+
+                int count;
+                while((count = BASS_ChannelGetData(stream, buf, 4096 | BASS_DATA_FLOAT)) != -1)
                 {
-                    form.append(max);
-                    form.append(min);
-
-                    max = std::numeric_limits<quint8>::min();
-                    min = std::numeric_limits<quint8>::max();
+                    for(int i=0; i<count/4; i++)
+                        samples.push_back(buf[i]*127);
                 }
+
+                const int size = samples.size();
+                qint8 max = std::numeric_limits<qint8>::min();
+                qint8 min = std::numeric_limits<qint8>::max();
+                for(int i=0; i<size; i++)
+                {
+                    max = qMax<qint8>(max, samples[i]);
+                    min = qMin<qint8>(min, samples[i]);
+
+                    if(!(i % qCeil(size/1023.0f)))
+                    {
+                        form.append(max+128);
+                        form.append(min+128);
+
+                        max = std::numeric_limits<qint8>::min();
+                        min = std::numeric_limits<qint8>::max();
+                    }
+                }
+
+                form.append(max);
+                form.append(min);
+
+                s.waveform = form;
+
+                BASS_StreamFree(stream);
             }
-
-            form.append(max);
-            form.append(min);
-
-            s.waveform = form;
-
-            decoder->stop();
-            delete decoder;
-
-            //qDebug() << decoder.position() << decoder.read().byteCount();
 
             QSqlQuery q(db->db);
             q.prepare("INSERT INTO `player_songs` VALUES(:id, :filename, :title, :form)");
@@ -242,33 +280,70 @@ void Player::loadSongs()
     //db->db.commit();
 }
 
+void Player::refreshState()
+{
+    bool prevPlaying = playing;
+    playing = (BASS_ChannelIsActive(playStream) == BASS_ACTIVE_PLAYING);
+
+    if(prevPlaying != playing)
+    {
+        emit stateChanged(playing);
+    }
+
+    float levels[2] = {0.0f, 0.0f};
+    if(playing)
+        BASS_ChannelGetLevelEx(playStream, levels, 0.035, BASS_LEVEL_STEREO);
+    peakMeter->setPeakStereo(levels[0], levels[1]);
+
+    QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
+    double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
+
+    QWORD totalBytes = BASS_ChannelGetLength(playStream, BASS_POS_BYTE);
+    double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
+
+    bPanel->playerPositionChanged(pos, total);
+}
+
 bool Player::isPlaying()
 {
-    return (mediaPlayer->state() == QMediaPlayer::PlayingState);
+    return playing;
 }
 
 void Player::play(int number)
 {
     qDebug() << "play" << number;
-    mediaPlayer->setMedia(QUrl::fromLocalFile(songsDir.filePath(songs[number].filename)));
-    mediaPlayer->play();
+    const QString filename = songsDir.filePath(songs[number].filename);
+
+#ifdef Q_OS_WIN
+    if (playStream = BASS_StreamCreateFile(FALSE,
+                                           filename.toStdWString().c_str(),
+                                           0,
+                                           0,
+                                           BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT | BASS_UNICODE))
+#endif
+#ifdef Q_OS_LINUX
+    if (playStream = BASS_StreamCreateFile(FALSE,
+                                           filename.toStdString().c_str(),
+                                           0,
+                                           0,
+                                           BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT))
+#endif
+    {
+        playing = BASS_ChannelPlay(playStream, FALSE);
+        emit stateChanged(playing);
+    }
+    else
+
+    {
+        LOG(QString("Can't play: error code = ") + QString::number(BASS_ErrorGetCode()));
+        LOG("Can't play file " + filename);
+    }
 }
 
 void Player::stop()
 {
     qDebug() << "stop";
-    mediaPlayer->stop();
-}
-
-void Player::playerStateChanged(QMediaPlayer::State state)
-{
-    if(state == QMediaPlayer::StoppedState)
-    {
-        peakMeter->stop();
-    }
-}
-
-void Player::playerPositionChanged(qint64 position)
-{
-    bPanel->playerPositionChanged(position, mediaPlayer->duration());
+    BASS_ChannelStop(playStream);
+    playing = false;
+    emit stateChanged(playing);
 }

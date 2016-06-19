@@ -97,6 +97,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     posBar->setObjectName("posBar");
     posBar->setOrientation(Qt::Horizontal);
     posBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    posBar->setValue(0);
     posLayout->addWidget(posBar, 1, 0, 1, 2);
 
     for(int i=0; i<layout->columnCount(); i++)
@@ -295,9 +296,9 @@ void BigPanel::playBtn_clicked()
     //update();
 }
 
-void BigPanel::playerStateChanged(QMediaPlayer::State state)
+void BigPanel::playerStateChanged(bool isPlaying)
 {
-    if(state == QMediaPlayer::PlayingState)
+    if(isPlaying)
     {
         playBtn->setIcon(QIcon(":/player-img/stop.svg"));
     }
@@ -307,13 +308,14 @@ void BigPanel::playerStateChanged(QMediaPlayer::State state)
     }
 }
 
-void BigPanel::playerPositionChanged(qint64 pos, qint64 duration)
+void BigPanel::playerPositionChanged(double pos, double duration)
 {
-    QString posStr = QTime(0, 0).addMSecs(pos).toString("m:ss");
+    QString posStr = "-:--";
     QString durationStr = "/-:--";
-    if(duration > -1) durationStr = QTime(0, 0).addMSecs(duration).toString("/m:ss");
+    if(pos > -1) posStr = QTime(0, 0).addSecs(pos).toString("m:ss");
+    if(duration > -1) durationStr = QTime(0, 0).addSecs(duration).toString("/m:ss");
     posLbl->setText(posStr + durationStr);
 
-    posBar->setValue(pos);
-    posBar->setMaximum(duration);
+    posBar->setValue(pos>0 ? pos*10 : 0);
+    posBar->setMaximum(duration>0 ? duration*10 : 100);
 }

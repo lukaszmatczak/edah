@@ -29,8 +29,6 @@
 #include <QLabel>
 #include <QProgressBar>
 
-#include <QMediaPlayer>
-
 class Player;
 
 class BigPanel : public QWidget
@@ -40,7 +38,7 @@ public:
     explicit BigPanel(Player *player);
     void addPeakMeter(PeakMeter *peakMeter);
 
-    void playerPositionChanged(qint64 pos, qint64 duration);
+    void playerPositionChanged(double pos, double duration);
 
 protected:
     void showEvent(QShowEvent *e);
@@ -65,7 +63,7 @@ private:
     Waveform *posBar;
 
 public slots:
-    void playerStateChanged(QMediaPlayer::State state);
+    void playerStateChanged(bool isPlaying);
 
 private slots:
     void numberBtn_clicked();

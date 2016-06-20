@@ -29,12 +29,32 @@
 
 #include <QObject>
 #include <QDir>
+#include <QRunnable>
 
 struct Song
 {
     QString filename;
     QString title;
+    int duration;
+    qint64 mtime;
     QByteArray waveform;
+};
+
+class SongInfoWorker : public QObject, public QRunnable
+{
+    Q_OBJECT
+public:
+    SongInfoWorker(int id, QString filepath);
+
+    void run();
+    bool autoDelete();
+
+private:
+    int number;
+    QString filepath;
+
+signals:
+    void done(int id, int duration, QByteArray waveform);
 };
 
 class Player : public QObject, public IPlugin
@@ -62,6 +82,7 @@ public:
 
 private:
     void loadSongs();
+    void loadSongsInfo();
 
     BigPanel *bPanel;
     QWidget *smallWidget;

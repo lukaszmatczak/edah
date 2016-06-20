@@ -266,6 +266,7 @@ void BigPanel::updateTitle(int number)
         titleLine->setVisible(true);
 
         posBar->setWaveform(&player->songs[number].waveform);
+        this->playerPositionChanged(-1, player->songs[number].duration/1000.0);
     }
     else
     {
@@ -274,6 +275,7 @@ void BigPanel::updateTitle(int number)
         titleLine->setVisible(false);
 
         posBar->setWaveform(nullptr);
+        this->playerPositionChanged(-1, -1);
     }
 }
 

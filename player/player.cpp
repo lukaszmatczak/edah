@@ -32,6 +32,8 @@
 #include <QEventLoop>
 #include <QMessageBox>
 #include <QUrl>
+#include <QDateTime>
+#include <QThreadPool>
 
 #include <QDebug>
 
@@ -151,29 +153,63 @@ void Player::loadSongs()
                 "`id` INTEGER PRIMARY KEY,"
                 "`filename` TEXT,"
                 "`title` TEXT,"
+                "`duration` INTEGER,"
+                "`mtime` INTEGER,"
                 "`waveform` BINARY)");
 
+    QFileInfoList songsListDir = songsDir.entryInfoList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
+    QFileInfoList songsList;
+    QVector<int> songsInDir;
+
+    for(int i=0; i<songsListDir.size(); i++)
+    {
+        QRegExp rx(".*(\\d{3}).*");
+        int pos = rx.indexIn(songsListDir[i].fileName());
+        if(pos == -1)
+        {
+            continue;
+        }
+
+        int number = rx.cap(1).toInt();
+
+        if(!songsInDir.contains(number))
+        {
+            songsList.append(songsListDir[i]);
+            songsInDir.append(number);
+        }
+    }
+
     QSqlQuery q(db->db);
-    q.exec("SELECT `id`, `filename`, `title`, `waveform` FROM `player_songs`");
+    q.exec("SELECT `id`, `filename`, `title`, `duration`, `mtime`, `waveform` FROM `player_songs`");
 
     while(q.next())
     {
         Song s;
         s.filename = q.value("filename").toString();
         s.title = q.value("title").toString();
+        s.duration = q.value("duration").toInt();
+        s.mtime = q.value("mtime").toLongLong();
         s.waveform = q.value("waveform").toByteArray();
 
-        //qDebug() << q.value("id").toInt() << s.filename << s.title;
-        songs.insert(q.value("id").toInt(), s);
+        if(songsDir.exists(s.filename))
+        {
+            songs.insert(q.value("id").toInt(), s);
+        }
+        else
+        {
+            QSqlQuery q(db->db);
+            q.prepare("DELETE FROM `player_songs` WHERE `filename`=:filename");
+            q.bindValue(":filename", s.filename);
+            q.exec();
+        }
     }
 
-    QStringList songsFilenames = songsDir.entryList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
+    db->db.transaction();
 
-    //db->db.transaction();
-
-    for(int i=0; i<songsFilenames.size(); i++)
+    for(int i=0; i<songsList.size(); i++)
     {
-        QString filename = songsFilenames[i];
+        QString filename = songsList[i].fileName();
+        qint64 mtime = songsList[i].lastModified().toMSecsSinceEpoch();
 
         QRegExp rx(".*(\\d{3}).*");
         int pos = rx.indexIn(filename);
@@ -184,7 +220,7 @@ void Player::loadSongs()
 
         int number = rx.cap(1).toInt();
 
-        if(!songs.contains(number))
+        if(!songs.contains(number) || songs[number].mtime != mtime)
         {
             Song s;
             s.filename = filename;
@@ -207,77 +243,103 @@ void Player::loadSongs()
             {
                 s.title = rx.cap(2);
             }
-            qDebug() << filename << s.title;
-
-            HSTREAM stream;
-            float buf[1024];
-            QByteArray form;
-#ifdef Q_OS_WIN
-            if(stream = BASS_StreamCreateFile(FALSE,
-                                              songsDir.filePath(filename).toStdWString().c_str(),
-                                              0,
-                                              0,
-                                              BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT | BASS_UNICODE))
-#endif
-#ifdef Q_OS_LINUX
-            if(stream = BASS_StreamCreateFile(FALSE,
-                                                  songsDir.filePath(filename).toStdString().c_str(),
-                                                  0,
-                                                  0,
-                                                  BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT))
-#endif
-            {
-                QWORD length = BASS_ChannelGetLength(stream, BASS_POS_BYTE);
-
-                QVector<qint8> samples;
-                samples.reserve(length/4);
-
-                int count;
-                while((count = BASS_ChannelGetData(stream, buf, 4096 | BASS_DATA_FLOAT)) != -1)
-                {
-                    for(int i=0; i<count/4; i++)
-                        samples.push_back(buf[i]*127);
-                }
-
-                const int size = samples.size();
-                qint8 max = std::numeric_limits<qint8>::min();
-                qint8 min = std::numeric_limits<qint8>::max();
-                for(int i=0; i<size; i++)
-                {
-                    max = qMax<qint8>(max, samples[i]);
-                    min = qMin<qint8>(min, samples[i]);
-
-                    if(!(i % qCeil(size/1023.0f)))
-                    {
-                        form.append(max+128);
-                        form.append(min+128);
-
-                        max = std::numeric_limits<qint8>::min();
-                        min = std::numeric_limits<qint8>::max();
-                    }
-                }
-
-                form.append(max);
-                form.append(min);
-
-                s.waveform = form;
-
-                BASS_StreamFree(stream);
-            }
 
             QSqlQuery q(db->db);
-            q.prepare("INSERT INTO `player_songs` VALUES(:id, :filename, :title, :form)");
+            q.prepare("INSERT OR IGNORE INTO `player_songs` VALUES(:id, NULL, NULL, NULL, NULL, NULL)");
+            q.bindValue(":id", number);
+            q.exec();
+
+            q.prepare("UPDATE `player_songs` SET `filename`=:filename, `title`=:title, `mtime`=:mtime, `duration`=NULL, `waveform`=NULL WHERE `id`=:id");
             q.bindValue(":id", number);
             q.bindValue(":filename", s.filename);
             q.bindValue(":title", s.title);
-            q.bindValue(":form", form);
+            q.bindValue(":mtime", mtime);
             q.exec();
 
             songs.insert(number, s);
         }
     }
 
-    //db->db.commit();
+    db->db.commit();
+
+    this->loadSongsInfo();
+}
+
+void Player::loadSongsInfo()
+{
+    QSqlQuery q(db->db);
+    q.exec("SELECT `id`, `filename` FROM `player_songs` WHERE `waveform` is NULL");
+
+    while(q.next())
+    {
+        QString filepath = songsDir.filePath(q.value("filename").toString());
+        SongInfoWorker *worker = new SongInfoWorker(q.value("id").toInt(), filepath);
+        connect(worker, &SongInfoWorker::done, this, [this](int id, int duration, QByteArray waveform) {
+            QSqlQuery q(db->db);
+            q.prepare("UPDATE `player_songs` SET `duration`=:duration, `waveform`=:waveform WHERE `id`=:id");
+            q.bindValue(":id", id);
+            q.bindValue(":duration", duration);
+            q.bindValue(":waveform", waveform);
+            q.exec();
+
+            songs[id].duration = duration;
+            songs[id].waveform = waveform;
+        });
+
+        QThreadPool::globalInstance()->start(worker);
+    }
+}
+
+SongInfoWorker::SongInfoWorker(int id, QString filepath) : number(id), filepath(filepath)
+{
+
+}
+
+void SongInfoWorker::run()
+{
+    HSTREAM stream;
+    QByteArray form;
+
+    int trials = 1024; // TODO??
+
+    while((!(stream = BASS_StreamCreateFile(FALSE,
+                                            filepath.utf16(),
+                                            0,
+                                            0,
+                                            BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT | BASS_UNICODE)))
+          && trials--);
+
+    QWORD length = BASS_ChannelGetLength(stream, BASS_POS_BYTE);
+    float *buf = new float[length/1024+1];
+
+    for(int i=0; i<1024; i++)
+    {
+        int count = BASS_ChannelGetData(stream, buf, (length/1024) | BASS_DATA_FLOAT);
+
+        qint8 max = std::numeric_limits<qint8>::min();
+        qint8 min = std::numeric_limits<qint8>::max();
+
+        for(int i=0; i<count/4; i++)
+        {
+            max = qMax<qint8>(max, buf[i]*127);
+            min = qMin<qint8>(min, buf[i]*127);
+        }
+
+        form.append(max+127);
+        form.append(min+127);
+    }
+
+    double duration = BASS_ChannelBytes2Seconds(stream, length);
+
+    BASS_StreamFree(stream);
+    delete [] buf;
+
+    emit done(number, duration*1000, form);
+}
+
+bool SongInfoWorker::autoDelete()
+{
+    return true;
 }
 
 void Player::refreshState()
@@ -292,16 +354,19 @@ void Player::refreshState()
 
     float levels[2] = {0.0f, 0.0f};
     if(playing)
+    {
         BASS_ChannelGetLevelEx(playStream, levels, 0.035, BASS_LEVEL_STEREO);
+
+        QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
+        double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
+
+        QWORD totalBytes = BASS_ChannelGetLength(playStream, BASS_POS_BYTE);
+        double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
+
+        bPanel->playerPositionChanged(pos, total);
+    }
+
     peakMeter->setPeakStereo(levels[0], levels[1]);
-
-    QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
-    double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
-
-    QWORD totalBytes = BASS_ChannelGetLength(playStream, BASS_POS_BYTE);
-    double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
-
-    bPanel->playerPositionChanged(pos, total);
 }
 
 bool Player::isPlaying()
@@ -314,20 +379,11 @@ void Player::play(int number)
     qDebug() << "play" << number;
     const QString filename = songsDir.filePath(songs[number].filename);
 
-#ifdef Q_OS_WIN
     if (playStream = BASS_StreamCreateFile(FALSE,
-                                           filename.toStdWString().c_str(),
+                                           filename.utf16(),
                                            0,
                                            0,
                                            BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT | BASS_UNICODE))
-#endif
-#ifdef Q_OS_LINUX
-    if (playStream = BASS_StreamCreateFile(FALSE,
-                                           filename.toStdString().c_str(),
-                                           0,
-                                           0,
-                                           BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT))
-#endif
     {
         playing = BASS_ChannelPlay(playStream, FALSE);
         emit stateChanged(playing);

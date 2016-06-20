@@ -99,6 +99,7 @@ private:
 private slots:
     void play(int number);
     void stop();
+    void seek(int ms);
 
     void refreshState();
 

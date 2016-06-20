@@ -16,7 +16,7 @@ QPushButton {
     border-color: rgb(0,0,0);
     border-top-color: rgb(70, 70, 70);
     border-left-color: rgb(70, 70, 70);
-    border-width: 2 4 4 2px;
+    border-width: 1 2 2 1px;
     border-style: solid;
     border-radius: 10px;
 }
@@ -25,7 +25,7 @@ QPushButton:pressed {
     border-color: rgb(0,0,0);
     border-bottom-color: rgb(70, 70, 70);
     border-right-color: rgb(70, 70, 70);
-    border-width: 4 2 2 4px;
+    border-width: 2 1 1 2px;
 }
 
 QToolTip {

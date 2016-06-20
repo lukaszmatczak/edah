@@ -28,8 +28,25 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QProgressBar>
+#include <QProxyStyle>
 
 class Player;
+
+class SliderStyle : public QProxyStyle
+{
+public:
+    virtual int styleHint(StyleHint hint, const QStyleOption *option=0, const QWidget *widget=0, QStyleHintReturn *returnData=0) const
+    {
+        if (hint == QStyle::SH_Slider_AbsoluteSetButtons)
+        {
+            return Qt::LeftButton;
+        }
+        else
+        {
+            return QProxyStyle::styleHint(hint, option, widget, returnData);
+        }
+    }
+};
 
 class BigPanel : public QWidget
 {
@@ -61,6 +78,8 @@ private:
     MyPushButton *playBtn;
     QLabel *posLbl;
     Waveform *posBar;
+    SliderStyle sliderStyle;
+    double currDuration;
 
 public slots:
     void playerStateChanged(bool isPlaying);
@@ -69,10 +88,13 @@ private slots:
     void numberBtn_clicked();
     void btnBack_clicked();
     void playBtn_clicked();
+    void posBar_valueChanged(int value);
+    void posBar_released();
 
 signals:
     void play(int number);
     void stop();
+    void seek(int ms);
 };
 
 #endif // BIGPANEL_H

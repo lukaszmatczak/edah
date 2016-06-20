@@ -44,6 +44,7 @@ Player::Player()
     bPanel = new BigPanel(this);
     connect(bPanel, &BigPanel::play, this, &Player::play);
     connect(bPanel, &BigPanel::stop, this, &Player::stop);
+    connect(bPanel, &BigPanel::seek, this, &Player::seek);
 
     settingsTab = new SettingsTab(this);
     smallWidget = new QLabel(this->getPluginName());
@@ -182,6 +183,7 @@ void Player::loadSongs()
     QSqlQuery q(db->db);
     q.exec("SELECT `id`, `filename`, `title`, `duration`, `mtime`, `waveform` FROM `player_songs`");
 
+    db->db.transaction();
     while(q.next())
     {
         Song s;
@@ -203,9 +205,9 @@ void Player::loadSongs()
             q.exec();
         }
     }
+    db->db.commit();
 
     db->db.transaction();
-
     for(int i=0; i<songsList.size(); i++)
     {
         QString filename = songsList[i].fileName();
@@ -402,4 +404,10 @@ void Player::stop()
     BASS_ChannelStop(playStream);
     playing = false;
     emit stateChanged(playing);
+}
+
+void Player::seek(int ms)
+{
+    QWORD bytes = BASS_ChannelSeconds2Bytes(playStream, ms/1000.0);
+    BASS_ChannelSetPosition(playStream, bytes, BASS_POS_BYTE);
 }

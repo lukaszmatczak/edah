@@ -26,7 +26,7 @@
 
 #include <QDebug>
 
-BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
+BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 {
     layout = new QGridLayout(this);
     this->setLayout(layout);
@@ -91,13 +91,17 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player)
     layout->addWidget(posFrame, 3, 3, 1, 3);
 
     posLbl = new QLabel("-:--/-:--", this);
+    posLbl->setObjectName("posLbl");
     posLayout->addWidget(posLbl, 0, 1, 1, 1, Qt::AlignRight);
 
     posBar = new Waveform(this);
     posBar->setObjectName("posBar");
     posBar->setOrientation(Qt::Horizontal);
     posBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    posBar->setValue(0);
+    posBar->setEnabled(false);
+    posBar->setStyle(&sliderStyle);
+    connect(posBar, &Waveform::valueChanged, this, &BigPanel::posBar_valueChanged);
+    connect(posBar, &Waveform::sliderReleased, this, &BigPanel::posBar_released);
     posLayout->addWidget(posBar, 1, 0, 1, 2);
 
     for(int i=0; i<layout->columnCount(); i++)
@@ -162,7 +166,7 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "border-color:  rgb(0,0,0);"
                                 "border-top-color: rgb(70, 70, 70);"
                                 "border-left-color:  rgb(70, 70, 70);"
-                                "border-width : 2 4 4 2px;"
+                                "border-width : 1 2 2 1px;"
                                 "border-style: solid;"
                                 "border-radius: 10px;"
                                 "}"
@@ -186,9 +190,8 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "border-color:  rgb(0,0,0);"
                                 "border-top-color: rgb(70, 70, 70);"
                                 "border-left-color:  rgb(70, 70, 70);"
-                                "border-width : 0px;"//"border-width : 2 4 4 2px;"
+                                "border-width : 1 2 2 1px;"
                                 "border-style: solid;"
-                                "border-radius: 0px;"
                                 "}"
                                 "#posBar::groove:horizontal {"
                                 "border-radius: 0px;"
@@ -201,8 +204,12 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "#posBar::handle:horizontal {"
                                 "background-color: rgb(36,36,36);"
                                 "width: 1px;"
+                                "}"
+                                "#posLbl {"
+                                "font-size: %3px;"
                                 "}")
                         .arg(qMax(1, numberBtns[0]->width()/3))
+                        .arg(qMax(1, numberBtns[0]->width()/6))
                         .arg(qMax(1, numberBtns[0]->width()/6)));
 
     QSize iconSize = QSize(playBtn->width()/3, playBtn->width()/3);
@@ -306,18 +313,54 @@ void BigPanel::playerStateChanged(bool isPlaying)
     }
     else
     {
-        playBtn->setIcon(QIcon(":/player-img/play.svg"));
+        /*if(nonstop)
+        {
+            int random = rndPlaylist->getNext();
+            ui->NumberLbl->setText(QString::number(random));
+            updateTitle(random);
+            play(random);
+        }
+        else*/
+        {
+            numberLbl->setText("");
+            updateTitle(0);
+            this->playerPositionChanged(-1, -1);
+
+            playBtn->setIcon(QIcon(":/player-img/play.svg"));
+        }
+
     }
+
+    posBar->setEnabled(isPlaying);
 }
 
 void BigPanel::playerPositionChanged(double pos, double duration)
 {
+    currDuration = duration;
+
+    if(!posBar->isSliderDown())
+    {
+        QString posStr = "-:--";
+        QString durationStr = "/-:--";
+        if(pos > -1) posStr = QTime(0, 0).addSecs(pos).toString("m:ss");
+        if(duration > -1) durationStr = QTime(0, 0).addSecs(duration).toString("/m:ss");
+        posLbl->setText(posStr + durationStr);
+
+        posBar->setValue(pos>0 ? pos*10 : 0);
+        posBar->setMaximum(duration>0 ? duration*10 : 1);
+    }
+}
+
+void BigPanel::posBar_valueChanged(int value)
+{
     QString posStr = "-:--";
     QString durationStr = "/-:--";
-    if(pos > -1) posStr = QTime(0, 0).addSecs(pos).toString("m:ss");
-    if(duration > -1) durationStr = QTime(0, 0).addSecs(duration).toString("/m:ss");
+    if(value > -1) posStr = QTime(0, 0).addSecs(value/10).toString("m:ss");
+    if(currDuration > -1) durationStr = QTime(0, 0).addSecs(currDuration).toString("/m:ss");
     posLbl->setText(posStr + durationStr);
+}
 
-    posBar->setValue(pos>0 ? pos*10 : 0);
-    posBar->setMaximum(duration>0 ? duration*10 : 100);
+void BigPanel::posBar_released()
+{
+    emit seek(posBar->value()*100);
 }

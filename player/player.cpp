@@ -85,13 +85,6 @@ Player::Player()
     connect(&timer, &QTimer::timeout, this, &Player::refreshState);
     timer.start();
 
-    /*mediaPlayer = new QMediaPlayer(this);
-    mediaPlayer->setNotifyInterval(16);
-    mediaPlayer->setVolume(100);
-    connect(mediaPlayer, &QMediaPlayer::stateChanged, this, &Player::playerStateChanged);
-    connect(mediaPlayer, &QMediaPlayer::positionChanged, this, &Player::playerPositionChanged);
-    connect(mediaPlayer, &QMediaPlayer::stateChanged, bPanel, &BigPanel::playerStateChanged);*/
-
     peakMeter = new PeakMeter;
     peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
     bPanel->addPeakMeter(peakMeter);

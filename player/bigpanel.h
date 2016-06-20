@@ -30,7 +30,10 @@
 #include <QProgressBar>
 #include <QProxyStyle>
 
+#include <random>
+
 class Player;
+struct Song;
 
 class SliderStyle : public QProxyStyle
 {
@@ -48,11 +51,32 @@ public:
     }
 };
 
+class ShufflePlaylist : public QObject
+{
+    Q_OBJECT
+public:
+    ShufflePlaylist(QMap<int, Song> *songs);
+    virtual ~ShufflePlaylist();
+    int getNext();
+
+private:
+    void generateNewPlaylist();
+    void shuffle(QVector<int>& vec);
+
+    QMap<int, Song> *songs;
+    QVector<int> playlist;
+
+    std::mt19937 *mtEngine;
+    int currPos;
+};
+
 class BigPanel : public QWidget
 {
     Q_OBJECT
 public:
     explicit BigPanel(Player *player);
+    virtual ~BigPanel();
+
     void addPeakMeter(PeakMeter *peakMeter);
 
     void playerPositionChanged(double pos, double duration);
@@ -68,12 +92,14 @@ private:
     void addDigit(int digit);
 
     Player *player;
+    ShufflePlaylist *rndPlaylist;
 
     QGridLayout *layout;
     QVector<MyPushButton*> numberBtns;
     QLabel *numberLbl;
     QWidget *titleLine;
     QLabel *titleLbl;
+    MyPushButton *rndBtn;
     MyPushButton *btnBack;
     MyPushButton *playBtn;
     QLabel *posLbl;
@@ -85,6 +111,7 @@ public slots:
     void playerStateChanged(bool isPlaying);
 
 private slots:
+    void btnRnd_clicked();
     void numberBtn_clicked();
     void btnBack_clicked();
     void playBtn_clicked();

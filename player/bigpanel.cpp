@@ -31,7 +31,15 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     layout = new QGridLayout(this);
     this->setLayout(layout);
 
-    MyPushButton *btn0 = new MyPushButton(QString::number(0), this);
+    rndPlaylist = new ShufflePlaylist(&player->songs);
+
+    rndBtn = new MyPushButton("", this);
+    rndBtn->setIcon(QIcon(":/player-img/random.svg"));
+    rndBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    connect(rndBtn, &MyPushButton::clicked, this, &BigPanel::btnRnd_clicked);
+    layout->addWidget(rndBtn, 3, 0);
+
+    MyPushButton *btn0 = new MyPushButton("0", this);
     btn0->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     layout->addWidget(btn0, 3, 1);
     numberBtns.push_back(btn0);
@@ -115,6 +123,11 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     }
 }
 
+BigPanel::~BigPanel()
+{
+    delete rndPlaylist;
+}
+
 void BigPanel::addPeakMeter(PeakMeter *peakMeter)
 {
     peakMeter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -147,9 +160,14 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
         this->btnBack_clicked();
         e->setAccepted(true);
     }
-    else if((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return))
+    else if(((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return)) && !player->isPlaying())
     {
         this->playBtn_clicked();
+        e->setAccepted(true);
+    }
+    else if(e->key() == Qt::Key_Backslash)
+    {
+        this->btnRnd_clicked();
         e->setAccepted(true);
     }
 }
@@ -217,6 +235,7 @@ void BigPanel::recalcSizes(const QSize &size)
 
     iconSize = QSize(btnBack->width()/2, btnBack->width()/2);
     btnBack->setIconSize(iconSize);
+    rndBtn->setIconSize(iconSize);
 }
 
 void BigPanel::addDigit(int digit)
@@ -240,6 +259,17 @@ void BigPanel::addDigit(int digit)
        updateTitle(newNumber);
     }
     //setNonstop(false);
+}
+
+void BigPanel::btnRnd_clicked()
+{
+    if (player->isPlaying())
+        return;
+
+    int random = rndPlaylist->getNext();
+    numberLbl->setText(QString::number(random));
+    this->updateTitle(random);
+    //setNonstop(true);
 }
 
 void BigPanel::numberBtn_clicked()
@@ -297,12 +327,12 @@ void BigPanel::playBtn_clicked()
     {
         int number = numberLbl->text().toInt();
         if(number == 0) return;
-        //ui->PlayBtn->setIcon(iconStop);
-        //qApp->processEvents();
+        playBtn->setIcon(QIcon(":/player-img/stop.svg"));
+        qApp->processEvents();
         emit play(number);
     }
 
-    //update();
+    this->update();
 }
 
 void BigPanel::playerStateChanged(bool isPlaying)
@@ -364,3 +394,50 @@ void BigPanel::posBar_released()
 {
     emit seek(posBar->value()*100);
 }
+
+ShufflePlaylist::ShufflePlaylist(QMap<int, Song> *songs) : songs(songs)
+{
+    mtEngine = new std::mt19937(time(NULL));
+
+    this->generateNewPlaylist();
+}
+
+ShufflePlaylist::~ShufflePlaylist()
+{
+    delete mtEngine;
+}
+
+int ShufflePlaylist::getNext()
+{
+    if(currPos >= playlist.size())
+        generateNewPlaylist();
+
+    if(playlist.size() < 1)
+        return 0;
+
+    return playlist[currPos++];
+}
+
+void ShufflePlaylist::generateNewPlaylist()
+{
+    currPos = 0;
+    playlist.clear();
+
+    auto numbers = songs->keys();
+    for(int i=0; i<numbers.size(); i++)
+    {
+        playlist.push_back(numbers[i]);
+    }
+
+    shuffle(playlist);
+}
+
+void ShufflePlaylist::shuffle(QVector<int>& vec)
+{
+    std::uniform_int_distribution<int> distribution(0, vec.size()-1);
+    for(int i=0; i<vec.size(); i++)
+    {
+        qSwap(vec[i], vec[distribution(*mtEngine)]);
+    }
+}
+

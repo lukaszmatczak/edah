@@ -23,6 +23,7 @@
 
 #include <QWidget>
 #include <QLineEdit>
+#include <QComboBox>
 
 class SettingsTab : public QWidget
 {
@@ -35,6 +36,7 @@ public:
 
 private:
     IPlugin *plugin;
+    QComboBox *playDevBox;
     QLineEdit *songsDir;
 
 private slots:

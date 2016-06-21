@@ -4,5 +4,7 @@
         <file>player-img/stop.svg</file>
         <file>player-img/back.svg</file>
         <file>player-img/random.svg</file>
+        <file>player-img/nonstop-off.svg</file>
+        <file>player-img/nonstop-on.svg</file>
     </qresource>
 </RCC>

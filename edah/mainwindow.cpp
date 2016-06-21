@@ -319,7 +319,8 @@ void MainWindow::loadPlugins()
 
                 invisibleWidget = plugin.plugin->smallPanel();
                 plugin.widget = plugin.plugin->bigPanel();
-                plugin.widget->grabKeyboard();
+                //plugin.widget->grabKeyboard();
+                plugin.widget->setFocus();
 
                 activePlugin = plugins.size();
             }
@@ -379,7 +380,10 @@ void MainWindow::reloadPlugins()
     }
 
     // select new big widget
-    activePlugin = newPluginsId.indexOf(plugins[activePlugin].id);
+    if(activePlugin != -1)
+    {
+        activePlugin = newPluginsId.indexOf(plugins[activePlugin].id);
+    }
     if(activePlugin == -1)
     {
         for(int i=0; i<newPlugins.size(); i++)
@@ -685,10 +689,9 @@ void MainWindow::recalcSizes(QSize size)
             visiblePluginsCount++;
     }
 
-    int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
+    //pluginLayout->setContentsMargins(size.width()/16, 0, size.width()/16, 0);
 
-    height = width*2.66;
-    pluginContainer->setMargin((size.height()-height)/2);
+    int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
 
     for(int i=0; i<plugins.size(); i++)
     {
@@ -700,14 +703,15 @@ void MainWindow::recalcSizes(QSize size)
         if(i == activePlugin)
         {
             plugins[i].widget->setFixedWidth(width*4);
-            plugins[i].widget->setFixedHeight(qMin<int>(width*2.66, pluginContainer->height()));
+            plugins[i].widget->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
             plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         }
         else
         {
             plugins[i].widget->setMaximumWidth(32768);
             plugins[i].widget->setMinimumWidth(1);
-            plugins[i].widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+            plugins[i].widget->setFixedHeight(qMin<int>(width*2.56, pluginContainer->height()));
+            plugins[i].widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
         }
     }
 }

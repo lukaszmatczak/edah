@@ -25,7 +25,7 @@ void Waveform::paintEvent(QPaintEvent *e)
     QPainter p(this);
 
     p.setRenderHints(QPainter::Antialiasing);
-    p.scale(this->width()/(1024.0+(1024.0/this->width()*3)), this->height()/256.0);
+    p.scale(this->width()/(1024.0+(1024.0/this->width()*3)), this->height()/(256.0+256.0/this->height()*3));
 
     for(int i=0; i<form->size()/2; i++)
     {
@@ -38,6 +38,9 @@ void Waveform::paintEvent(QPaintEvent *e)
             p.setPen(QColor(127, 127, 127));
         }
 
-        p.drawLine((1024.0/this->width()*2)+i, 255-(quint8)form->at(i*2)-1, (1024.0/this->width()*2)+i, 255-(quint8)form->at(i*2+1));
+        p.drawLine((1024.0/this->width())+i,
+                   (256.0/this->height())+255-(quint8)form->at(i*2)-1,
+                   (1024.0/this->width())+i,
+                   (256.0/this->height())+255-(quint8)form->at(i*2+1));
     }
 }

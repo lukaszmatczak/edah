@@ -20,6 +20,8 @@
 
 #include <libedah/database.h>
 
+#include <bass.h>
+
 #include <QFormLayout>
 #include <QPushButton>
 #include <QApplication>
@@ -32,6 +34,15 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
     this->setLayout(layout);
 
     QHBoxLayout *songsLayout = new QHBoxLayout;
+
+    playDevBox = new QComboBox(this);
+    playDevBox->setEditable(true);
+
+    BASS_DEVICEINFO info;
+    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
+        playDevBox->addItem(info.name);
+
+    layout->addRow(tr("Audio device: "), playDevBox);
 
     songsDir = new QLineEdit(this);
     songsLayout->addWidget(songsDir);
@@ -55,10 +66,12 @@ void SettingsTab::songsDirBtn_clicked()
 
 void SettingsTab::loadSettings()
 {
+    playDevBox->setCurrentText(db->value(plugin, "device", "").toString());
     songsDir->setText(db->value(plugin, "songsDir", "").toString());
 }
 
 void SettingsTab::writeSettings()
 {
+    db->setValue(plugin, "device", playDevBox->currentText());
     db->setValue(plugin, "songsDir", songsDir->text());
 }

@@ -49,7 +49,7 @@ Player::Player()
     settingsTab = new SettingsTab(this);
     smallWidget = new QLabel(this->getPluginName());
 
-    QString playDev = "Default"; // TODO: get it from config
+    QString playDev = db->value(this, "device", "").toString();
     int playDevNo = -1;
 
     BASS_DEVICEINFO info;
@@ -73,7 +73,7 @@ Player::Player()
 
         QMessageBox msg(QMessageBox::Critical, "Error!", text);
         msg.exec();
-        exit(-1);
+        //exit(-1);
     }
 
     BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
@@ -94,6 +94,9 @@ Player::Player()
 
 Player::~Player()
 {
+    QThreadPool::globalInstance()->clear();
+    QThreadPool::globalInstance()->waitForDone();
+
     delete bPanel;
     delete smallWidget;
     delete settingsTab;
@@ -140,7 +143,7 @@ void Player::writeSettings()
 {
     settingsTab->writeSettings();
 }
-#include <QtMath>
+
 void Player::loadSongs()
 {
     db->db.exec("CREATE TABLE IF NOT EXISTS player_songs ("
@@ -262,14 +265,24 @@ void Player::loadSongs()
 
 void Player::loadSongsInfo()
 {
+    static int progress;
+    progress = 0;
+
     QSqlQuery q(db->db);
-    q.exec("SELECT `id`, `filename` FROM `player_songs` WHERE `waveform` is NULL");
+    q.exec("SELECT `id`, `filename` FROM `player_songs` WHERE `waveform` IS NULL");
+
+    if(q.size() > 0)
+    {
+        db->db.transaction();
+    }
 
     while(q.next())
     {
+        progress++;
+
         QString filepath = songsDir.filePath(q.value("filename").toString());
         SongInfoWorker *worker = new SongInfoWorker(q.value("id").toInt(), filepath);
-        connect(worker, &SongInfoWorker::done, this, [this](int id, int duration, QByteArray waveform) {
+        connect(worker, &SongInfoWorker::done, this, [this, &progress](int id, int duration, QByteArray waveform) {
             QSqlQuery q(db->db);
             q.prepare("UPDATE `player_songs` SET `duration`=:duration, `waveform`=:waveform WHERE `id`=:id");
             q.bindValue(":id", id);
@@ -279,11 +292,86 @@ void Player::loadSongsInfo()
 
             songs[id].duration = duration;
             songs[id].waveform = waveform;
+
+            if(--progress <= 0)
+            {
+                db->db.commit();
+            }
         });
 
         QThreadPool::globalInstance()->start(worker);
     }
 }
+
+void Player::refreshState()
+{
+    bool prevPlaying = playing;
+    playing = (BASS_ChannelIsActive(playStream) == BASS_ACTIVE_PLAYING);
+
+    if(prevPlaying != playing)
+    {
+        emit stateChanged(playing);
+    }
+
+    float levels[2] = {0.0f, 0.0f};
+    if(playing)
+    {
+        BASS_ChannelGetLevelEx(playStream, levels, 0.035, BASS_LEVEL_STEREO);
+
+        QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
+        double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
+
+        QWORD totalBytes = BASS_ChannelGetLength(playStream, BASS_POS_BYTE);
+        double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
+
+        bPanel->playerPositionChanged(pos, total);
+    }
+
+    peakMeter->setPeakStereo(levels[0], levels[1]);
+}
+
+bool Player::isPlaying()
+{
+    return playing;
+}
+
+void Player::play(int number)
+{
+    const QString filename = songsDir.filePath(songs[number].filename);
+
+    if (playStream = BASS_StreamCreateFile(FALSE,
+                                           filename.utf16(),
+                                           0,
+                                           0,
+                                           BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT | BASS_UNICODE))
+    {
+        playing = BASS_ChannelPlay(playStream, FALSE);
+        emit stateChanged(playing);
+    }
+    else
+
+    {
+        LOG(QString("Can't play: error code = ") + QString::number(BASS_ErrorGetCode()));
+        LOG("Can't play file " + filename);
+    }
+}
+
+void Player::stop()
+{
+    BASS_ChannelStop(playStream);
+    playing = false;
+    emit stateChanged(playing);
+}
+
+void Player::seek(int ms)
+{
+    QWORD bytes = BASS_ChannelSeconds2Bytes(playStream, ms/1000.0);
+    BASS_ChannelSetPosition(playStream, bytes, BASS_POS_BYTE);
+}
+
+//////////////////////
+/// SongInfoWorker ///
+//////////////////////
 
 SongInfoWorker::SongInfoWorker(int id, QString filepath) : number(id), filepath(filepath)
 {
@@ -335,72 +423,4 @@ void SongInfoWorker::run()
 bool SongInfoWorker::autoDelete()
 {
     return true;
-}
-
-void Player::refreshState()
-{
-    bool prevPlaying = playing;
-    playing = (BASS_ChannelIsActive(playStream) == BASS_ACTIVE_PLAYING);
-
-    if(prevPlaying != playing)
-    {
-        emit stateChanged(playing);
-    }
-
-    float levels[2] = {0.0f, 0.0f};
-    if(playing)
-    {
-        BASS_ChannelGetLevelEx(playStream, levels, 0.035, BASS_LEVEL_STEREO);
-
-        QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
-        double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
-
-        QWORD totalBytes = BASS_ChannelGetLength(playStream, BASS_POS_BYTE);
-        double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
-
-        bPanel->playerPositionChanged(pos, total);
-    }
-
-    peakMeter->setPeakStereo(levels[0], levels[1]);
-}
-
-bool Player::isPlaying()
-{
-    return playing;
-}
-
-void Player::play(int number)
-{
-    qDebug() << "play" << number;
-    const QString filename = songsDir.filePath(songs[number].filename);
-
-    if (playStream = BASS_StreamCreateFile(FALSE,
-                                           filename.utf16(),
-                                           0,
-                                           0,
-                                           BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT | BASS_UNICODE))
-    {
-        playing = BASS_ChannelPlay(playStream, FALSE);
-        emit stateChanged(playing);
-    }
-    else
-
-    {
-        LOG(QString("Can't play: error code = ") + QString::number(BASS_ErrorGetCode()));
-        LOG("Can't play file " + filename);
-    }
-}
-
-void Player::stop()
-{
-    qDebug() << "stop";
-    BASS_ChannelStop(playStream);
-    playing = false;
-    emit stateChanged(playing);
-}
-
-void Player::seek(int ms)
-{
-    QWORD bytes = BASS_ChannelSeconds2Bytes(playStream, ms/1000.0);
-    BASS_ChannelSetPosition(playStream, bytes, BASS_POS_BYTE);
 }

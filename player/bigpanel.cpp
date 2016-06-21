@@ -23,6 +23,7 @@
 #include <QResizeEvent>
 #include <QGraphicsDropShadowEffect>
 #include <QTime>
+#include <QApplication>
 
 #include <QDebug>
 
@@ -98,9 +99,17 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     posFrame->setLayout(posLayout);
     layout->addWidget(posFrame, 3, 3, 1, 3);
 
+    nonstopIcon = new QPushButton(this);
+    nonstopIcon->setObjectName("nonstopIcon");
+    posLayout->addWidget(nonstopIcon, 0, 0);
+
+    nonstopLbl = new QLabel(tr("Autoplay"), this);
+    nonstopLbl->setObjectName("nonstopLbl");
+    posLayout->addWidget(nonstopLbl, 0, 1);
+
     posLbl = new QLabel("-:--/-:--", this);
     posLbl->setObjectName("posLbl");
-    posLayout->addWidget(posLbl, 0, 1, 1, 1, Qt::AlignRight);
+    posLayout->addWidget(posLbl, 0, 2, 1, 1, Qt::AlignRight);
 
     posBar = new Waveform(this);
     posBar->setObjectName("posBar");
@@ -110,7 +119,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     posBar->setStyle(&sliderStyle);
     connect(posBar, &Waveform::valueChanged, this, &BigPanel::posBar_valueChanged);
     connect(posBar, &Waveform::sliderReleased, this, &BigPanel::posBar_released);
-    posLayout->addWidget(posBar, 1, 0, 1, 2);
+    posLayout->addWidget(posBar, 1, 0, 1, 3);
 
     for(int i=0; i<layout->columnCount(); i++)
     {
@@ -121,6 +130,8 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     {
         layout->setRowStretch(i, 1);
     }
+
+    this->setNonstop(false);
 }
 
 BigPanel::~BigPanel()
@@ -180,7 +191,8 @@ void BigPanel::recalcSizes(const QSize &size)
     numberLbl->setFixedWidth(fm.width("000"));
     titleLine->setFixedHeight(fm.height());
 
-    this->setStyleSheet(QString("#songInfoFrm { background-color: rgb(40,40,40);"
+    this->setStyleSheet(QString("#songInfoFrm { "
+                                "background-color: rgb(40,40,40);"
                                 "border-color:  rgb(0,0,0);"
                                 "border-top-color: rgb(70, 70, 70);"
                                 "border-left-color:  rgb(70, 70, 70);"
@@ -223,8 +235,12 @@ void BigPanel::recalcSizes(const QSize &size)
                                 "background-color: rgb(36,36,36);"
                                 "width: 1px;"
                                 "}"
-                                "#posLbl {"
+                                "#posLbl, #nonstopLbl {"
                                 "font-size: %3px;"
+                                "}"
+                                "#nonstopIcon {"
+                                "border: none;"
+                                "background: transparent;"
                                 "}")
                         .arg(qMax(1, numberBtns[0]->width()/3))
                         .arg(qMax(1, numberBtns[0]->width()/6))
@@ -236,6 +252,10 @@ void BigPanel::recalcSizes(const QSize &size)
     iconSize = QSize(btnBack->width()/2, btnBack->width()/2);
     btnBack->setIconSize(iconSize);
     rndBtn->setIconSize(iconSize);
+
+    iconSize = QSize(numberBtns[0]->width()/6, numberBtns[0]->width()/6);
+    nonstopIcon->setIconSize(iconSize);
+    nonstopIcon->setFixedSize(iconSize);
 }
 
 void BigPanel::addDigit(int digit)
@@ -258,7 +278,7 @@ void BigPanel::addDigit(int digit)
        numberLbl->setText(QString::number(newNumber));
        updateTitle(newNumber);
     }
-    //setNonstop(false);
+    this->setNonstop(false);
 }
 
 void BigPanel::btnRnd_clicked()
@@ -266,10 +286,14 @@ void BigPanel::btnRnd_clicked()
     if (player->isPlaying())
         return;
 
-    int random = rndPlaylist->getNext();
+    int random;
+    if((numberLbl->text().length() > 0) && !nonstop)
+        random = numberLbl->text().toInt();
+    else
+        random = rndPlaylist->getNext();
     numberLbl->setText(QString::number(random));
-    this->updateTitle(random);
-    //setNonstop(true);
+    updateTitle(random);
+    this->setNonstop(true);
 }
 
 void BigPanel::numberBtn_clicked()
@@ -320,7 +344,7 @@ void BigPanel::playBtn_clicked()
 {
     if(player->isPlaying())
     {
-        //setNonstop(false);
+        this->setNonstop(false);
         emit stop();
     }
     else
@@ -335,6 +359,14 @@ void BigPanel::playBtn_clicked()
     this->update();
 }
 
+void BigPanel::setNonstop(bool isSet)
+{
+    nonstop = isSet;
+
+    nonstopIcon->setIcon(QIcon(isSet ? ":/player-img/nonstop-on.svg" : ":/player-img/nonstop-off.svg"));
+    nonstopLbl->setStyleSheet(isSet ? "color: rgb(0, 80, 255);" : "color: rgb(30, 40, 45);");
+}
+
 void BigPanel::playerStateChanged(bool isPlaying)
 {
     if(isPlaying)
@@ -343,17 +375,18 @@ void BigPanel::playerStateChanged(bool isPlaying)
     }
     else
     {
-        /*if(nonstop)
+        if(nonstop)
         {
             int random = rndPlaylist->getNext();
-            ui->NumberLbl->setText(QString::number(random));
-            updateTitle(random);
-            play(random);
+            numberLbl->setText(QString::number(random));
+            this->updateTitle(random);
+            emit play(random);
+            isPlaying = true;
         }
-        else*/
+        else
         {
             numberLbl->setText("");
-            updateTitle(0);
+            this->updateTitle(0);
             this->playerPositionChanged(-1, -1);
 
             playBtn->setIcon(QIcon(":/player-img/play.svg"));

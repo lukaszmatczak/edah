@@ -90,6 +90,7 @@ private:
     void recalcSizes(const QSize &size);
     void updateTitle(int number);
     void addDigit(int digit);
+    void setNonstop(bool isSet);
 
     Player *player;
     ShufflePlaylist *rndPlaylist;
@@ -102,10 +103,13 @@ private:
     MyPushButton *rndBtn;
     MyPushButton *btnBack;
     MyPushButton *playBtn;
+    QPushButton *nonstopIcon;
+    QLabel *nonstopLbl;
     QLabel *posLbl;
     Waveform *posBar;
     SliderStyle sliderStyle;
     double currDuration;
+    bool nonstop;
 
 public slots:
     void playerStateChanged(bool isPlaying);

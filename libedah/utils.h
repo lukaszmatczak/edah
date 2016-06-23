@@ -22,6 +22,7 @@
 #include "libedah.h"
 
 #include <QObject>
+#include <QSettings>
 
 class LIBEDAHSHARED_EXPORT Utils : public QObject
 {
@@ -34,6 +35,7 @@ public:
     QString getUsername();
     QString getDataDir();
     QString getPluginPath(QString plugin);
+    QString getConfigPath();
 
     void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
     void addShadowEffect(QWidget *widget, QColor color);
@@ -41,5 +43,6 @@ public:
 };
 
 LIBEDAHSHARED_EXPORT extern Utils *utils;
+LIBEDAHSHARED_EXPORT extern QSettings *settings;
 
 #endif // UTILS_H

@@ -24,6 +24,7 @@
 #include <QWidget>
 #include <QLineEdit>
 #include <QComboBox>
+#include <QSettings>
 
 class SettingsTab : public QWidget
 {

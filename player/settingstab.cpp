@@ -18,7 +18,7 @@
 
 #include "settingstab.h"
 
-#include <libedah/database.h>
+#include <libedah/libedah.h>
 
 #include <bass.h>
 
@@ -66,12 +66,20 @@ void SettingsTab::songsDirBtn_clicked()
 
 void SettingsTab::loadSettings()
 {
-    playDevBox->setCurrentText(settings->value(plugin, "device", "").toString());
-    songsDir->setText(settings->value(plugin, "songsDir", "").toString());
+    settings->beginGroup(plugin->getPluginId());
+
+    playDevBox->setCurrentText(settings->value("device", "").toString());
+    songsDir->setText(settings->value("songsDir", "").toString());
+    settings->endGroup();
+
 }
 
 void SettingsTab::writeSettings()
 {
-    settings->setValue(plugin, "device", playDevBox->currentText());
-    settings->setValue(plugin, "songsDir", songsDir->text());
+    settings->beginGroup(plugin->getPluginId());
+
+    settings->setValue("device", playDevBox->currentText());
+    settings->setValue("songsDir", songsDir->text());
+
+    settings->endGroup();
 }

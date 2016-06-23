@@ -21,7 +21,6 @@
 
 #include "winframe.h"
 #include <libedah/iplugin.h>
-#include <libedah/database.h>
 
 #include <QMainWindow>
 #include <QVBoxLayout>
@@ -31,15 +30,26 @@
 #include <QTimer>
 #include <QTranslator>
 #include <QPushButton>
-
+#include <QSettings>
 #include <QPluginLoader>
+
+struct PluginCfgEntry
+{
+    QString id;
+    bool enabled;
+};
+
+QDataStream &operator<<(QDataStream &stream, const PluginCfgEntry &entry);
+QDataStream &operator>>(QDataStream &stream, PluginCfgEntry &entry);
 
 struct Plugin
 {
     QString id;
     QPluginLoader *loader;
     IPlugin *plugin;
-    QWidget *widget;
+    QWidget *panel;
+    QWidget *container;
+    //QWidget *widget;
 };
 
 class MainWindow : public QMainWindow
@@ -72,7 +82,6 @@ private:
     void createBottomBar(QWidget *parent);
 
     QTranslator translator;
-    QSqlDatabase db;
 
     QWidget *centralWidget;
     WinFrame *winFrame;

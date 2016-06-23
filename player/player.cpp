@@ -18,8 +18,8 @@
 
 #include "player.h"
 
-#include <libedah/database.h>
 #include <libedah/logger.h>
+#include <libedah/utils.h>
 
 #include <taglib/tag.h>
 #include <taglib/fileref.h>
@@ -28,20 +28,21 @@
 #include <QPushButton>
 #include <QGridLayout>
 #include <QLabel>
-#include <QSqlQuery>
 #include <QEventLoop>
 #include <QMessageBox>
 #include <QUrl>
 #include <QDateTime>
 #include <QThreadPool>
+#include <QSettings>
 
 #include <QDebug>
 
 Player::Player()
 {
-    db = settings->createDatabaseConnection(this->getPluginId());
-
-    songsDir = QDir(settings->value(this, "songsDir").toString());
+    settings->beginGroup(this->getPluginId());
+    songsDir = QDir(settings->value("songsDir").toString());
+    QString playDev = settings->value("device", "").toString();
+    settings->endGroup();
 
     bPanel = new BigPanel(this);
     connect(bPanel, &BigPanel::play, this, &Player::play);
@@ -51,9 +52,7 @@ Player::Player()
     settingsTab = new SettingsTab(this);
     smallWidget = new QLabel(this->getPluginName());
 
-    QString playDev = settings->value(this, "device", "").toString();
     int playDevNo = -1;
-
     BASS_DEVICEINFO info;
     for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
     {
@@ -104,9 +103,6 @@ Player::~Player()
     delete settingsTab;
 
     BASS_Free();
-
-    db.commit();
-    db.close();
 }
 
 QWidget *Player::bigPanel()
@@ -151,14 +147,6 @@ void Player::writeSettings()
 
 void Player::loadSongs()
 {
-    db.exec("CREATE TABLE IF NOT EXISTS player_songs ("
-            "`id` INTEGER PRIMARY KEY,"
-            "`filename` TEXT,"
-            "`title` TEXT,"
-            "`duration` INTEGER,"
-            "`mtime` INTEGER,"
-            "`waveform` BINARY)");
-
     QFileInfoList songsListDir = songsDir.entryInfoList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
     QFileInfoList songsList;
     QVector<int> songsInDir;
@@ -181,34 +169,22 @@ void Player::loadSongs()
         }
     }
 
-    QSqlQuery q(db);
-    q.exec("SELECT `id`, `filename`, `title`, `duration`, `mtime`, `waveform` FROM `player_songs`");
-
-    db.transaction();
-    while(q.next())
+    QFile file(utils->getConfigPath() + "/" + this->getPluginId() + "_songs.cfg", this);
+    file.open(QIODevice::ReadWrite);
     {
-        Song s;
-        s.filename = q.value("filename").toString();
-        s.title = q.value("title").toString();
-        s.duration = q.value("duration").toInt();
-        s.mtime = q.value("mtime").toLongLong();
-        s.waveform = q.value("waveform").toByteArray();
+        QDataStream stream(&file);
+        stream >> songs;
+    }
 
-        if(songsDir.exists(s.filename))
+    QList<int> keys = songs.keys();
+    for(int i=0; i<keys.size(); i++)
+    {
+        if(!songsDir.exists(songs[keys[i]].filename))
         {
-            songs.insert(q.value("id").toInt(), s);
-        }
-        else
-        {
-            QSqlQuery q(db);
-            q.prepare("DELETE FROM `player_songs` WHERE `filename`=:filename");
-            q.bindValue(":filename", s.filename);
-            q.exec();
+            songs.remove(keys[i]);
         }
     }
-    db.commit();
 
-    db.transaction();
     for(int i=0; i<songsList.size(); i++)
     {
         QString filename = songsList[i].fileName();
@@ -227,6 +203,8 @@ void Player::loadSongs()
         {
             Song s;
             s.filename = filename;
+            s.duration = -1;
+            s.mtime = mtime;
 
 #ifdef Q_OS_WIN
             TagLib::FileRef filetag(songsDir.filePath(filename).toStdWString().c_str());
@@ -247,23 +225,15 @@ void Player::loadSongs()
                 s.title = rx.cap(2);
             }
 
-            QSqlQuery q(db);
-            q.prepare("INSERT OR IGNORE INTO `player_songs` VALUES(:id, NULL, NULL, NULL, NULL, NULL)");
-            q.bindValue(":id", number);
-            q.exec();
-
-            q.prepare("UPDATE `player_songs` SET `filename`=:filename, `title`=:title, `mtime`=:mtime, `duration`=NULL, `waveform`=NULL WHERE `id`=:id");
-            q.bindValue(":id", number);
-            q.bindValue(":filename", s.filename);
-            q.bindValue(":title", s.title);
-            q.bindValue(":mtime", mtime);
-            q.exec();
-
             songs.insert(number, s);
         }
     }
 
-    db.commit();
+    {
+        file.resize(0);
+        QDataStream stream(&file);
+        stream << songs;
+    }
 
     this->loadSongsInfo();
 }
@@ -273,34 +243,26 @@ void Player::loadSongsInfo()
     static int progress;
     progress = 0;
 
-    QSqlQuery q(db);
-    q.exec("SELECT `id`, `filename` FROM `player_songs` WHERE `waveform` IS NULL");
-
-    while(q.next())
+    QList<int> keys = songs.keys();
+    for(int i=0; i<keys.size(); i++)
     {
-        if(progress == 0)
-        {
-            db.transaction();
-        }
+        if(songs[keys[i]].duration != -1)
+            continue;
 
         progress++;
 
-        QString filepath = songsDir.filePath(q.value("filename").toString());
-        SongInfoWorker *worker = new SongInfoWorker(q.value("id").toInt(), filepath);
+        QString filepath = songsDir.filePath(songs[keys[i]].filename);
+        SongInfoWorker *worker = new SongInfoWorker(keys[i], filepath);
         connect(worker, &SongInfoWorker::done, this, [this, &progress](int id, int duration, QByteArray waveform) {
-            QSqlQuery q(db);
-            q.prepare("UPDATE `player_songs` SET `duration`=:duration, `waveform`=:waveform WHERE `id`=:id");
-            q.bindValue(":id", id);
-            q.bindValue(":duration", duration);
-            q.bindValue(":waveform", waveform);
-            q.exec();
-
             songs[id].duration = duration;
             songs[id].waveform = waveform;
 
             if(--progress <= 0)
             {
-                db.commit();
+                QFile file(utils->getConfigPath() + "/" + this->getPluginId() + "_songs.cfg", this);
+                file.open(QIODevice::WriteOnly);
+                QDataStream stream(&file);
+                stream << songs;
             }
         });
 
@@ -428,4 +390,20 @@ void SongInfoWorker::run()
 bool SongInfoWorker::autoDelete()
 {
     return true;
+}
+
+QDataStream &operator<<(QDataStream &stream, const Song &song)
+{
+    stream << song.filename << song.title << song.duration
+           << song.mtime << song.waveform;
+
+    return stream;
+}
+
+QDataStream &operator>>(QDataStream &stream, Song &song)
+{
+    stream >> song.filename >> song.title >> song.duration
+           >> song.mtime >> song.waveform;
+
+    return stream;
 }

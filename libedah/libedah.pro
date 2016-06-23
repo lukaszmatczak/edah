@@ -18,13 +18,11 @@ DEFINES += LIBEDAH_LIBRARY
 SOURCES += logger.cpp \
     utils.cpp \
     mypushbutton.cpp \
-    database.cpp \
     peakmeter.cpp
 
 HEADERS += iplugin.h \
         logger.h \
         utils.h \
-        database.h \
     mypushbutton.h \
     libedah.h \
     peakmeter.h

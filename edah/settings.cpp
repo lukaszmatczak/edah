@@ -19,7 +19,6 @@
 #include "settings.h"
 
 #include <libedah/utils.h>
-#include <libedah/database.h>
 
 #include <QVBoxLayout>
 #include <QTabWidget>
@@ -34,8 +33,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QHeaderView>
-
-#include <QSqlQuery>
 
 #include <QDebug>
 
@@ -241,7 +238,7 @@ void GeneralTab::installedPluginSelected(const QModelIndex &index)
 
 void GeneralTab::loadSettings()
 {
-    QString lang = settings->value(nullptr, "lang", "").toString();
+    QString lang = settings->value("lang", "").toString();
     if(lang.isEmpty())
     {
         lang = QLocale::system().name().left(2);
@@ -260,30 +257,32 @@ void GeneralTab::loadSettings()
     }
     langBox->setCurrentIndex(idx);
 
-    fullscreenChk->setChecked(settings->value(nullptr, "fullscreen", false).toBool());
+    fullscreenChk->setChecked(settings->value("fullscreen", false).toBool());
 
     pluginsModel->load(currLang);
 }
 
 void GeneralTab::writeSettings()
 {
-    settings->setValue(nullptr, "lang", langBox->currentData());
-    settings->setValue(nullptr, "fullscreen", fullscreenChk->isChecked());
+    settings->setValue("lang", langBox->currentData());
+    settings->setValue("fullscreen", fullscreenChk->isChecked());
 
-    QSqlDatabase db = QSqlDatabase::database("core");
-    db.exec("DELETE FROM `plugins`");
+    QVector<PluginCfgEntry> cfg;
 
     for(int i=0; i<pluginsModel->rowCount(QModelIndex()); i++)
     {
         PluginTableModel::PluginInfo pi = pluginsModel->getPluginInfo(i);
 
-        QSqlQuery q(db);
-        q.prepare("INSERT INTO `plugins` VALUES(null, :plugin_id, :order, :enabled)");
-        q.bindValue(":plugin_id", pi.id);
-        q.bindValue(":order", i);
-        q.bindValue(":enabled", pi.enabled);
-        q.exec();
+        PluginCfgEntry entry;
+        entry.id = pi.id;
+        entry.enabled = pi.enabled;
+        cfg.push_back(entry);
     }
+
+    QFile file(utils->getConfigPath() + "/plugins.cfg", this);
+    file.open(QIODevice::WriteOnly);
+    QDataStream stream(&file);
+    stream << cfg;
 }
 
 ////////////////////////
@@ -297,14 +296,15 @@ void PluginTableModel::load(QString lang)
     QVector<QString> pluginsId;
     plugins.clear();
 
-    QSqlDatabase db = QSqlDatabase::database("core");
-    QSqlQuery q(db);
-    q.prepare("SELECT `plugin_id`, `enabled` FROM `plugins` ORDER BY `order`");
-    q.exec();
-    while(q.next())
+    QVector<PluginCfgEntry> cfg;
+    QFile file(utils->getConfigPath() + "/plugins.cfg", this);
+    file.open(QIODevice::ReadOnly);
+    QDataStream stream(&file);
+    stream >> cfg;
+
+    for(int i=0; i<cfg.size(); i++)
     {
-        QString pluginDir = q.value(0).toString();
-        QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
+        QFile file(utils->getDataDir()+"/plugins/"+cfg[i].id+"/info.json");
 
         if(!file.exists())
         {
@@ -312,7 +312,7 @@ void PluginTableModel::load(QString lang)
         }
 
         PluginInfo pi = this->loadFromFile(file, lang);
-        pi.enabled = q.value(1).toBool();
+        pi.enabled = cfg[i].enabled;
 
         plugins.push_back(pi);
         pluginsId.push_back(pi.id);

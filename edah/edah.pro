@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets network sql
+QT       += core gui widgets network
 
 TARGET = edah
 TEMPLATE = app

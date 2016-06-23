@@ -24,7 +24,6 @@
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
-#include <libedah/database.h>
 
 #include <bass.h>
 
@@ -84,8 +83,6 @@ public:
 private:
     void loadSongs();
     void loadSongsInfo();
-
-    QSqlDatabase db;
 
     BigPanel *bPanel;
     QWidget *smallWidget;

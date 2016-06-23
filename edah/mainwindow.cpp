@@ -22,7 +22,6 @@
 
 #include <libedah/logger.h>
 #include <libedah/utils.h>
-#include <libedah/database.h>
 
 #include <QResizeEvent>
 #include <QFontDatabase>
@@ -30,20 +29,36 @@
 #include <QApplication>
 #include <QDir>
 #include <QGraphicsDropShadowEffect>
-#include <QSqlQuery>
 #include <QTimeLine>
 #include <QMenu>
 
 #include <QDebug>
 
+QDataStream &operator<<(QDataStream &stream, const PluginCfgEntry &entry)
+{
+    stream.writeRawData((const char*)&entry.enabled, 1);
+    stream << entry.id;
+
+    return stream;
+}
+
+QDataStream &operator>>(QDataStream &stream, PluginCfgEntry &entry)
+{
+    stream.readRawData((char*)&entry.enabled, 1);
+    stream >> entry.id;
+
+    return stream;
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    QCoreApplication::setOrganizationName("Lukasz Matczak");
+    QCoreApplication::setApplicationName("Edah");
+
     utils = new Utils;
     logger = new Logger;
-    settings = new Database;
-
-    db = settings->createDatabaseConnection("core");
+    settings = new QSettings;
 
     const QString fontFilename = utils->getDataDir() + "/OpenSans-Light.ttf";
     if(QFontDatabase::addApplicationFont(fontFilename) == -1)
@@ -52,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     this->setGeometry(100, 100, 600, 338);
-    this->restoreGeometry(settings->value(nullptr, "MainWindow_geometry").toByteArray());
+    this->restoreGeometry(settings->value("MainWindow_geometry").toByteArray());
     this->setMinimumSize(600, 338);
 
     QFile fstyle(":/style.qss");
@@ -100,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 
-    QString localeStr = settings->value(nullptr, "lang", "").toString();
+    QString localeStr = settings->value("lang", "").toString();
     if(localeStr.isEmpty())
     {
         localeStr = QLocale::system().name().left(2);
@@ -115,7 +130,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     qApp->installTranslator(&translator);
 
-    if(settings->value(nullptr, "fullscreen", false).toBool())
+    if(settings->value("fullscreen", false).toBool())
     {
         titleBar->setVisible(false);
         this->showFullScreen();
@@ -137,16 +152,13 @@ MainWindow::~MainWindow()
 {
     if(!this->isFullScreen())
     {
-        settings->setValue(nullptr, "MainWindow_geometry", this->saveGeometry());
+        settings->setValue("MainWindow_geometry", this->saveGeometry());
     }
 
     foreach(Plugin plugin, plugins)
     {
         this->unloadPlugin(&plugin);
     }
-
-    db.commit();
-    db.close();
 
     delete settings;
     delete logger;
@@ -201,7 +213,7 @@ void MainWindow::mousePressEvent(QMouseEvent *e)
 
     for(int i=0; i<plugins.size(); i++)
     {
-        if(plugins[i].plugin->hasPanel() && plugins[i].widget->underMouse())
+        if(plugins[i].plugin->hasPanel() && plugins[i].container->underMouse())
         {
             this->changeActivePlugin(i);
             break;
@@ -258,7 +270,8 @@ bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
     plugin->loader = new QPluginLoader(utils->getPluginPath(id), this);
     plugin->plugin = qobject_cast<IPlugin*>(plugin->loader->instance());
 
-    plugin->widget = nullptr;
+    plugin->panel = nullptr;
+    plugin->container = nullptr;
 
     if(!plugin->plugin)
     {
@@ -290,13 +303,17 @@ bool MainWindow::findPlugin(const QString &id, Plugin *plugin)
 
 void MainWindow::loadPlugins()
 {
-    db.exec("CREATE TABLE IF NOT EXISTS plugins ("
+/*    db.exec("CREATE TABLE IF NOT EXISTS plugins ("
                 "`id` INTEGER PRIMARY KEY AUTOINCREMENT,"
                 "`plugin_id` TEXT,"
                 "`order` INTEGER,"
-                "`enabled` INTEGER)");
+                "`enabled` INTEGER)");*/
 
-    QSqlQuery q(db);
+    activePlugin = -1;
+
+    this->reloadPlugins();
+
+/*    QSqlQuery q(db);
     q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
 
     while(q.next())
@@ -305,7 +322,12 @@ void MainWindow::loadPlugins()
 
         if(this->loadPlugin(q.value(0).toString(), &plugin))
         {
-            if((pluginLayout->count() > 0) && plugin.plugin->hasPanel())
+            if(!plugin.plugin->hasPanel())
+            {
+                continue;
+            }
+
+            if(pluginLayout->count() > 0)
             {
                 QWidget *line = new QWidget(this);
                 line->setObjectName("line");
@@ -314,41 +336,33 @@ void MainWindow::loadPlugins()
             }
 
             QWidget *invisibleWidget;
+            plugin.container = new QWidget(pluginContainer);
+            plugin.container->setObjectName("plugin.container");
 
             if(pluginLayout->count() == 0) // first plugin is big by default
             {
-                if(!plugin.plugin->hasPanel())
-                {
-                    continue;
-                }
-
                 invisibleWidget = plugin.plugin->smallPanel();
-                plugin.widget = plugin.plugin->bigPanel();
-                //plugin.widget->grabKeyboard();
-                plugin.widget->setFocus();
+                plugin.panel = plugin.plugin->bigPanel();
+                plugin.container->setFocus();
 
                 activePlugin = plugins.size();
             }
             else
             {
-                if(!plugin.plugin->hasPanel())
-                {
-                    continue;
-                }
-
                 invisibleWidget = plugin.plugin->bigPanel();
-                plugin.widget = plugin.plugin->smallPanel();
+                plugin.panel = plugin.plugin->smallPanel();
             }
 
-            invisibleWidget->setParent(pluginContainer);
+            invisibleWidget->setParent(plugin.container);
             invisibleWidget->hide();
 
-            plugin.widget->setParent(pluginContainer);
-            pluginLayout->addWidget(plugin.widget);
+            //plugin.widget->setParent(pluginContainer);
+            plugin.panel->setParent(plugin.container); //TODO
+            pluginLayout->addWidget(plugin.container);
 
             plugins.push_back(plugin);
         }
-    }
+    }*/
 }
 
 void MainWindow::reloadPlugins()
@@ -365,15 +379,31 @@ void MainWindow::reloadPlugins()
         {
             delete i->widget();
         }
+        else if(i->widget()->objectName() == "plugin.container")
+        {
+            QObjectList children = i->widget()->children();
+            for(int i=0; i<children.size(); i++)
+            {
+                children[i]->setParent(nullptr);
+            }
+            delete i->widget();
+        }
         delete i;
     }
 
     // load new plugins
-    QSqlQuery q(db);
-    q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
-    while(q.next())
+    QVector<PluginCfgEntry> cfg;
+    QFile file(utils->getConfigPath() + "/plugins.cfg", this);
+    file.open(QIODevice::ReadOnly);
+    QDataStream stream(&file);
+    stream >> cfg;
+
+    for(int i=0; i<cfg.size(); i++)
     {
-        QString pluginId = q.value(0).toString();
+        if(!cfg[i].enabled)
+            continue;
+
+        QString pluginId = cfg[i].id;
 
         Plugin p;
 
@@ -428,12 +458,17 @@ void MainWindow::reloadPlugins()
             pluginLayout->addWidget(line);
         }
 
-        plugins[i].widget = (i == activePlugin) ?
+        plugins[i].panel = (i == activePlugin) ?
                     plugins[i].plugin->bigPanel() :
                     plugins[i].plugin->smallPanel();
+        plugins[i].container = new QWidget(pluginContainer);
+        plugins[i].container->setObjectName("plugin.container");
+        plugins[i].container->setLayout(new QHBoxLayout);
+        plugins[i].container->layout()->addWidget(plugins[i].panel);
+        plugins[i].panel->setParent(plugins[i].container);
 
-        pluginLayout->addWidget(plugins[i].widget);
-        plugins[i].widget->show();
+        pluginLayout->addWidget(plugins[i].container);
+        plugins[i].panel->show();
     }
 
     this->recalcSizes(this->size());
@@ -468,33 +503,33 @@ void MainWindow::changeActivePlugin(int pluginIdx)
 
     if(activePlugin != pluginIdx)
     {
-        utils->fadeInOut(plugins[activePlugin].widget,
-                         plugins[pluginIdx].widget,
+        utils->fadeInOut(plugins[activePlugin].container,
+                         plugins[pluginIdx].container,
                          250, 255, 0);
 
-        int smallWidth = plugins[pluginIdx].widget->width();
-        int bigWidth = plugins[activePlugin].widget->width();
+        int smallWidth = plugins[pluginIdx].container->width();
+        int bigWidth = plugins[activePlugin].container->width();
 
         QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
-        this->swapWidgets(plugins[pluginIdx].widget, newBigWidget);
+        this->swapWidgets(plugins[pluginIdx].container, newBigWidget);
         newBigWidget->setFixedWidth(smallWidth);
-        plugins[pluginIdx].widget = newBigWidget;
+        plugins[pluginIdx].container = newBigWidget;
 
         QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
-        this->swapWidgets(plugins[activePlugin].widget, newSmallWidget);
+        this->swapWidgets(plugins[activePlugin].container, newSmallWidget);
         newSmallWidget->setFixedWidth(bigWidth);
-        plugins[activePlugin].widget = newSmallWidget;
+        plugins[activePlugin].container = newSmallWidget;
 
         QTimeLine timeLine(350);
         timeLine.setEasingCurve(QEasingCurve::InOutSine);
         timeLine.setFrameRange(smallWidth, bigWidth);
 
-        plugins[activePlugin].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        plugins[pluginIdx].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        plugins[activePlugin].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+        plugins[pluginIdx].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
         connect(&timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
-            plugins[activePlugin].widget->setFixedWidth(bigWidth-(frame-smallWidth));
-            plugins[pluginIdx].widget->setFixedWidth(frame);
+            plugins[activePlugin].container->setFixedWidth(bigWidth-(frame-smallWidth));
+            plugins[pluginIdx].container->setFixedWidth(frame);
         });
         timeLine.start();
 
@@ -502,13 +537,13 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
         loop.exec();
 
-        utils->fadeInOut(plugins[activePlugin].widget,
-                         plugins[pluginIdx].widget,
+        utils->fadeInOut(plugins[activePlugin].container,
+                         plugins[pluginIdx].container,
                          250, 0, 255);
     }
 
     //plugins[pluginIdx].widget->grabKeyboard();
-    plugins[pluginIdx].widget->setFocus();
+    plugins[pluginIdx].container->setFocus();
 
     activePlugin = pluginIdx;
 
@@ -707,26 +742,26 @@ void MainWindow::recalcSizes(QSize size)
 
         if(i == activePlugin)
         {
-            plugins[i].widget->setFixedWidth(width*4);
-            plugins[i].widget->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
-            plugins[i].widget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            plugins[i].container->setFixedWidth(width*4);
+            plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
+            plugins[i].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         }
         else
         {
-            plugins[i].widget->setMaximumWidth(32768);
-            plugins[i].widget->setMinimumWidth(1);
-            plugins[i].widget->setFixedHeight(qMin<int>(width*2.56, pluginContainer->height()));
-            plugins[i].widget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+            plugins[i].container->setMaximumWidth(32768);
+            plugins[i].container->setMinimumWidth(1);
+            plugins[i].container->setFixedHeight(qMin<int>(width*2.56, pluginContainer->height()));
+            plugins[i].container->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
         }
     }
 }
 
 void MainWindow::settingsChanged()
 {
-    QLocale locale = QLocale(settings->value(nullptr, "lang", "").toString());
+    QLocale locale = QLocale(settings->value("lang", "").toString());
     translator.load(locale, "lang", ".", ":/lang");
 
-    bool fullscreen = settings->value(nullptr, "fullscreen", false).toBool();
+    bool fullscreen = settings->value("fullscreen", false).toBool();
     if(fullscreen != this->isFullScreen())
     {
         titleBar->setVisible(!fullscreen);

@@ -25,8 +25,10 @@
 #include <QEventLoop>
 #include <QStyle>
 #include <QApplication>
+#include <QStandardPaths>
 
 Utils *utils;
+LIBEDAHSHARED_EXPORT QSettings *settings;
 
 Utils::Utils()
 {
@@ -76,6 +78,11 @@ QString Utils::getPluginPath(QString plugin)
             .arg(this->getDataDir())
             .arg(plugin)
             .arg(plugin);
+}
+
+QString Utils::getConfigPath()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
 }
 
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)

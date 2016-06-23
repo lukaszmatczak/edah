@@ -39,7 +39,9 @@
 
 Player::Player()
 {
-    songsDir = QDir(db->value(this, "songsDir").toString());
+    db = settings->createDatabaseConnection(this->getPluginId());
+
+    songsDir = QDir(settings->value(this, "songsDir").toString());
 
     bPanel = new BigPanel(this);
     connect(bPanel, &BigPanel::play, this, &Player::play);
@@ -49,7 +51,7 @@ Player::Player()
     settingsTab = new SettingsTab(this);
     smallWidget = new QLabel(this->getPluginName());
 
-    QString playDev = db->value(this, "device", "").toString();
+    QString playDev = settings->value(this, "device", "").toString();
     int playDevNo = -1;
 
     BASS_DEVICEINFO info;
@@ -102,6 +104,9 @@ Player::~Player()
     delete settingsTab;
 
     BASS_Free();
+
+    db.commit();
+    db.close();
 }
 
 QWidget *Player::bigPanel()
@@ -146,13 +151,13 @@ void Player::writeSettings()
 
 void Player::loadSongs()
 {
-    db->db.exec("CREATE TABLE IF NOT EXISTS player_songs ("
-                "`id` INTEGER PRIMARY KEY,"
-                "`filename` TEXT,"
-                "`title` TEXT,"
-                "`duration` INTEGER,"
-                "`mtime` INTEGER,"
-                "`waveform` BINARY)");
+    db.exec("CREATE TABLE IF NOT EXISTS player_songs ("
+            "`id` INTEGER PRIMARY KEY,"
+            "`filename` TEXT,"
+            "`title` TEXT,"
+            "`duration` INTEGER,"
+            "`mtime` INTEGER,"
+            "`waveform` BINARY)");
 
     QFileInfoList songsListDir = songsDir.entryInfoList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
     QFileInfoList songsList;
@@ -176,10 +181,10 @@ void Player::loadSongs()
         }
     }
 
-    QSqlQuery q(db->db);
+    QSqlQuery q(db);
     q.exec("SELECT `id`, `filename`, `title`, `duration`, `mtime`, `waveform` FROM `player_songs`");
 
-    db->db.transaction();
+    db.transaction();
     while(q.next())
     {
         Song s;
@@ -195,15 +200,15 @@ void Player::loadSongs()
         }
         else
         {
-            QSqlQuery q(db->db);
+            QSqlQuery q(db);
             q.prepare("DELETE FROM `player_songs` WHERE `filename`=:filename");
             q.bindValue(":filename", s.filename);
             q.exec();
         }
     }
-    db->db.commit();
+    db.commit();
 
-    db->db.transaction();
+    db.transaction();
     for(int i=0; i<songsList.size(); i++)
     {
         QString filename = songsList[i].fileName();
@@ -242,7 +247,7 @@ void Player::loadSongs()
                 s.title = rx.cap(2);
             }
 
-            QSqlQuery q(db->db);
+            QSqlQuery q(db);
             q.prepare("INSERT OR IGNORE INTO `player_songs` VALUES(:id, NULL, NULL, NULL, NULL, NULL)");
             q.bindValue(":id", number);
             q.exec();
@@ -258,7 +263,7 @@ void Player::loadSongs()
         }
     }
 
-    db->db.commit();
+    db.commit();
 
     this->loadSongsInfo();
 }
@@ -268,22 +273,22 @@ void Player::loadSongsInfo()
     static int progress;
     progress = 0;
 
-    QSqlQuery q(db->db);
+    QSqlQuery q(db);
     q.exec("SELECT `id`, `filename` FROM `player_songs` WHERE `waveform` IS NULL");
-
-    if(q.size() > 0)
-    {
-        db->db.transaction();
-    }
 
     while(q.next())
     {
+        if(progress == 0)
+        {
+            db.transaction();
+        }
+
         progress++;
 
         QString filepath = songsDir.filePath(q.value("filename").toString());
         SongInfoWorker *worker = new SongInfoWorker(q.value("id").toInt(), filepath);
         connect(worker, &SongInfoWorker::done, this, [this, &progress](int id, int duration, QByteArray waveform) {
-            QSqlQuery q(db->db);
+            QSqlQuery q(db);
             q.prepare("UPDATE `player_songs` SET `duration`=:duration, `waveform`=:waveform WHERE `id`=:id");
             q.bindValue(":id", id);
             q.bindValue(":duration", duration);
@@ -295,7 +300,7 @@ void Player::loadSongsInfo()
 
             if(--progress <= 0)
             {
-                db->db.commit();
+                db.commit();
             }
         });
 

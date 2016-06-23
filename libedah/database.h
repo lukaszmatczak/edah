@@ -30,15 +30,20 @@ class LIBEDAHSHARED_EXPORT Database : public QObject
 {
     Q_OBJECT
 public:
-    explicit Database(QObject *parent = 0);
-    virtual ~Database();
+    QSqlDatabase createDatabaseConnection(const QString &connectionName);
 
     QVariant value(const IPlugin *plugin, const QString &key, const QVariant &defaultValue = QVariant());
     void setValue(const IPlugin *plugin, const QString &key, const QVariant &value);
 
+private:
+    explicit Database();
+    virtual ~Database();
+
     QSqlDatabase db;
+
+    friend class MainWindow;
 };
 
-LIBEDAHSHARED_EXPORT extern Database *db;
+LIBEDAHSHARED_EXPORT extern Database *settings;
 
 #endif // DATABASE_H

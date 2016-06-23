@@ -21,6 +21,7 @@
 
 #include "winframe.h"
 #include <libedah/iplugin.h>
+#include <libedah/database.h>
 
 #include <QMainWindow>
 #include <QVBoxLayout>
@@ -71,6 +72,7 @@ private:
     void createBottomBar(QWidget *parent);
 
     QTranslator translator;
+    QSqlDatabase db;
 
     QWidget *centralWidget;
     WinFrame *winFrame;

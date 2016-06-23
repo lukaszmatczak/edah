@@ -24,69 +24,82 @@
 #include <QStandardPaths>
 #include <QDir>
 
-LIBEDAHSHARED_EXPORT Database *db;
+LIBEDAHSHARED_EXPORT Database *settings;
 
 /*!
  \class Database
- \inmodule Edah
  \brief The Database class provides access to sqlite database.
 
- Instance of this class is created automatically by core module as global object:
+ Don't create and delete this object manually. Instance of this class is
+ created automatically by core module as global object:
  \code
- Database *db;
+ Database *settings;
  \endcode
 
- Database file is stored in " %USERPROFILE%\\AppData\\Local\\edah\\config.db"
+ Database file is stored in "%USERPROFILE%\AppData\Local\edah\config.db"
  on Windows and "~/.config/edah/config.db" on Linux.
  */
 
-/*!
- \variable Database::db
- \brief The QSqlDatabase object. You can use it if you want to create and browse
- own table in config database.
- */
+Database::Database()
+{
+    db = this->createDatabaseConnection("settings");
+
+    db.exec("CREATE TABLE IF NOT EXISTS config (module TEXT, key TEXT, value BLOB, PRIMARY KEY(module, key))");
+}
+
+Database::~Database()
+{
+    db.commit();
+    db.close();
+}
 
 /*!
- \fn Database::Database(QObject *parent)
- Don't create this object manually. Core module creates it automatically.
+ * \brief Creates database connection with given \a connectionName.
+ *
+ * You can create additional connection if you want to create and browse own
+ * table in config database.
+ *
+ * \note \a connectionName must be unique in whole application, otherwise
+ * this method will return an invalid QSqlDatabase object.
+ *
+ * \sa QSqlDatabase::isValid()
  */
-Database::Database(QObject *parent) : QObject(parent)
+QSqlDatabase Database::createDatabaseConnection(const QString &connectionName)
 {
+    if(QSqlDatabase::contains(connectionName))
+    {
+        LOG(QString("Connection named \"%1\" already exists!")
+            .arg(connectionName));
+
+        return QSqlDatabase();
+    }
+
     const QString configLocation = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
 
     if(!QDir(configLocation).exists())
         QDir().mkdir(configLocation);
 
-    db = QSqlDatabase::addDatabase("QSQLITE");
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
     db.setDatabaseName(configLocation + "/config.db");
     if(!db.open())
     {
         LOG(QString("Couldn't open database \"%1\"").arg(db.databaseName()));
     }
 
-    db.exec("CREATE TABLE IF NOT EXISTS config (module TEXT, key TEXT, value BLOB, PRIMARY KEY(module, key))");
+    return db;
 }
 
 /*!
- \fn Database::~Database()
- Don't delete this object manually. Core module deletes it automatically.
- */
-Database::~Database()
-{
-    db.close();
-}
-
-/*!
- \fn QVariant Database::value(const IPlugin *plugin, const QString &key, const QVariant &defaultValue)
- Returns the value for setting \a key and owner \a plugin. If the setting
- doesn't exist, returns \a defaultValue.
-
- If no default value is specified, a default QVariant is returned.
-
- Example:
- \code
- QString defaultDir = db->value(this, "defaultDir").toString();
- \endcode
+ * \brief Returns the value for setting \a key and owner \a plugin.
+ *
+ * If the setting doesn't exist, returns \a defaultValue. If no default value
+ * is specified, a default QVariant is returned.
+ *
+ * Example:
+ * \code
+ * QString defaultDir = settings->value(this, "defaultDir").toString();
+ * \endcode
+ * \sa Database::setValue()
  */
 QVariant Database::value(const IPlugin *plugin, const QString &key, const QVariant &defaultValue)
 {
@@ -109,14 +122,15 @@ QVariant Database::value(const IPlugin *plugin, const QString &key, const QVaria
 }
 
 /*!
- \fn void Database::setValue(const IPlugin *plugin, const QString &key, const QVariant &value)
- Sets the value of \a key to \a value and owner to \a plugin. If the \a key
- already exists, the previous value is overwritten.
-
- Example:
- \code
- db->setValue(this, "defaultDir", "D:/records/");
- \endcode
+ * \brief Sets the value of \a key to \a value and owner to \a plugin.
+ *
+ * If the \a key already exists, the previous value is overwritten.
+ *
+ * Example:
+ * \code
+ * settings->setValue(this, "defaultDir", "D:/records/");
+ * \endcode
+ * \sa Database::value()
  */
 void Database::setValue(const IPlugin *plugin, const QString &key, const QVariant &value)
 {

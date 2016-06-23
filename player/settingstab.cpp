@@ -66,12 +66,12 @@ void SettingsTab::songsDirBtn_clicked()
 
 void SettingsTab::loadSettings()
 {
-    playDevBox->setCurrentText(db->value(plugin, "device", "").toString());
-    songsDir->setText(db->value(plugin, "songsDir", "").toString());
+    playDevBox->setCurrentText(settings->value(plugin, "device", "").toString());
+    songsDir->setText(settings->value(plugin, "songsDir", "").toString());
 }
 
 void SettingsTab::writeSettings()
 {
-    db->setValue(plugin, "device", playDevBox->currentText());
-    db->setValue(plugin, "songsDir", songsDir->text());
+    settings->setValue(plugin, "device", playDevBox->currentText());
+    settings->setValue(plugin, "songsDir", songsDir->text());
 }

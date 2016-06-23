@@ -19,7 +19,7 @@ public:
  */
 
 /*!
-    \fn QWidget *IPlugin::getBigWidget()
+    \fn QWidget *IPlugin::bigPanel()
     
     Returns widget to show on main window when plugin is expanded or 
     \c nullptr if plugin doesn't appear on main window.
@@ -33,7 +33,7 @@ public:
  */
 
 /*!
-    \fn QWidget *IPlugin::getSmallWidget()
+    \fn QWidget *IPlugin::smallPanel()
     
     Returns widget to show on main window when plugin is collapsed or 
     \c nullptr if plugin doesn't appear on main window.
@@ -47,7 +47,7 @@ public:
  */
 
 /*!
-    \fn QString IPlugin::getPluginName()
+    \fn QString IPlugin::getPluginName() const
     
     Returns plugin name visible to user.
     

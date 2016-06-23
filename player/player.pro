@@ -10,6 +10,8 @@ TARGET = player
 TEMPLATE = lib
 CONFIG += plugin c++11
 
+QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
+
 DESTDIR = ../plugins/player
 
 INCLUDEPATH += ..

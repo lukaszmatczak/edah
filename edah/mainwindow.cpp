@@ -41,7 +41,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     utils = new Utils;
     logger = new Logger;
-    db = new Database;
+    settings = new Database;
+
+    db = settings->createDatabaseConnection("core");
 
     const QString fontFilename = utils->getDataDir() + "/OpenSans-Light.ttf";
     if(QFontDatabase::addApplicationFont(fontFilename) == -1)
@@ -50,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     this->setGeometry(100, 100, 600, 338);
-    this->restoreGeometry(db->value(nullptr, "MainWindow_geometry").toByteArray());
+    this->restoreGeometry(settings->value(nullptr, "MainWindow_geometry").toByteArray());
     this->setMinimumSize(600, 338);
 
     QFile fstyle(":/style.qss");
@@ -98,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 
-    QString localeStr = db->value(nullptr, "lang", "").toString();
+    QString localeStr = settings->value(nullptr, "lang", "").toString();
     if(localeStr.isEmpty())
     {
         localeStr = QLocale::system().name().left(2);
@@ -113,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     qApp->installTranslator(&translator);
 
-    if(db->value(nullptr, "fullscreen", false).toBool())
+    if(settings->value(nullptr, "fullscreen", false).toBool())
     {
         titleBar->setVisible(false);
         this->showFullScreen();
@@ -135,7 +137,7 @@ MainWindow::~MainWindow()
 {
     if(!this->isFullScreen())
     {
-        db->setValue(nullptr, "MainWindow_geometry", this->saveGeometry());
+        settings->setValue(nullptr, "MainWindow_geometry", this->saveGeometry());
     }
 
     foreach(Plugin plugin, plugins)
@@ -143,7 +145,10 @@ MainWindow::~MainWindow()
         this->unloadPlugin(&plugin);
     }
 
-    delete db;
+    db.commit();
+    db.close();
+
+    delete settings;
     delete logger;
     delete utils;
 }
@@ -285,13 +290,13 @@ bool MainWindow::findPlugin(const QString &id, Plugin *plugin)
 
 void MainWindow::loadPlugins()
 {
-    db->db.exec("CREATE TABLE IF NOT EXISTS plugins ("
+    db.exec("CREATE TABLE IF NOT EXISTS plugins ("
                 "`id` INTEGER PRIMARY KEY AUTOINCREMENT,"
                 "`plugin_id` TEXT,"
                 "`order` INTEGER,"
                 "`enabled` INTEGER)");
 
-    QSqlQuery q(db->db);
+    QSqlQuery q(db);
     q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
 
     while(q.next())
@@ -364,7 +369,7 @@ void MainWindow::reloadPlugins()
     }
 
     // load new plugins
-    QSqlQuery q(db->db);
+    QSqlQuery q(db);
     q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
     while(q.next())
     {
@@ -718,10 +723,10 @@ void MainWindow::recalcSizes(QSize size)
 
 void MainWindow::settingsChanged()
 {
-    QLocale locale = QLocale(db->value(nullptr, "lang", "").toString());
+    QLocale locale = QLocale(settings->value(nullptr, "lang", "").toString());
     translator.load(locale, "lang", ".", ":/lang");
 
-    bool fullscreen = db->value(nullptr, "fullscreen", false).toBool();
+    bool fullscreen = settings->value(nullptr, "fullscreen", false).toBool();
     if(fullscreen != this->isFullScreen())
     {
         titleBar->setVisible(!fullscreen);

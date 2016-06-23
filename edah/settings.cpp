@@ -241,7 +241,7 @@ void GeneralTab::installedPluginSelected(const QModelIndex &index)
 
 void GeneralTab::loadSettings()
 {
-    QString lang = db->value(nullptr, "lang", "").toString();
+    QString lang = settings->value(nullptr, "lang", "").toString();
     if(lang.isEmpty())
     {
         lang = QLocale::system().name().left(2);
@@ -260,23 +260,24 @@ void GeneralTab::loadSettings()
     }
     langBox->setCurrentIndex(idx);
 
-    fullscreenChk->setChecked(db->value(nullptr, "fullscreen", false).toBool());
+    fullscreenChk->setChecked(settings->value(nullptr, "fullscreen", false).toBool());
 
     pluginsModel->load(currLang);
 }
 
 void GeneralTab::writeSettings()
 {
-    db->setValue(nullptr, "lang", langBox->currentData());
-    db->setValue(nullptr, "fullscreen", fullscreenChk->isChecked());
+    settings->setValue(nullptr, "lang", langBox->currentData());
+    settings->setValue(nullptr, "fullscreen", fullscreenChk->isChecked());
 
-    db->db.exec("DELETE FROM `plugins`");
+    QSqlDatabase db = QSqlDatabase::database("core");
+    db.exec("DELETE FROM `plugins`");
 
     for(int i=0; i<pluginsModel->rowCount(QModelIndex()); i++)
     {
         PluginTableModel::PluginInfo pi = pluginsModel->getPluginInfo(i);
 
-        QSqlQuery q(db->db);
+        QSqlQuery q(db);
         q.prepare("INSERT INTO `plugins` VALUES(null, :plugin_id, :order, :enabled)");
         q.bindValue(":plugin_id", pi.id);
         q.bindValue(":order", i);
@@ -296,7 +297,8 @@ void PluginTableModel::load(QString lang)
     QVector<QString> pluginsId;
     plugins.clear();
 
-    QSqlQuery q(db->db);
+    QSqlDatabase db = QSqlDatabase::database("core");
+    QSqlQuery q(db);
     q.prepare("SELECT `plugin_id`, `enabled` FROM `plugins` ORDER BY `order`");
     q.exec();
     while(q.next())

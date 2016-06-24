@@ -36,22 +36,20 @@
 
 QDataStream &operator<<(QDataStream &stream, const PluginCfgEntry &entry)
 {
-    stream.writeRawData((const char*)&entry.enabled, 1);
-    stream << entry.id;
+    stream << entry.enabled << entry.id;
 
     return stream;
 }
 
 QDataStream &operator>>(QDataStream &stream, PluginCfgEntry &entry)
 {
-    stream.readRawData((char*)&entry.enabled, 1);
-    stream >> entry.id;
+    stream >> entry.enabled >> entry.id;
 
     return stream;
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), activePlugin(-1)
 {
     QCoreApplication::setOrganizationName("Lukasz Matczak");
     QCoreApplication::setApplicationName("Edah");
@@ -145,7 +143,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(qApp, &QApplication::focusChanged, this, &MainWindow::onFocusChanged);
 
-    this->loadPlugins();
+    this->reloadPlugins();
 }
 
 MainWindow::~MainWindow()
@@ -301,70 +299,6 @@ bool MainWindow::findPlugin(const QString &id, Plugin *plugin)
     return false;
 }
 
-void MainWindow::loadPlugins()
-{
-/*    db.exec("CREATE TABLE IF NOT EXISTS plugins ("
-                "`id` INTEGER PRIMARY KEY AUTOINCREMENT,"
-                "`plugin_id` TEXT,"
-                "`order` INTEGER,"
-                "`enabled` INTEGER)");*/
-
-    activePlugin = -1;
-
-    this->reloadPlugins();
-
-/*    QSqlQuery q(db);
-    q.exec("SELECT `plugin_id` FROM `plugins` WHERE `enabled`=1 ORDER BY `order`");
-
-    while(q.next())
-    {
-        Plugin plugin;
-
-        if(this->loadPlugin(q.value(0).toString(), &plugin))
-        {
-            if(!plugin.plugin->hasPanel())
-            {
-                continue;
-            }
-
-            if(pluginLayout->count() > 0)
-            {
-                QWidget *line = new QWidget(this);
-                line->setObjectName("line");
-                line->setFixedWidth(2);
-                pluginLayout->addWidget(line);
-            }
-
-            QWidget *invisibleWidget;
-            plugin.container = new QWidget(pluginContainer);
-            plugin.container->setObjectName("plugin.container");
-
-            if(pluginLayout->count() == 0) // first plugin is big by default
-            {
-                invisibleWidget = plugin.plugin->smallPanel();
-                plugin.panel = plugin.plugin->bigPanel();
-                plugin.container->setFocus();
-
-                activePlugin = plugins.size();
-            }
-            else
-            {
-                invisibleWidget = plugin.plugin->bigPanel();
-                plugin.panel = plugin.plugin->smallPanel();
-            }
-
-            invisibleWidget->setParent(plugin.container);
-            invisibleWidget->hide();
-
-            //plugin.widget->setParent(pluginContainer);
-            plugin.panel->setParent(plugin.container); //TODO
-            pluginLayout->addWidget(plugin.container);
-
-            plugins.push_back(plugin);
-        }
-    }*/
-}
-
 void MainWindow::reloadPlugins()
 {
     QVector<QString> newPluginsId;
@@ -384,7 +318,7 @@ void MainWindow::reloadPlugins()
             QObjectList children = i->widget()->children();
             for(int i=0; i<children.size(); i++)
             {
-                children[i]->setParent(nullptr);
+                children[i]->setParent(this);
             }
             delete i->widget();
         }
@@ -463,7 +397,7 @@ void MainWindow::reloadPlugins()
                     plugins[i].plugin->smallPanel();
         plugins[i].container = new QWidget(pluginContainer);
         plugins[i].container->setObjectName("plugin.container");
-        plugins[i].container->setLayout(new QHBoxLayout);
+        plugins[i].container->setLayout(new QGridLayout);
         plugins[i].container->layout()->addWidget(plugins[i].panel);
         plugins[i].panel->setParent(plugins[i].container);
 
@@ -472,21 +406,6 @@ void MainWindow::reloadPlugins()
     }
 
     this->recalcSizes(this->size());
-}
-
-void MainWindow::swapWidgets(QWidget *first, QWidget *second)
-{
-    first->hide();
-    int idx = pluginLayout->indexOf(first);
-    pluginLayout->removeWidget(first);
-    second->setParent(pluginContainer);
-    pluginLayout->insertWidget(idx, second);
-
-    QGraphicsOpacityEffect *effect = new QGraphicsOpacityEffect;
-    effect->setOpacity(0.0);
-    second->setGraphicsEffect(effect);
-
-    second->show();
 }
 
 void MainWindow::changeActivePlugin(int pluginIdx)
@@ -503,22 +422,25 @@ void MainWindow::changeActivePlugin(int pluginIdx)
 
     if(activePlugin != pluginIdx)
     {
-        utils->fadeInOut(plugins[activePlugin].container,
-                         plugins[pluginIdx].container,
+        utils->fadeInOut(plugins[activePlugin].panel,
+                         plugins[pluginIdx].panel,
                          250, 255, 0);
 
         int smallWidth = plugins[pluginIdx].container->width();
         int bigWidth = plugins[activePlugin].container->width();
 
-        QWidget *newBigWidget = plugins[pluginIdx].plugin->bigPanel();
-        this->swapWidgets(plugins[pluginIdx].container, newBigWidget);
-        newBigWidget->setFixedWidth(smallWidth);
-        plugins[pluginIdx].container = newBigWidget;
+        plugins[pluginIdx].panel->hide();
+        plugins[activePlugin].panel->hide();
 
-        QWidget *newSmallWidget = plugins[activePlugin].plugin->smallPanel();
-        this->swapWidgets(plugins[activePlugin].container, newSmallWidget);
-        newSmallWidget->setFixedWidth(bigWidth);
-        plugins[activePlugin].container = newSmallWidget;
+        plugins[pluginIdx].panel = plugins[pluginIdx].plugin->bigPanel();
+        plugins[pluginIdx].panel->hide();
+        plugins[pluginIdx].panel->setParent(plugins[pluginIdx].container);
+        plugins[pluginIdx].container->layout()->addWidget(plugins[pluginIdx].panel);
+
+        plugins[activePlugin].panel = plugins[activePlugin].plugin->smallPanel();
+        plugins[activePlugin].panel->hide();
+        plugins[activePlugin].panel->setParent(plugins[activePlugin].container);
+        plugins[activePlugin].container->layout()->addWidget(plugins[activePlugin].panel);
 
         QTimeLine timeLine(350);
         timeLine.setEasingCurve(QEasingCurve::InOutSine);
@@ -537,12 +459,14 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
         loop.exec();
 
-        utils->fadeInOut(plugins[activePlugin].container,
-                         plugins[pluginIdx].container,
+        plugins[activePlugin].panel->show();
+        plugins[pluginIdx].panel->show();
+
+        utils->fadeInOut(plugins[activePlugin].panel,
+                         plugins[pluginIdx].panel,
                          250, 0, 255);
     }
 
-    //plugins[pluginIdx].widget->grabKeyboard();
     plugins[pluginIdx].container->setFocus();
 
     activePlugin = pluginIdx;
@@ -729,8 +653,6 @@ void MainWindow::recalcSizes(QSize size)
             visiblePluginsCount++;
     }
 
-    //pluginLayout->setContentsMargins(size.width()/16, 0, size.width()/16, 0);
-
     int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
 
     for(int i=0; i<plugins.size(); i++)
@@ -742,6 +664,8 @@ void MainWindow::recalcSizes(QSize size)
 
         if(i == activePlugin)
         {
+            int margin = qMax(0.0, width*2.6666 - pluginContainer->height())*0.75;
+            plugins[i].container->layout()->setContentsMargins(margin, 0, margin, 0);
             plugins[i].container->setFixedWidth(width*4);
             plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
             plugins[i].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -750,7 +674,7 @@ void MainWindow::recalcSizes(QSize size)
         {
             plugins[i].container->setMaximumWidth(32768);
             plugins[i].container->setMinimumWidth(1);
-            plugins[i].container->setFixedHeight(qMin<int>(width*2.56, pluginContainer->height()));
+            plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
             plugins[i].container->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
         }
     }

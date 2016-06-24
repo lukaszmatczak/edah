@@ -71,11 +71,9 @@ protected:
 
 private:
     bool loadPlugin(const QString &id, Plugin *plugin);
-    void loadPlugins();
     void unloadPlugin(Plugin *plugin);
     bool findPlugin(const QString &id, Plugin *plugin);
     void reloadPlugins();
-    void swapWidgets(QWidget *first, QWidget *second);
     void changeActivePlugin(int pluginIdx);
 
     void createTitleBar(QWidget *parent);

@@ -150,6 +150,7 @@ void Player::loadSongs()
     QFileInfoList songsListDir = songsDir.entryInfoList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
     QFileInfoList songsList;
     QVector<int> songsInDir;
+    bool removed = false, added = false;
 
     for(int i=0; i<songsListDir.size(); i++)
     {
@@ -182,6 +183,7 @@ void Player::loadSongs()
         if(!songsDir.exists(songs[keys[i]].filename))
         {
             songs.remove(keys[i]);
+            removed = true;
         }
     }
 
@@ -226,16 +228,21 @@ void Player::loadSongs()
             }
 
             songs.insert(number, s);
+            added = true;
         }
     }
 
+    if(added || removed)
     {
         file.resize(0);
         QDataStream stream(&file);
         stream << songs;
     }
 
-    this->loadSongsInfo();
+    if(added)
+    {
+        this->loadSongsInfo();
+    }
 }
 
 void Player::loadSongsInfo()

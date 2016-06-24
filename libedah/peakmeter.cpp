@@ -28,7 +28,8 @@ PeakMeter::~PeakMeter()
 
 bool PeakMeter::hasHeightForWidth() const
 {
-    return true;
+    //return true;
+    return false;
 }
 
 int PeakMeter::heightForWidth(int width) const
@@ -57,8 +58,17 @@ void PeakMeter::paintEvent(QPaintEvent *e)
 
     QPainter p(this);
 
+    int margin = 0;
+
+    if(this->height()/this->width() < 1580.0/450.0)
+    {
+        int destWidth = this->height()*450.0/1580.0;
+        margin = (this->width()-destWidth)/2;
+    }
+
     p.setRenderHints(QPainter::Antialiasing);
-    p.scale(this->width()/1000.0, this->height()/1580.0);
+    qreal hScale = (this->width()-margin*2)/450.0;
+    p.scale(hScale, this->height()/1580.0);
 
     QRadialGradient gradient(0.5, 0.5, 0.5);
     gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
@@ -80,7 +90,7 @@ void PeakMeter::paintEvent(QPaintEvent *e)
             gradient.setColorAt(1, color);
             p.setBrush(QBrush(gradient));
             p.setPen(color);
-            p.drawRoundedRect((channel*250)+275, 1580-(i*50), 200, 30, 10, 100);
+            p.drawRoundedRect((channel*250)+margin/hScale, 1580-(i*50), 200, 30, 10, 100);
         }
     }
 }

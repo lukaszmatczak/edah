@@ -37,7 +37,7 @@
 
 #include <QDebug>
 
-Player::Player()
+Player::Player() : currNumber(0), autoplay(false)
 {
     settings->beginGroup(this->getPluginId());
     songsDir = QDir(settings->value("songsDir").toString());
@@ -49,8 +49,10 @@ Player::Player()
     connect(bPanel, &BigPanel::stop, this, &Player::stop);
     connect(bPanel, &BigPanel::seek, this, &Player::seek);
 
+    sPanel = new SmallPanel(this);
+
     settingsTab = new SettingsTab(this);
-    smallWidget = new QLabel(this->getPluginName());
+
 
     int playDevNo = -1;
     BASS_DEVICEINFO info;
@@ -81,6 +83,7 @@ Player::Player()
     BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
 
     connect(this, &Player::stateChanged, bPanel, &BigPanel::playerStateChanged);
+    connect(this, &Player::stateChanged, sPanel, &SmallPanel::playerStateChanged);
 
     timer.setInterval(35);
     connect(&timer, &QTimer::timeout, this, &Player::refreshState);
@@ -88,7 +91,6 @@ Player::Player()
 
     peakMeter = new PeakMeter;
     peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
-    bPanel->addPeakMeter(peakMeter);
 
     this->loadSongs();
 }
@@ -99,7 +101,7 @@ Player::~Player()
     QThreadPool::globalInstance()->waitForDone();
 
     delete bPanel;
-    delete smallWidget;
+    delete sPanel;
     delete settingsTab;
 
     BASS_Free();
@@ -107,12 +109,18 @@ Player::~Player()
 
 QWidget *Player::bigPanel()
 {
+    sPanel->removePeakMeter(peakMeter);
+    bPanel->addPeakMeter(peakMeter);
+
     return bPanel;
 }
 
 QWidget *Player::smallPanel()
 {
-    return smallWidget;
+    bPanel->removePeakMeter(peakMeter);
+    sPanel->addPeakMeter(peakMeter);
+
+    return sPanel;
 }
 
 bool Player::hasPanel() const
@@ -299,6 +307,7 @@ void Player::refreshState()
         double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
 
         bPanel->playerPositionChanged(pos, total);
+        sPanel->playerPositionChanged(currNumber, pos, total, autoplay);
     }
 
     peakMeter->setPeakStereo(levels[0], levels[1]);
@@ -309,8 +318,11 @@ bool Player::isPlaying()
     return playing;
 }
 
-void Player::play(int number)
+void Player::play(int number, bool autoplay)
 {
+    currNumber = number;
+    this->autoplay = autoplay;
+
     const QString filename = songsDir.filePath(songs[number].filename);
 
     if (playStream = BASS_StreamCreateFile(FALSE,
@@ -334,6 +346,7 @@ void Player::stop()
 {
     BASS_ChannelStop(playStream);
     playing = false;
+    currNumber = 0;
     emit stateChanged(playing);
 }
 

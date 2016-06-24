@@ -18,7 +18,7 @@
 
 #include "settingstab.h"
 
-#include <libedah/libedah.h>
+#include <libedah/utils.h>
 
 #include <bass.h>
 

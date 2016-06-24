@@ -279,10 +279,10 @@ void GeneralTab::writeSettings()
         cfg.push_back(entry);
     }
 
-    QFile file(utils->getConfigPath() + "/plugins.cfg", this);
-    file.open(QIODevice::WriteOnly);
-    QDataStream stream(&file);
+    QByteArray arr;
+    QDataStream stream(&arr, QIODevice::WriteOnly);
     stream << cfg;
+    settings->setValue("plugins", arr);
 }
 
 ////////////////////////
@@ -297,9 +297,8 @@ void PluginTableModel::load(QString lang)
     plugins.clear();
 
     QVector<PluginCfgEntry> cfg;
-    QFile file(utils->getConfigPath() + "/plugins.cfg", this);
-    file.open(QIODevice::ReadOnly);
-    QDataStream stream(&file);
+    QByteArray arr = settings->value("plugins").toByteArray();
+    QDataStream stream(arr);
     stream >> cfg;
 
     for(int i=0; i<cfg.size(); i++)

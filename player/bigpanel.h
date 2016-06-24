@@ -78,6 +78,7 @@ public:
     virtual ~BigPanel();
 
     void addPeakMeter(PeakMeter *peakMeter);
+    void removePeakMeter(PeakMeter *peakMeter);
 
     void playerPositionChanged(double pos, double duration);
 
@@ -123,7 +124,7 @@ private slots:
     void posBar_released();
 
 signals:
-    void play(int number);
+    void play(int number, bool autoplay);
     void stop();
     void seek(int ms);
 };

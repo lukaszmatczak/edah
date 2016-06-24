@@ -16,36 +16,41 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef SMALLPANEL_H
+#define SMALLPANEL_H
 
-#include "libedah.h"
+#include <libedah/peakmeter.h>
 
-#include <QObject>
-#include <QSettings>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QLabel>
 
-class LIBEDAHSHARED_EXPORT Utils : public QObject
+class Player;
+
+class SmallPanel : public QWidget
 {
     Q_OBJECT
-
 public:
-    QString getLogDir();
-    QString getUsername();
-    QString getDataDir();
-    QString getPluginPath(QString plugin);
-    QString getConfigPath();
+    explicit SmallPanel(Player *player);
+    void playerPositionChanged(int number, double pos, double duration, bool autoplay);
 
-    void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
-    void addShadowEffect(QWidget *widget, QColor color);
-    void updateStyle(QWidget *widget);
+    void addPeakMeter(PeakMeter *peakMeter);
+    void removePeakMeter(PeakMeter *peakMeter);
+
+protected:
+    void showEvent(QShowEvent *e);
+    void resizeEvent(QResizeEvent *e);
+
+public slots:
+    void playerStateChanged(bool isPlaying);
 
 private:
-    Utils();
+    void recalcSizes(const QSize &size);
 
-    friend class MainWindow;
+    Player *player;
+
+    QVBoxLayout *layout;
+    QLabel *infoLbl;
 };
 
-LIBEDAHSHARED_EXPORT extern Utils *utils;
-LIBEDAHSHARED_EXPORT extern QSettings *settings;
-
-#endif // UTILS_H
+#endif // SMALLPANEL_H

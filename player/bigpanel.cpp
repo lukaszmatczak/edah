@@ -145,6 +145,11 @@ void BigPanel::addPeakMeter(PeakMeter *peakMeter)
     layout->addWidget(peakMeter, 1, 5, 2, 1);
 }
 
+void BigPanel::removePeakMeter(PeakMeter *peakMeter)
+{
+    layout->removeWidget(peakMeter);
+}
+
 void BigPanel::showEvent(QShowEvent *e)
 {
     Q_UNUSED(e);
@@ -353,7 +358,7 @@ void BigPanel::playBtn_clicked()
         if(number == 0) return;
         playBtn->setIcon(QIcon(":/player-img/stop.svg"));
         qApp->processEvents();
-        emit play(number);
+        emit play(number, nonstop);
     }
 
     this->update();
@@ -380,7 +385,7 @@ void BigPanel::playerStateChanged(bool isPlaying)
             int random = rndPlaylist->getNext();
             numberLbl->setText(QString::number(random));
             this->updateTitle(random);
-            emit play(random);
+            emit play(random, nonstop);
             isPlaying = true;
         }
         else

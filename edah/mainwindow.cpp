@@ -327,9 +327,8 @@ void MainWindow::reloadPlugins()
 
     // load new plugins
     QVector<PluginCfgEntry> cfg;
-    QFile file(utils->getConfigPath() + "/plugins.cfg", this);
-    file.open(QIODevice::ReadOnly);
-    QDataStream stream(&file);
+    QByteArray arr = settings->value("plugins").toByteArray();
+    QDataStream stream(arr);
     stream >> cfg;
 
     for(int i=0; i<cfg.size(); i++)

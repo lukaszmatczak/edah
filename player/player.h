@@ -20,6 +20,7 @@
 #define PLAYER_H
 
 #include "bigpanel.h"
+#include "smallpanel.h"
 #include "settingstab.h"
 
 #include <libedah/iplugin.h>
@@ -85,7 +86,7 @@ private:
     void loadSongsInfo();
 
     BigPanel *bPanel;
-    QWidget *smallWidget;
+    SmallPanel *sPanel;
     SettingsTab *settingsTab;
 
     QDir songsDir;
@@ -93,11 +94,13 @@ private:
 
     HSTREAM playStream;
     bool playing;
+    int currNumber;
+    bool autoplay;
 
     QTimer timer;
 
 private slots:
-    void play(int number);
+    void play(int number, bool autoplay);
     void stop();
     void seek(int ms);
 

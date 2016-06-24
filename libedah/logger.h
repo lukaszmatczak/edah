@@ -28,12 +28,15 @@
 class LIBEDAHSHARED_EXPORT Logger
 {
 public:
-    Logger();
     void write(const QString &msg);
 
 private:
+    Logger();
+
     QFile file;
     QString username;
+
+    friend class MainWindow;
 };
 
 LIBEDAHSHARED_EXPORT extern Logger *logger;

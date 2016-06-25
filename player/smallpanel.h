@@ -37,9 +37,12 @@ public:
     void addPeakMeter(PeakMeter *peakMeter);
     void removePeakMeter(PeakMeter *peakMeter);
 
+    void retranslate();
+
 protected:
     void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
+    void changeEvent(QEvent *e);
 
 public slots:
     void playerStateChanged(bool isPlaying);
@@ -50,6 +53,7 @@ private:
     Player *player;
 
     QVBoxLayout *layout;
+    QLabel *nameLbl;
     QLabel *infoLbl;
 };
 

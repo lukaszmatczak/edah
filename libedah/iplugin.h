@@ -33,6 +33,7 @@ public:
 
     virtual void loadSettings() = 0;
     virtual void writeSettings() = 0;
+    virtual void settingsChanged() = 0;
 };
 
 Q_DECLARE_INTERFACE(IPlugin, "edah.iplugin")

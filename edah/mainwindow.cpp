@@ -693,6 +693,11 @@ void MainWindow::settingsChanged()
     }
 
     this->reloadPlugins();
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        plugins[i].plugin->settingsChanged();
+    }
 }
 
 void MainWindow::onMaximizeBtnClicked()

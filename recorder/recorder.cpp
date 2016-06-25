@@ -63,3 +63,8 @@ void Recorder::writeSettings()
 {
 
 }
+
+void Recorder::settingsChanged()
+{
+
+}

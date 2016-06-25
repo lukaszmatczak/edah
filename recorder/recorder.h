@@ -25,6 +25,7 @@ public:
 
     void loadSettings();
     void writeSettings();
+    void settingsChanged();
 
 private:
     QWidget *bigFrame;

@@ -31,6 +31,7 @@
 #include <QObject>
 #include <QDir>
 #include <QRunnable>
+#include <QTranslator>
 
 struct Song
 {
@@ -77,6 +78,7 @@ public:
 
     void loadSettings();
     void writeSettings();
+    void settingsChanged();
 
     bool isPlaying();
     QMap<int, Song> songs;
@@ -84,6 +86,8 @@ public:
 private:
     void loadSongs();
     void loadSongsInfo();
+
+    QTranslator translator;
 
     BigPanel *bPanel;
     SmallPanel *sPanel;

@@ -27,7 +27,7 @@ SmallPanel::SmallPanel(Player *player) : player(player)
     layout = new QVBoxLayout;
     this->setLayout(layout);
 
-    QLabel *nameLbl = new QLabel(player->getPluginName());
+    nameLbl = new QLabel;
     nameLbl->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     layout->addWidget(nameLbl, 1);
 
@@ -54,6 +54,23 @@ void SmallPanel::recalcSizes(const QSize &size)
                                 "   font-size: %1px;"
                                 "}")
                         .arg(qMax(1, size.height()/24)));
+}
+
+void SmallPanel::retranslate()
+{
+    nameLbl->setText(player->getPluginName());
+}
+
+void SmallPanel::changeEvent(QEvent *e)
+{
+    if(e->type() == QEvent::LanguageChange)
+    {
+        this->retranslate();
+    }
+    else
+    {
+        QWidget::changeEvent(e);
+    }
 }
 
 void SmallPanel::playerStateChanged(bool isPlaying)

@@ -103,7 +103,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     nonstopIcon->setObjectName("nonstopIcon");
     posLayout->addWidget(nonstopIcon, 0, 0);
 
-    nonstopLbl = new QLabel(tr("Autoplay"), this);
+    nonstopLbl = new QLabel(this);
     nonstopLbl->setObjectName("nonstopLbl");
     posLayout->addWidget(nonstopLbl, 0, 1);
 
@@ -185,6 +185,23 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
     {
         this->btnRnd_clicked();
         e->setAccepted(true);
+    }
+}
+
+void BigPanel::retranslate()
+{
+    nonstopLbl->setText(tr("Autoplay"));
+}
+
+void BigPanel::changeEvent(QEvent *e)
+{
+    if(e->type() == QEvent::LanguageChange)
+    {
+        this->retranslate();
+    }
+    else
+    {
+        QWidget::changeEvent(e);
     }
 }
 

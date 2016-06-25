@@ -34,11 +34,27 @@
 #include <QDateTime>
 #include <QThreadPool>
 #include <QSettings>
+#include <QApplication>
 
 #include <QDebug>
 
 Player::Player() : currNumber(0), autoplay(false)
 {
+    QString localeStr = settings->value("lang", "").toString();
+    if(localeStr.isEmpty())
+    {
+        localeStr = QLocale::system().name().left(2);
+    }
+    if(localeStr != "en")
+    {
+        if(!translator.load(QLocale(localeStr), "lang", ".", ":/player-lang"))
+        {
+            LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
+        }
+    }
+
+    qApp->installTranslator(&translator);
+
     settings->beginGroup(this->getPluginId());
     songsDir = QDir(settings->value("songsDir").toString());
     QString playDev = settings->value("device", "").toString();
@@ -48,8 +64,10 @@ Player::Player() : currNumber(0), autoplay(false)
     connect(bPanel, &BigPanel::play, this, &Player::play);
     connect(bPanel, &BigPanel::stop, this, &Player::stop);
     connect(bPanel, &BigPanel::seek, this, &Player::seek);
+    bPanel->retranslate();
 
     sPanel = new SmallPanel(this);
+    sPanel->retranslate();
 
     settingsTab = new SettingsTab(this);
 
@@ -72,11 +90,10 @@ Player::Player() : currNumber(0), autoplay(false)
         LOG(text);
 
         if(code == 23)
-            text += QString::fromUtf8("\nProblem z urządzeniem \"") + playDev + "\"!";
+            text += tr("Invalid device \"%1\"!").arg(playDev);
 
         QMessageBox msg(QMessageBox::Critical, "Error!", text);
         msg.exec();
-        //exit(-1);
     }
 
     BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
@@ -151,6 +168,12 @@ void Player::loadSettings()
 void Player::writeSettings()
 {
     settingsTab->writeSettings();
+}
+
+void Player::settingsChanged()
+{
+    QLocale locale = QLocale(settings->value("lang", "").toString());
+    translator.load(locale, "lang", ".", ":/player-lang");
 }
 
 void Player::loadSongs()

@@ -82,10 +82,13 @@ public:
 
     void playerPositionChanged(double pos, double duration);
 
+    void retranslate();
+
 protected:
     void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
+    void changeEvent(QEvent *e);
 
 private:
     void recalcSizes(const QSize &size);

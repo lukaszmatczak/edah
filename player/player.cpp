@@ -38,6 +38,11 @@
 
 #include <QDebug>
 
+#if defined(_MSC_VER)
+#undef min
+#undef max
+#endif
+
 Player::Player() : currNumber(0), autoplay(false)
 {
     QString localeStr = settings->value("lang", "").toString();
@@ -291,7 +296,7 @@ void Player::loadSongsInfo()
 
         QString filepath = songsDir.filePath(songs[keys[i]].filename);
         SongInfoWorker *worker = new SongInfoWorker(keys[i], filepath);
-        connect(worker, &SongInfoWorker::done, this, [this, &progress](int id, int duration, QByteArray waveform) {
+        connect(worker, &SongInfoWorker::done, this, [this](int id, int duration, QByteArray waveform) {
             songs[id].duration = duration;
             songs[id].waveform = waveform;
 
@@ -321,7 +326,7 @@ void Player::refreshState()
     float levels[2] = {0.0f, 0.0f};
     if(playing)
     {
-        BASS_ChannelGetLevelEx(playStream, levels, 0.035, BASS_LEVEL_STEREO);
+        BASS_ChannelGetLevelEx(playStream, levels, 0.035f, BASS_LEVEL_STEREO);
 
         QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
         double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
@@ -409,17 +414,17 @@ void SongInfoWorker::run()
     {
         int count = BASS_ChannelGetData(stream, buf, (length/1024) | BASS_DATA_FLOAT);
 
-        qint8 max = std::numeric_limits<qint8>::min();
-        qint8 min = std::numeric_limits<qint8>::max();
+        qint8 maxi = std::numeric_limits<qint8>::min();
+        qint8 mini = std::numeric_limits<qint8>::max();
 
         for(int i=0; i<count/4; i++)
         {
-            max = qMax<qint8>(max, buf[i]*127);
-            min = qMin<qint8>(min, buf[i]*127);
+            maxi = qMax<qint8>(maxi, buf[i]*127);
+            mini = qMin<qint8>(mini, buf[i]*127);
         }
 
-        form.append(max+127);
-        form.append(min+127);
+        form.append(maxi+127);
+        form.append(mini+127);
     }
 
     double duration = BASS_ChannelBytes2Seconds(stream, length);

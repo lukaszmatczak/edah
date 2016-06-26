@@ -452,7 +452,7 @@ void BigPanel::posBar_released()
 
 ShufflePlaylist::ShufflePlaylist(QMap<int, Song> *songs) : songs(songs)
 {
-    mtEngine = new std::mt19937(time(NULL));
+    mtEngine = new std::mt19937(QDateTime::currentMSecsSinceEpoch());
 
     this->generateNewPlaylist();
 }
@@ -489,6 +489,9 @@ void ShufflePlaylist::generateNewPlaylist()
 
 void ShufflePlaylist::shuffle(QVector<int>& vec)
 {
+    if(vec.size() == 0)
+        return;
+
     std::uniform_int_distribution<int> distribution(0, vec.size()-1);
     for(int i=0; i<vec.size(); i++)
     {

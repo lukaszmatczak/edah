@@ -315,7 +315,7 @@ void MainWindow::reloadPlugins()
         }
         else if(i->widget()->objectName() == "plugin.container")
         {
-            QObjectList children = i->widget()->children();
+            QList<QWidget*> children = i->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
             for(int i=0; i<children.size(); i++)
             {
                 children[i]->setParent(this);

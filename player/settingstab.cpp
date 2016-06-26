@@ -37,6 +37,7 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     playDevBox = new QComboBox(this);
     playDevBox->setEditable(true);
+    playDevBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     BASS_DEVICEINFO info;
     for (int i=1; BASS_GetDeviceInfo(i, &info); i++)

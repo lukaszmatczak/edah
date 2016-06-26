@@ -62,7 +62,7 @@ signals:
 class Player : public QObject, public IPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "edah.iplugin" FILE "player.json")
+    Q_PLUGIN_METADATA(IID "edah.iplugin")
     Q_INTERFACES(IPlugin)
 
 public:

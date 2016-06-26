@@ -178,8 +178,9 @@ GeneralTab::GeneralTab()
     connect(moveDownBtn, &QPushButton::clicked, this, &GeneralTab::moveDownBtnClicked);
     pluginsBtnsLayout->addWidget(moveDownBtn);
 
-    pluginDesc = new QTextEdit(this);
+    pluginDesc = new QTextBrowser(this);
     pluginDesc->setReadOnly(true);
+    pluginDesc->setOpenExternalLinks(true);
     layout->addRow(pluginDesc);
 
     QEvent langEvent(QEvent::LanguageChange);

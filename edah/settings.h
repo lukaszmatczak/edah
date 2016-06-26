@@ -25,7 +25,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QTableView>
-#include <QTextEdit>
+#include <QTextBrowser>
 #include <QFile>
 #include <QDialogButtonBox>
 #include <QLabel>
@@ -83,7 +83,7 @@ private:
     QPushButton *moveUpBtn;
     QPushButton *moveDownBtn;
 
-    QTextEdit *pluginDesc;
+    QTextBrowser *pluginDesc;
 
     QString currLang;
 

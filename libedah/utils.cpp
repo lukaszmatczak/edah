@@ -26,13 +26,18 @@
 #include <QStyle>
 #include <QApplication>
 #include <QStandardPaths>
+#include <QDir>
 
 Utils *utils;
 LIBEDAHSHARED_EXPORT QSettings *settings;
 
 Utils::Utils()
 {
-
+    QDir confDir(this->getConfigPath());
+    if(!confDir.exists())
+    {
+        confDir.mkpath(".");
+    }
 }
 
 QString Utils::getLogDir()

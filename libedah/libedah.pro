@@ -11,7 +11,7 @@ TEMPLATE = lib
 
 CONFIG += c++11
 
-QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
+gcc:QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
 
 DEFINES += LIBEDAH_LIBRARY
 

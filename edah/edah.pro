@@ -11,7 +11,7 @@ TEMPLATE = app
 
 CONFIG += c++11
 
-QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
+gcc:QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
 
 include(../qtsingleapplication/src/qtsingleapplication.pri)
 

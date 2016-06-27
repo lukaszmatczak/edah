@@ -58,9 +58,9 @@ public:
     ShufflePlaylist(QMap<int, Song> *songs);
     virtual ~ShufflePlaylist();
     int getNext();
+    void generateNewPlaylist();
 
 private:
-    void generateNewPlaylist();
     void shuffle(QVector<int>& vec);
 
     QMap<int, Song> *songs;
@@ -84,6 +84,8 @@ public:
 
     void retranslate();
 
+    ShufflePlaylist *rndPlaylist;
+
 protected:
     void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
@@ -97,7 +99,7 @@ private:
     void setNonstop(bool isSet);
 
     Player *player;
-    ShufflePlaylist *rndPlaylist;
+
 
     QGridLayout *layout;
     QVector<MyPushButton*> numberBtns;

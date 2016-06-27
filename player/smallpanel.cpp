@@ -26,6 +26,7 @@ SmallPanel::SmallPanel(Player *player) : player(player)
 {
     layout = new QVBoxLayout;
     this->setLayout(layout);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     nameLbl = new QLabel;
     nameLbl->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);

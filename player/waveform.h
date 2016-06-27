@@ -8,13 +8,13 @@ class Waveform : public QSlider
 public:
     Waveform(QWidget *parent);
 
-    void setWaveform(QByteArray *form);
+    void setWaveform(const QByteArray &form);
 
 protected:
     void paintEvent(QPaintEvent *e);
 
 private:
-    QByteArray *form;
+    QByteArray form;
 };
 
 #endif // WAVEFORM_H

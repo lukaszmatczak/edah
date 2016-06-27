@@ -2,12 +2,12 @@
 
 #include <QPainter>
 
-Waveform::Waveform(QWidget *parent) : QSlider(parent), form(nullptr)
+Waveform::Waveform(QWidget *parent) : QSlider(parent)
 {
 
 }
 
-void Waveform::setWaveform(QByteArray *form)
+void Waveform::setWaveform(const QByteArray &form)
 {
     this->form = form;
     this->update();
@@ -17,17 +17,12 @@ void Waveform::paintEvent(QPaintEvent *e)
 {
     QSlider::paintEvent(e);
 
-    if(!form)
-    {
-        return;
-    }
-
     QPainter p(this);
 
     p.setRenderHints(QPainter::Antialiasing);
     p.scale(this->width()/(1024.0+(1024.0/this->width()*3)), this->height()/(256.0+256.0/this->height()*3));
 
-    for(int i=0; i<form->size()/2; i++)
+    for(int i=0; i<form.size()/2; i++)
     {
         if(i <= this->value()*1024/this->maximum())
         {
@@ -39,8 +34,8 @@ void Waveform::paintEvent(QPaintEvent *e)
         }
 
         p.drawLine((1024.0/this->width())+i,
-                   (256.0/this->height())+255-(quint8)form->at(i*2)-1,
+                   (256.0/this->height())+255-(quint8)form.at(i*2)-1,
                    (1024.0/this->width())+i,
-                   (256.0/this->height())+255-(quint8)form->at(i*2+1));
+                   (256.0/this->height())+255-(quint8)form.at(i*2+1));
     }
 }

@@ -27,6 +27,7 @@
 #include <QApplication>
 #include <QStyle>
 #include <QFileDialog>
+#include <QLabel>
 
 SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 {

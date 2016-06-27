@@ -348,7 +348,7 @@ void BigPanel::updateTitle(int number)
         numberLbl->setStyleSheet("");
         titleLine->setVisible(true);
 
-        posBar->setWaveform(&player->songs[number].waveform);
+        posBar->setWaveform(player->songs[number].waveform);
         this->playerPositionChanged(-1, player->songs[number].duration/1000.0);
     }
     else
@@ -495,4 +495,3 @@ void ShufflePlaylist::shuffle(QVector<int>& vec)
         qSwap(vec[i], vec[distribution(*mtEngine)]);
     }
 }
-

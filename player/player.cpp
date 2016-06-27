@@ -55,11 +55,6 @@ Player::Player() : currNumber(0), autoplay(false)
 
     qApp->installTranslator(&translator);
 
-    settings->beginGroup(this->getPluginId());
-    songsDir = QDir(settings->value("songsDir").toString());
-    QString playDev = settings->value("device", "").toString();
-    settings->endGroup();
-
     bPanel = new BigPanel(this);
     connect(bPanel, &BigPanel::play, this, &Player::play);
     connect(bPanel, &BigPanel::stop, this, &Player::stop);
@@ -71,30 +66,7 @@ Player::Player() : currNumber(0), autoplay(false)
 
     settingsTab = new SettingsTab(this);
 
-
-    int playDevNo = -1;
-    BASS_DEVICEINFO info;
-    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
-    {
-        if(playDev == info.name)
-        {
-            playDevNo = i;
-            break;
-        }
-    }
-
-    if(!BASS_Init(playDevNo, 44100, 0, nullptr, nullptr))
-    {
-        int code = BASS_ErrorGetCode();
-        QString text = "BASS error: " + QString::number(code);
-        LOG(text);
-
-        if(code == 23)
-            text += tr("Invalid device \"%1\"!").arg(playDev);
-
-        QMessageBox msg(QMessageBox::Critical, "Error!", text);
-        msg.exec();
-    }
+    this->settingsChanged();
 
     BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
     BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
@@ -108,8 +80,6 @@ Player::Player() : currNumber(0), autoplay(false)
 
     peakMeter = new PeakMeter;
     peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
-
-    this->loadSongs();
 }
 
 Player::~Player()
@@ -174,6 +144,49 @@ void Player::settingsChanged()
 {
     QLocale locale = QLocale(settings->value("lang", "").toString());
     translator.load(locale, "lang", ".", ":/player-lang");
+
+    settings->beginGroup(this->getPluginId());
+    songsDir = QDir(settings->value("songsDir").toString());
+    QString playDev = settings->value("device", "").toString();
+    settings->endGroup();
+
+    static bool initialized = false;
+
+    int playDevNo = -1;
+    BASS_DEVICEINFO info;
+    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
+    {
+        if(playDev == info.name)
+        {
+            playDevNo = i;
+            break;
+        }
+    }
+
+    if((BASS_GetDevice() != playDevNo) || !initialized)
+    {
+        BASS_Free();
+
+        if(!BASS_Init(playDevNo, 44100, 0, nullptr, nullptr))
+        {
+            int code = BASS_ErrorGetCode();
+            QString text = "BASS error: " + QString::number(code);
+            LOG(text);
+
+            if(code == 23)
+                text += tr("Invalid device \"%1\"!").arg(playDev);
+
+            QMessageBox msg(QMessageBox::Critical, "Error!", text);
+            msg.exec();
+        }
+        else
+        {
+            initialized = true;
+        }
+    }
+
+    this->loadSongs();
+    this->bPanel->rndPlaylist->generateNewPlaylist();
 }
 
 void Player::loadSongs()
@@ -270,10 +283,7 @@ void Player::loadSongs()
         stream << songs;
     }
 
-    if(added)
-    {
-        this->loadSongsInfo();
-    }
+    this->loadSongsInfo();
 }
 
 void Player::loadSongsInfo()

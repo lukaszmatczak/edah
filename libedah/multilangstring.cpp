@@ -61,3 +61,16 @@ void MultilangString::setLang(const QString &l)
 {
     lang = l;
 }
+
+MultilangString MultilangString::fromJson(const QJsonObject &json)
+{
+    MultilangString string;
+
+    for(int i=0; i<json.size(); i++)
+    {
+        QString lang = json.keys()[i];
+        string[lang] = json.value(lang).toString();
+    }
+
+    return string;
+}

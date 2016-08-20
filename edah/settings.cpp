@@ -34,6 +34,10 @@
 #include <QJsonObject>
 #include <QHeaderView>
 
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonArray>
+
 #include <QDebug>
 
 ////////////////
@@ -164,11 +168,8 @@ GeneralTab::GeneralTab()
     QVBoxLayout *availPluginsLayout = new QVBoxLayout;
     pluginsLayout->addLayout(availPluginsLayout);
 
-    availPluginsLbl = new QLabel(this);
-    availPluginsLayout->addWidget(availPluginsLbl);
-
     QHBoxLayout *pluginsBtnsLayout = new QHBoxLayout;
-    layout->addRow(pluginsBtnsLayout);
+    installedPluginsLayout->addLayout(pluginsBtnsLayout);
 
     moveUpBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_ArrowUp), "", this);
     connect(moveUpBtn, &QPushButton::clicked, this, &GeneralTab::moveUpBtnClicked);
@@ -177,6 +178,29 @@ GeneralTab::GeneralTab()
     moveDownBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_ArrowDown), "", this);
     connect(moveDownBtn, &QPushButton::clicked, this, &GeneralTab::moveDownBtnClicked);
     pluginsBtnsLayout->addWidget(moveDownBtn);
+
+    availPluginsLbl = new QLabel(this);
+    availPluginsLayout->addWidget(availPluginsLbl);
+
+    availPluginsTbl = new QTableView(this);
+    availPluginsModel = new AvailPluginTableModel;
+
+    availPluginsTbl->setModel(availPluginsModel);
+    availPluginsTbl->horizontalHeader()->hide();
+    availPluginsTbl->verticalHeader()->hide();
+    availPluginsTbl->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    availPluginsTbl->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    availPluginsTbl->setSelectionBehavior(QAbstractItemView::SelectRows);
+    availPluginsTbl->setShowGrid(false);
+    availPluginsTbl->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    availPluginsTbl->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    connect(availPluginsTbl, &QTableView::pressed, this, &GeneralTab::availablePluginSelected);
+    availPluginsLayout->addWidget(availPluginsTbl);
+
+    downloadPlugin = new QPushButton(this);
+    connect(downloadPlugin, &QPushButton::pressed, this, &GeneralTab::downloadPluginClicked);
+    availPluginsLayout->addWidget(downloadPlugin);
+
 
     pluginDesc = new QTextBrowser(this);
     pluginDesc->setReadOnly(true);
@@ -197,8 +221,9 @@ void GeneralTab::changeEvent(QEvent *e)
         availPluginsLbl->setText(tr("Available plugins:"));
         moveUpBtn->setText(tr("Move up"));
         moveDownBtn->setText(tr("Move down"));
+        downloadPlugin->setText(tr("Download"));
 
-        pluginsModel->retranslate(langBox->currentData().toString());
+        pluginsModel->refresh();
         this->installedPluginSelected(pluginsModel->index(pluginsTbl->currentIndex().row(), 1));
     }
 }
@@ -223,6 +248,15 @@ void GeneralTab::moveDownBtnClicked()
     pluginsTbl->setCurrentIndex(idx);
 }
 
+void GeneralTab::downloadPluginClicked()
+{
+    int currRow = availPluginsTbl->currentIndex().row();
+    if(currRow < 0 || currRow >= availPluginsModel->rowCount(QModelIndex())) return;
+
+    QString url = availPluginsModel->getPluginInfo(currRow).url;
+    // TODO
+}
+
 void GeneralTab::installedPluginSelected(const QModelIndex &index)
 {
     if(index.column() == 0)
@@ -233,6 +267,15 @@ void GeneralTab::installedPluginSelected(const QModelIndex &index)
     QString text = "<b>" + pluginsModel->getPluginInfo(index.row()).name + "</b>";
     text += " <b>" + pluginsModel->getPluginInfo(index.row()).version + "</b>";
     text += "<br/><br/>" + pluginsModel->getPluginInfo(index.row()).desc;
+
+    pluginDesc->setText(text);
+}
+
+void GeneralTab::availablePluginSelected(const QModelIndex &index)
+{
+    QString text = "<b>" + availPluginsModel->getPluginInfo(index.row()).name + "</b>";
+    text += " <b>" + availPluginsModel->getPluginInfo(index.row()).version + "</b>";
+    text += "<br/><br/>" + availPluginsModel->getPluginInfo(index.row()).desc;
 
     pluginDesc->setText(text);
 }
@@ -260,7 +303,7 @@ void GeneralTab::loadSettings()
 
     fullscreenChk->setChecked(settings->value("fullscreen", false).toBool());
 
-    pluginsModel->load(currLang);
+    pluginsModel->load();
 }
 
 void GeneralTab::writeSettings()
@@ -272,7 +315,7 @@ void GeneralTab::writeSettings()
 
     for(int i=0; i<pluginsModel->rowCount(QModelIndex()); i++)
     {
-        PluginTableModel::PluginInfo pi = pluginsModel->getPluginInfo(i);
+        PluginInfo pi = pluginsModel->getPluginInfo(i);
 
         PluginCfgEntry entry;
         entry.id = pi.id;
@@ -290,7 +333,7 @@ void GeneralTab::writeSettings()
 /// PluginTableModel ///
 ////////////////////////
 
-void PluginTableModel::load(QString lang)
+void PluginTableModel::load()
 {
     emit layoutAboutToBeChanged();
 
@@ -311,7 +354,7 @@ void PluginTableModel::load(QString lang)
             continue;
         }
 
-        PluginInfo pi = this->loadFromFile(file, lang);
+        PluginInfo pi = this->loadFromFile(file);
         pi.enabled = cfg[i].enabled;
 
         plugins.push_back(pi);
@@ -330,7 +373,7 @@ void PluginTableModel::load(QString lang)
 
         QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
 
-        PluginInfo pi = this->loadFromFile(file, lang);
+        PluginInfo pi = this->loadFromFile(file);
         pi.enabled = false;
 
         plugins.push_back(pi);
@@ -340,56 +383,38 @@ void PluginTableModel::load(QString lang)
     emit dataChanged(createIndex(0, 0), createIndex(plugins.size()-1, 2));
 }
 
-PluginTableModel::PluginInfo PluginTableModel::loadFromFile(QFile &file, const QString &lang)
+PluginInfo PluginTableModel::loadFromFile(QFile &file)
 {
+    PluginInfo pi;
+
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QJsonObject info = QJsonDocument::fromJson(file.readAll()).object();
-    QJsonObject infoLang = info.value(lang).toObject();
-    if(infoLang.isEmpty())
-    {
-        infoLang = info.value("en").toObject();
-    }
 
-    PluginInfo pi;
     pi.id = info.value("id").toString();
-    pi.name = infoLang.value("name").toString();
-    pi.desc = infoLang.value("desc").toString();
     pi.version = info.value("version").toString();
+
+    pi.name = MultilangString::fromJson(info.value("name").toObject());
+    pi.desc = MultilangString::fromJson(info.value("desc").toObject());
 
     return pi;
 }
 
-void PluginTableModel::retranslate(const QString &lang)
+void PluginTableModel::refresh()
 {
-    emit layoutAboutToBeChanged();
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        QString pluginDir = plugins[i].id;
-        QFile file(utils->getDataDir()+"/plugins/"+pluginDir+"/info.json");
-
-        if(!file.exists())
-        {
-            continue;
-        }
-
-        PluginInfo pi = this->loadFromFile(file, lang);
-
-        plugins[i].name = pi.name;
-        plugins[i].desc = pi.desc;
-    }
-
-    emit layoutChanged();
     emit dataChanged(createIndex(0, 0), createIndex(plugins.size()-1, 2));
 }
 
 int PluginTableModel::rowCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent);
+
     return plugins.size();
 }
 
 int PluginTableModel::columnCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent);
+
     return 3;
 }
 
@@ -401,8 +426,8 @@ QVariant PluginTableModel::data(const QModelIndex &index, int role) const
 
         switch(index.column())
         {
-        case 1: return plugins[index.row()].name;
-        case 2: return plugins[index.row()].desc;
+        case 1: return plugins[index.row()].name.toString();
+        case 2: return plugins[index.row()].desc.toString();
         }
     }
     else if(role == Qt::CheckStateRole)
@@ -416,7 +441,7 @@ QVariant PluginTableModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-PluginTableModel::PluginInfo PluginTableModel::getPluginInfo(int i)
+PluginInfo PluginTableModel::getPluginInfo(int i)
 {
     if(i<0 || i>=plugins.size())
     {
@@ -436,4 +461,87 @@ void PluginTableModel::toggleChecked(int i)
 void PluginTableModel::swapEntries(int pos1, int pos2)
 {
     qSwap(plugins[pos1], plugins[pos2]);
+}
+
+/////////////////////////////
+/// AvailPluginTableModel ///
+/////////////////////////////
+
+AvailPluginTableModel::AvailPluginTableModel()
+{
+    manager = new QNetworkAccessManager;
+    QNetworkRequest url(QUrl(utils->getServerUrl() + "/api/get_linux_plugins.php"));
+    reply = manager->get(url);
+
+    connect(reply, &QNetworkReply::finished, this, &AvailPluginTableModel::pluginsDownloaded);
+}
+
+AvailPluginTableModel::~AvailPluginTableModel()
+{
+    delete manager;
+}
+
+void AvailPluginTableModel::pluginsDownloaded()
+{
+    emit layoutAboutToBeChanged();
+
+    QJsonObject json = QJsonDocument::fromJson(reply->readAll()).object();
+
+    for(int i=0; i<json.size(); i++)
+    {
+        PluginInfo pi;
+
+        QString id = json.keys()[i];
+        pi.id = id;
+        pi.version = json[id].toObject().value("version").toString();
+        pi.url = json[id].toObject().value("deb_url").toString();
+
+        pi.name = MultilangString::fromJson(json[id].toObject().value("name").toObject());
+        pi.desc = MultilangString::fromJson(json[id].toObject().value("desc").toObject());
+
+        plugins.push_back(pi);
+    }
+
+    emit layoutChanged();
+    emit dataChanged(createIndex(0, 0), createIndex(plugins.size()-1, 2));
+}
+
+int AvailPluginTableModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+
+    return plugins.size();
+}
+
+int AvailPluginTableModel::columnCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+
+    return 2;
+}
+
+QVariant AvailPluginTableModel::data(const QModelIndex &index, int role) const
+{
+    if(role == Qt::DisplayRole)
+    {
+        if(index.row() >= plugins.size()) return QVariant();
+
+        switch(index.column())
+        {
+        case 0: return plugins[index.row()].name.toString();
+        case 1: return plugins[index.row()].desc.toString();
+        }
+    }
+
+    return QVariant();
+}
+
+PluginInfo AvailPluginTableModel::getPluginInfo(int i)
+{
+    if(i<0 || i>=plugins.size())
+    {
+        return PluginInfo();
+    }
+
+    return plugins[i];
 }

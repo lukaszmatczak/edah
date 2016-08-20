@@ -18,14 +18,16 @@ DEFINES += LIBEDAH_LIBRARY
 SOURCES += logger.cpp \
     utils.cpp \
     mypushbutton.cpp \
-    peakmeter.cpp
+    peakmeter.cpp \
+    multilangstring.cpp
 
 HEADERS += iplugin.h \
         logger.h \
         utils.h \
     mypushbutton.h \
     libedah.h \
-    peakmeter.h
+    peakmeter.h \
+    multilangstring.h
 
 unix {
     target.path = /usr/lib

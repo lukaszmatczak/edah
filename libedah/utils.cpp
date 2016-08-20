@@ -90,6 +90,11 @@ QString Utils::getConfigPath()
     return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
 }
 
+QString Utils::getServerUrl()
+{
+    return "http://localhost/edah/";
+}
+
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
 {
     QTimeLine timeLine(duration);

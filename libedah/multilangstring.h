@@ -21,6 +21,7 @@
 #define MULTILANGSTRING_H
 
 #include <QMap>
+#include <QJsonObject>
 
 class MultilangString
 {
@@ -34,6 +35,8 @@ public:
     operator QString() const;
     MultilangString &operator =(const MultilangString &other);
     QString &operator [](const QString &l);
+
+    static MultilangString fromJson(const QJsonObject &json);
 
 private:
     static void setLang(const QString &l);

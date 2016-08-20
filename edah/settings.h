@@ -21,6 +21,8 @@
 
 #include "mainwindow.h"
 
+#include <libedah/multilangstring.h>
+
 #include <QDialog>
 #include <QComboBox>
 #include <QCheckBox>
@@ -29,24 +31,28 @@
 #include <QFile>
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QNetworkAccessManager>
+
+struct PluginInfo
+{
+    bool enabled;
+    QString id;
+    MultilangString name;
+    MultilangString desc;
+    QString version;
+#ifdef Q_OS_LINUX
+    QString url;
+#endif
+};
 
 class PluginTableModel : public QAbstractTableModel
 {
     Q_OBJECT
 
 public:
-    struct PluginInfo
-    {
-        bool enabled;
-        QString id;
-        QString name;
-        QString desc;
-        QString version;
-    };
-
-    void load(QString lang);
-    PluginInfo loadFromFile(QFile &file, const QString &lang);
-    void retranslate(const QString &lang);
+    void load();
+    PluginInfo loadFromFile(QFile &file);
+    void refresh();
     int rowCount(const QModelIndex &parent) const;
     int columnCount(const QModelIndex &parent) const;
     QVariant data(const QModelIndex &index, int role) const;
@@ -58,6 +64,29 @@ public:
 private:
     QVector<PluginInfo> plugins;
 
+};
+
+class AvailPluginTableModel : public QAbstractTableModel
+{
+    Q_OBJECT
+
+public:
+    AvailPluginTableModel();
+    virtual ~AvailPluginTableModel();
+    int rowCount(const QModelIndex &parent) const;
+    int columnCount(const QModelIndex &parent) const;
+    QVariant data(const QModelIndex &index, int role) const;
+
+    PluginInfo getPluginInfo(int i);
+
+private slots:
+    void pluginsDownloaded();
+
+private:
+    QNetworkAccessManager *manager;
+    QNetworkReply *reply;
+
+    QVector<PluginInfo> plugins;
 };
 
 class GeneralTab : public QWidget
@@ -76,12 +105,18 @@ private:
     QLabel *langLbl;
     QComboBox *langBox;
     QCheckBox *fullscreenChk;
+
     QTableView *pluginsTbl;
     PluginTableModel *pluginsModel;
+
+    QTableView *availPluginsTbl;
+    AvailPluginTableModel *availPluginsModel;
+
     QLabel *installedPluginsLbl;
     QLabel *availPluginsLbl;
     QPushButton *moveUpBtn;
     QPushButton *moveDownBtn;
+    QPushButton *downloadPlugin;
 
     QTextBrowser *pluginDesc;
 
@@ -89,8 +124,10 @@ private:
 
 private slots:
     void installedPluginSelected(const QModelIndex &index);
+    void availablePluginSelected(const QModelIndex &index);
     void moveUpBtnClicked();
     void moveDownBtnClicked();
+    void downloadPluginClicked();
 };
 
 class Settings : public QDialog

@@ -126,6 +126,8 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 
+    MultilangString::setLang(localeStr);
+
     qApp->installTranslator(&translator);
 
     if(settings->value("fullscreen", false).toBool())
@@ -681,6 +683,8 @@ void MainWindow::recalcSizes(QSize size)
 
 void MainWindow::settingsChanged()
 {
+    MultilangString::setLang(settings->value("lang", "en").toString());
+
     QLocale locale = QLocale(settings->value("lang", "").toString());
     translator.load(locale, "lang", ".", ":/lang");
 

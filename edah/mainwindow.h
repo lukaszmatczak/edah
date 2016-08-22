@@ -21,6 +21,7 @@
 
 #include "winframe.h"
 #include <libedah/iplugin.h>
+#include <libedah/updater.h>
 
 #include <QMainWindow>
 #include <QVBoxLayout>
@@ -32,6 +33,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QPluginLoader>
+#include <QThread>
 
 struct PluginCfgEntry
 {
@@ -106,6 +108,12 @@ private:
     QVector<Plugin> plugins;
     int activePlugin;
 
+#ifdef Q_OS_WIN
+    QThread updaterThread;
+    Updater *updater;
+#endif
+    bool updateAvailable;
+
 public slots:
     void newProcess(const QString &message);
 
@@ -117,7 +125,12 @@ private slots:
     void onMaximizeBtnClicked();
     void showMenu();
     void showAbout();
+    void showUpdateDialog();
     void showSettings();
+    void showUpdate(UpdateInfoArray info);
+
+signals:
+    void checkForUpdates();
 };
 
 #endif // MAINWINDOW_H

@@ -49,7 +49,7 @@ QDataStream &operator>>(QDataStream &stream, PluginCfgEntry &entry)
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), activePlugin(-1)
+    : QMainWindow(parent), activePlugin(-1), updateAvailable(false)
 {
     QCoreApplication::setOrganizationName("Lukasz Matczak");
     QCoreApplication::setApplicationName("Edah");
@@ -146,10 +146,31 @@ MainWindow::MainWindow(QWidget *parent)
     connect(qApp, &QApplication::focusChanged, this, &MainWindow::onFocusChanged);
 
     this->reloadPlugins();
+
+#ifdef Q_OS_WIN
+    //bool experimental = globalSettings->value("experimental", false).toBool();
+    updater = new Updater;
+    updater->setInstallDir(QApplication::applicationDirPath());
+    connect(this, &MainWindow::checkForUpdates, updater, &Updater::checkUpdates);
+    connect(updater, &Updater::newUpdates, this, &MainWindow::showUpdate);
+    updater->moveToThread(&updaterThread);
+    updaterThread.start();
+    emit checkForUpdates();
+
+    /*if(experimental)
+    {
+        titleLbl->setText(tr("Edah - testing version"));
+    }*/
+#endif
 }
 
 MainWindow::~MainWindow()
 {
+#ifdef Q_OS_WIN
+    updaterThread.quit();
+    updaterThread.wait();
+#endif
+
     if(!this->isFullScreen())
     {
         settings->setValue("MainWindow_geometry", this->saveGeometry());
@@ -200,6 +221,11 @@ void MainWindow::changeEvent(QEvent *e)
         {
             pluginContainer->setText("");
         }
+
+        /*if(experimental)
+        {
+            titleLbl->setText(tr("Edah - testing version"));
+        }*/
     }
     else
     {
@@ -307,24 +333,24 @@ void MainWindow::reloadPlugins()
     QVector<Plugin> newPlugins;
 
     // delete all items in pluginLayout
-    QLayoutItem *i;
-    while((i = pluginLayout->takeAt(0)) != 0)
+    QLayoutItem *item;
+    while((item = pluginLayout->takeAt(0)) != 0)
     {
-        i->widget()->hide();
-        if(i->widget()->objectName() == "line")
+        item->widget()->hide();
+        if(item->widget()->objectName() == "line")
         {
-            delete i->widget();
+            delete item->widget();
         }
-        else if(i->widget()->objectName() == "plugin.container")
+        else if(item->widget()->objectName() == "plugin.container")
         {
-            QList<QWidget*> children = i->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+            QList<QWidget*> children = item->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
             for(int i=0; i<children.size(); i++)
             {
                 children[i]->setParent(this);
             }
-            delete i->widget();
+            delete item->widget();
         }
-        delete i;
+        delete item;
     }
 
     // load new plugins
@@ -717,6 +743,12 @@ void MainWindow::showMenu()
     QMenu *menu = new QMenu(this);
 
     menu->addAction(tr("Settings..."), this, SLOT(showSettings()));
+
+    if(this->updateAvailable)
+    {
+        menu->addAction(tr("Update is available to download!"), this, SLOT(showUpdateDialog()));
+    }
+
     menu->addAction(tr("About..."), this, SLOT(showAbout()));
 
     if(QObject::sender() == menuBtn_bottom)
@@ -739,10 +771,23 @@ void MainWindow::showAbout()
     dialog->show();
 }
 
+void MainWindow::showUpdateDialog()
+{
+    // TODO
+}
+
 void MainWindow::showSettings()
 {
     Settings *settings = new Settings(&plugins);
     settings->setAttribute(Qt::WA_DeleteOnClose);
     connect(settings, &Settings::settingsChanged, this, &MainWindow::settingsChanged);
     settings->exec();
+}
+
+void MainWindow::showUpdate(UpdateInfoArray info)
+{
+    this->updateAvailable = true;
+
+    menuBtn->setIcon(QIcon(":/img/menu_info.svg"));
+    menuBtn_bottom->setIcon(QIcon(":/img/menu_info.svg"));
 }

@@ -7,5 +7,6 @@
         <file>img/icon.svg</file>
         <file>img/menu.svg</file>
         <file>lang/lang.pl.qm</file>
+        <file>img/menu_info.svg</file>
     </qresource>
 </RCC>

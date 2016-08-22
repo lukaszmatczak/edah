@@ -92,7 +92,7 @@ QString Utils::getConfigPath()
 
 QString Utils::getServerUrl()
 {
-    return "http://localhost/edah/";
+    return "http://192.168.1.225/edah/";
 }
 
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)

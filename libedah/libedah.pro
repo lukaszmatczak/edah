@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += gui widgets sql
+QT       += gui widgets network
 
 TARGET = edah
 TEMPLATE = lib
@@ -28,6 +28,13 @@ HEADERS += iplugin.h \
     libedah.h \
     peakmeter.h \
     multilangstring.h
+
+win32 {
+    SOURCES += updater.cpp
+    HEADERS += updater.h
+
+    LIBS += -ladvapi32
+}
 
 unix {
     target.path = /usr/lib

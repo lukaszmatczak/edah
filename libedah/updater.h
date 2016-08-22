@@ -16,37 +16,48 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#ifndef MULTILANGSTRING_H
-#define MULTILANGSTRING_H
+#ifndef UPDATER_H
+#define UPDATER_H
 
 #include "libedah.h"
 
-#include <QMap>
-#include <QJsonObject>
+#include <QObject>
 
-class LIBEDAHSHARED_EXPORT MultilangString
+#include <QNetworkAccessManager>
+
+struct UpdateInfo
 {
+    QString name;
+    QString oldVersion;
+    QString newVersion;
+    int oldBuild;
+    int newBuild;
+};
+typedef QVector<UpdateInfo> UpdateInfoArray;
+
+class LIBEDAHSHARED_EXPORT Updater : public QObject
+{
+    Q_OBJECT
 public:
-    explicit MultilangString();
-    MultilangString(const MultilangString &other);
-    MultilangString(const MultilangString &&other);
+    explicit Updater(QObject *parent = 0);
+    void setInstallDir(QString dir);
 
-    QString toString() const;
+public slots:
+    void checkUpdates();
 
-    operator QString() const;
-    MultilangString &operator =(const MultilangString &other);
-    QString &operator [](const QString &l);
-
-    static MultilangString fromJson(const QJsonObject &json);
+private slots:
+    void readyReadGet_build();
 
 private:
-    static void setLang(const QString &l);
+    QJsonObject JsonFindModule(const QJsonArray &arr, const QJsonValue &name);
 
-    static QString lang;
-    QMap<QString, QString> data;
+    QString installDir;
 
-    friend class MainWindow;
+    QNetworkAccessManager *manager;
+    QNetworkReply *reply;
+
+signals:
+    void newUpdates(UpdateInfoArray info);
 };
 
-#endif // MULTILANGSTRING_H
+#endif // UPDATER_H

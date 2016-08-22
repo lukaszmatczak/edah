@@ -252,9 +252,10 @@ void GeneralTab::downloadPluginClicked()
 {
     int currRow = availPluginsTbl->currentIndex().row();
     if(currRow < 0 || currRow >= availPluginsModel->rowCount(QModelIndex())) return;
-
+#ifdef Q_OS_LINUX
     QString url = availPluginsModel->getPluginInfo(currRow).url;
     // TODO
+#endif
 }
 
 void GeneralTab::installedPluginSelected(const QModelIndex &index)
@@ -494,7 +495,9 @@ void AvailPluginTableModel::pluginsDownloaded()
         QString id = json.keys()[i];
         pi.id = id;
         pi.version = json[id].toObject().value("version").toString();
+#ifdef Q_OS_LINUX
         pi.url = json[id].toObject().value("deb_url").toString();
+#endif
 
         pi.name = MultilangString::fromJson(json[id].toObject().value("name").toObject());
         pi.desc = MultilangString::fromJson(json[id].toObject().value("desc").toObject());

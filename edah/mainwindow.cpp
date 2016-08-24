@@ -18,6 +18,7 @@
 
 #include "mainwindow.h"
 #include "aboutdialog.h"
+#include "updatedialog.h"
 #include "settings.h"
 
 #include <libedah/logger.h>
@@ -773,7 +774,9 @@ void MainWindow::showAbout()
 
 void MainWindow::showUpdateDialog()
 {
-    // TODO
+    UpdateDialog *dlg = new UpdateDialog(&updateInfo, updater);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->exec();
 }
 
 void MainWindow::showSettings()
@@ -787,6 +790,12 @@ void MainWindow::showSettings()
 void MainWindow::showUpdate(UpdateInfoArray info)
 {
     this->updateAvailable = true;
+    this->updateInfo = info;
+
+    for(int i=0; i<info.size(); i++)
+    {
+        qDebug() << info[i].name << info[i].oldVersion << info[i].oldBuild << info[i].newVersion << info[i].newBuild;
+    }
 
     menuBtn->setIcon(QIcon(":/img/menu_info.svg"));
     menuBtn_bottom->setIcon(QIcon(":/img/menu_info.svg"));

@@ -113,6 +113,7 @@ private:
     Updater *updater;
 #endif
     bool updateAvailable;
+    UpdateInfoArray updateInfo;
 
 public slots:
     void newProcess(const QString &message);

@@ -44,20 +44,28 @@ public:
 
 public slots:
     void checkUpdates();
+    void checkFiles();
 
 private slots:
     void readyReadGet_build();
+    void readyReadGet();
 
 private:
     QJsonObject JsonFindModule(const QJsonArray &arr, const QJsonValue &name);
+    QString decryptChecksum(QString encrypted);
+    QStringList getInstalledPlugins();
 
     QString installDir;
+
+    QStringList pluginsList;
+    QSet<QString> depedencies;
 
     QNetworkAccessManager *manager;
     QNetworkReply *reply;
 
 signals:
     void newUpdates(UpdateInfoArray info);
+    void filesChecked(int size);
 };
 
 #endif // UPDATER_H

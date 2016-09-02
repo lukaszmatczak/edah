@@ -27,3 +27,6 @@ before_install:
   - sudo add-apt-repository --yes ppa:beineri/opt-qt551
   - sudo apt-get update -qq
   - sudo apt-get install -qq qt55base qt55tools
+  - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
+  - unzip build-wrapper-linux-x86.zip
+  - export PATH=$PWD/build-wrapper-linux-x86:$PATH

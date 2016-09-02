@@ -6,4 +6,8 @@ os:
 branches:
   only:
     - master
-    
+
+script:
+  - cd edah
+  - qmake
+  - make

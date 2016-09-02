@@ -11,3 +11,5 @@ script:
   - cd edah
   - qmake
   - make
+
+dist: trusty

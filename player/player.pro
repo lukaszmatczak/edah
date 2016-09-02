@@ -32,7 +32,7 @@ DISTFILES += player.json
 
 TRANSLATIONS = player-lang/lang.pl.ts
 
-LIBS += -ltag -lbass
+LIBS += -L. -ltag -lbass
 win32: LIBS += -ledah
 
 RESOURCES += \

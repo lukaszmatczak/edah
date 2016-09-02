@@ -26,10 +26,12 @@ script:
   - /opt/qt55/bin/qmake
   - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
   - cd ..
+  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
   - cd player
   - /opt/qt55/bin/qmake
   - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
   - cd ..
+  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
   - cd edah
   - /opt/qt55/bin/qmake
   - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make

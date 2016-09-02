@@ -16,11 +16,16 @@ env:
 script:
   - update-java-alternatives --set "java-8-oracle"
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
-  - cd edah
-  - mkdir tmp_dir
   - source /opt/qt55/bin/qt55-env.sh
+  - mkdir tmp_dir
+  - cd libedah
   - /opt/qt55/bin/qmake
-  - build-wrapper-linux-x86-64 --out-dir tmp_dir make
+  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
+  - ..
+  - cd edah
+  - /opt/qt55/bin/qmake
+  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
+  - ..
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
 
 before_install:

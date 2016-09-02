@@ -30,7 +30,7 @@ HEADERS  += mainwindow.h \
 
 INCLUDEPATH += ..
 
-LIBS += -L$$PWD/../../build-libedah-Qt5-Debug -ledah
+LIBS += -L$$PWD/../libedah -L$$PWD/../../build-libedah-Qt5-Debug -ledah
 
 RESOURCES += \
     common.qrc

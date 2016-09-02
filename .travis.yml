@@ -14,18 +14,18 @@ env:
     - secure: "QHKyTpaKrpZm6jnoW9MlHo1MokqzK2E+aq8DNH29dNUU5jwWX1G1f1tLf96IgqZNcnJhbF3m9TIGsg8ILjq5f1AHmcr1tN+br5yMcFWpUxxOk3WtcDnHTsv7prQJF24eYJIPWA1E/PdA6KkpRvtVoqnFtYbtojViCFz7WqSrkSgq4831yFU+Kr6hFS5dzA+uLBT6bQrCk8T/01+55yhDn9u+TUy19vvTPY0B4XxDyKzV/VxogmRaYzoYonS2G66334TyHDwPlJEK8ZIQa6TPF0iExi5bytjVE2DRetnBI9Vvqgq+0OtRVPG4uT/WMBIB+iY/5cdLmgPo1kLVZPnPUZHJxMyTdsZkMOZHShAEs1YOahHTzZpO0THc4jraT7eWxMK/Hz+VTDATf9FyWdcGUiwBjZXS9mrSnMsHXDX7zUNXp/m5IcogmZijU3p7+w2otNkQ3OXYVPTj3aQIcMoOhdzXxZtAz5oRMWB+zVUdhnBQTq/a0rrAGQ7bzJlUwUjcaI66p7QtfFlP7Wr/q6YR1TDcThLlrMzG3uzYjGs7yeKNQQBNteWbXGcgBYRFiyDkwKdPnIW78MVqCdvMA8CwUZXJqiA6uxR6c8DOgBMAvDQffRuDfLd/qhJ8m/tgZBch2rlvHB8sdZWhuhCfX6od6M+2uYEZiHU8JFLo2ljRIio=" # defines SONAR_TOKEN=abcdef0123456789
 
 script:
-  - update-java-alternatives --set "java-8-oracle"
+  - sudo update-java-alternatives --set "java-8-oracle"
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
   - source /opt/qt55/bin/qt55-env.sh
   - mkdir tmp_dir
   - cd libedah
   - /opt/qt55/bin/qmake
   - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
-  - ..
+  - cd ..
   - cd edah
   - /opt/qt55/bin/qmake
   - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
-  - ..
+  - cd ..
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
 
 before_install:

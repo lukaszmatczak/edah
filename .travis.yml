@@ -16,11 +16,12 @@ env:
 script:
   - update-java-alternatives --set "java-8-oracle"
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle"
-  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
   - cd edah
+  - mkdir tmp_dir
   - source /opt/qt55/bin/qt55-env.sh
   - /opt/qt55/bin/qmake
-  - make
+  - build-wrapper-linux-x86-64 --out-dir tmp_dir make
+  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
 
 before_install:
   - sudo add-apt-repository --yes ppa:beineri/opt-qt551

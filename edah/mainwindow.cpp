@@ -774,9 +774,11 @@ void MainWindow::showAbout()
 
 void MainWindow::showUpdateDialog()
 {
+#ifdef Q_OS_WIN
     UpdateDialog *dlg = new UpdateDialog(&updateInfo, updater);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     dlg->exec();
+#endif
 }
 
 void MainWindow::showSettings()

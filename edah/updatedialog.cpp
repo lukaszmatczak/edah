@@ -59,9 +59,10 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     connect(buttonBox, &QDialogButtonBox::rejected, this, &UpdateDialog::close);
 
     layout->addWidget(buttonBox);
-
+#ifdef Q_OS_WIN
     connect(this, &UpdateDialog::checkFiles, updater, &Updater::checkFiles);
     connect(updater, &Updater::filesChecked, this, &UpdateDialog::filesChecked);
+#endif
 
     emit checkFiles();
 }

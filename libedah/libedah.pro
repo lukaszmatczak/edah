@@ -33,7 +33,7 @@ win32 {
     SOURCES += updater.cpp
     HEADERS += updater.h
 
-    LIBS += -L../openssl/lib -ladvapi32 -llibeay32MD
+    LIBS += -L../openssl/lib -ladvapi32 -lshell32 -llibeay32MD
 
     INCLUDEPATH += ../openssl/include
 }

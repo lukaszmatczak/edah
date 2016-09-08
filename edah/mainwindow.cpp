@@ -59,6 +59,8 @@ MainWindow::MainWindow(QWidget *parent)
     logger = new Logger;
     settings = new QSettings;
 
+    QDir(QDir::tempPath() + "/edah").removeRecursively();
+
     const QString fontFilename = utils->getDataDir() + "/OpenSans-Light.ttf";
     if(QFontDatabase::addApplicationFont(fontFilename) == -1)
     {

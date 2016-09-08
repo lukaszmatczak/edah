@@ -22,6 +22,8 @@
 #include "libedah.h"
 
 #include <QObject>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include <QNetworkAccessManager>
 
@@ -35,6 +37,29 @@ struct UpdateInfo
 };
 typedef QVector<UpdateInfo> UpdateInfoArray;
 
+struct FileInfo
+{
+    enum Type { Directory, File };
+
+    Type type;
+    bool isPlugin;
+    QString module;
+    QString filename;
+    QString checksum;
+    QString compressedChecksum;
+    quint32 size;
+    int compressedSize;
+};
+
+struct UpdateInfoEx
+{
+    QJsonArray remoteJson;
+    QSet<QString> depedencies;
+    QJsonObject modules;
+    QList<FileInfo> filesToUpdate;
+    int totalDownloadSize;
+};
+
 class LIBEDAHSHARED_EXPORT Updater : public QObject
 {
     Q_OBJECT
@@ -43,22 +68,33 @@ public:
     void setInstallDir(QString dir);
 
 public slots:
-    void checkUpdates();
-    void checkFiles();
-
-private slots:
-    void readyReadGet_build();
-    void readyReadGet();
+    QPair<QJsonArray, QSet<QString> > checkUpdates(); // stage 1
+    UpdateInfoEx checkFiles(); // stage 2
+    void prepareUpdate(); // stage 3
+    void doUpdate(); // stage 4
 
 private:
-    QJsonObject JsonFindModule(const QJsonArray &arr, const QJsonValue &name);
-    QString decryptChecksum(QString encrypted);
     QStringList getInstalledPlugins();
 
-    QString installDir;
+    // stage 1
+    QJsonArray download_getBuild();
+    void checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> *depedencies, UpdateInfoArray *updates);
+    void checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> depedencies, UpdateInfoArray *updates);
+    QJsonObject JsonFindModule(const QJsonArray &arr, const QJsonValue &name);
+    QString getDeviceId();
 
-    QStringList pluginsList;
-    QSet<QString> depedencies;
+    // stage 2
+    QByteArray download_get();
+    QString decryptChecksum(QString encrypted);
+    QList<FileInfo> compareChecksums(const QJsonObject &modules, const QSet<QString> &depedencies);
+
+    // stage 4
+    void downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSize);
+    void verify(const QList<FileInfo> &filesToUpdate);
+    void installUpdate(const QList<FileInfo> &filesToUpdate, const QSet<QString> &depedencies, const QJsonArray &versions);
+
+    QString installDir;
+    QString updateDir;
 
     QNetworkAccessManager *manager;
     QNetworkReply *reply;
@@ -66,6 +102,9 @@ private:
 signals:
     void newUpdates(UpdateInfoArray info);
     void filesChecked(int size);
+    void progress(int stage, int curr, int total);
+    void verFailed();
+    void updateFinished();
 };
 
 #endif // UPDATER_H

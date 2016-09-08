@@ -55,7 +55,7 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     buttonBox->button(QDialogButtonBox::Yes)->setText(tr("Yes"));
     buttonBox->button(QDialogButtonBox::No)->setText(tr("No"));
 
-    //connect(buttonBox, &QDialogButtonBox::accepted, updater, &Updater::prepareUpdate);
+    connect(buttonBox, &QDialogButtonBox::accepted, updater, &Updater::prepareUpdate);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &UpdateDialog::close);
 
     layout->addWidget(buttonBox);

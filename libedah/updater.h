@@ -53,6 +53,7 @@ struct FileInfo
 
 struct UpdateInfoEx
 {
+    UpdateInfoArray updates;
     QJsonArray remoteJson;
     QSet<QString> depedencies;
     QJsonObject modules;
@@ -68,7 +69,7 @@ public:
     void setInstallDir(QString dir);
 
 public slots:
-    QPair<QJsonArray, QSet<QString> > checkUpdates(); // stage 1
+    UpdateInfoEx checkUpdates(); // stage 1
     UpdateInfoEx checkFiles(); // stage 2
     void prepareUpdate(); // stage 3
     void doUpdate(); // stage 4
@@ -91,7 +92,9 @@ private:
     // stage 4
     void downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSize);
     void verify(const QList<FileInfo> &filesToUpdate);
-    void installUpdate(const QList<FileInfo> &filesToUpdate, const QSet<QString> &depedencies, const QJsonArray &versions);
+    void installUpdate(const QList<FileInfo> &filesToUpdate);
+    void runPostinstScripts(UpdateInfoArray updates);
+    void updateVersionInfo(const QSet<QString> &depedencies, const QJsonArray &versions);
 
     QString installDir;
     QString updateDir;

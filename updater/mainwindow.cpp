@@ -117,7 +117,8 @@ void MainWindow::progress(int step, int curr, int max)
     case 2:
     {
         this->canClose = false;
-        setWindowFlags(Qt::WindowSystemMenuHint | Qt::WindowTitleHint);
+        this->setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+        this->show();
         stepLbl->setText(tr("Step 3/3: Installing"));
         progressLbl->setText(tr("Copying file %1 of %2").arg(curr).arg(max));
 

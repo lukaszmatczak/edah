@@ -27,6 +27,7 @@
 #include <QJsonDocument>
 #include <QDebug>
 #include <QDataStream>
+#include <QProcess>
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -74,23 +75,21 @@ QStringList Updater::getInstalledPlugins()
 /// STAGE 1 ///
 ///////////////
 
-QPair<QJsonArray, QSet<QString> > Updater::checkUpdates()
+UpdateInfoEx Updater::checkUpdates()
 {
-    UpdateInfoArray updates;
-    QJsonArray remoteJson = this->download_getBuild();
+    UpdateInfoEx info;
+    info.remoteJson = this->download_getBuild();
+    info.depedencies.insert("core");
 
-    QSet<QString> depedencies;
-    depedencies.insert("core");
+    this->checkForPluginsUpdate(info.remoteJson, &info.depedencies, &info.updates);
+    this->checkForModulesUpdate(info.remoteJson, info.depedencies, &info.updates);
 
-    this->checkForPluginsUpdate(remoteJson, &depedencies, &updates);
-    this->checkForModulesUpdate(remoteJson, depedencies, &updates);
-
-    if(updates.size() > 0)
+    if(info.updates.size() > 0)
     {
-        emit newUpdates(updates);
+        emit newUpdates(info.updates);
     }
 
-    return qMakePair(remoteJson, depedencies);
+    return info;
 }
 
 QJsonArray Updater::download_getBuild()
@@ -234,10 +233,8 @@ UpdateInfoEx Updater::checkFiles()
         return info;
     }
 
-    QPair<QJsonArray, QSet<QString> > pair = this->checkUpdates();
+    info = this->checkUpdates();
 
-    info.remoteJson = pair.first;
-    info.depedencies = pair.second;
     info.modules = QJsonDocument::fromJson(data[1]).object();
     info.filesToUpdate = this->compareChecksums(info.modules, info.depedencies);
     info.totalDownloadSize = 0;
@@ -388,7 +385,9 @@ void Updater::doUpdate()
     UpdateInfoEx info = this->checkFiles();
     this->downloadUpdates(info.filesToUpdate, info.totalDownloadSize);
     this->verify(info.filesToUpdate);
-    this->installUpdate(info.filesToUpdate, info.depedencies, info.remoteJson);
+    this->installUpdate(info.filesToUpdate);
+    this->runPostinstScripts(info.updates);
+    this->updateVersionInfo(info.depedencies, info.remoteJson);
 
     QDir(updateDir).removeRecursively();
     emit updateFinished();
@@ -457,7 +456,7 @@ void Updater::verify(const QList<FileInfo> &filesToUpdate)
     }
 }
 
-void Updater::installUpdate(const QList<FileInfo> &filesToUpdate, const QSet<QString> &depedencies, const QJsonArray &versions)
+void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
 {
     for(int i=0; i<filesToUpdate.size(); i++)
     {
@@ -494,7 +493,40 @@ void Updater::installUpdate(const QList<FileInfo> &filesToUpdate, const QSet<QSt
         }
     }
 
-    // update version JSON files
+    // TODO: depedencies
+    // TODO: remove files
+}
+
+void Updater::runPostinstScripts(UpdateInfoArray updates)
+{
+    QStringList pluginsList = this->getInstalledPlugins();
+
+    for(int i=0; i<updates.size(); i++)
+    {
+        QString moduleName = updates[i].name;
+        bool isPlugin = pluginsList.contains(moduleName);
+
+        QString filename = isPlugin ?
+                    installDir + "/plugins/" + moduleName + "/" + "postinst.ps1" :
+                    installDir + "/" + moduleName + "_postinst.ps1";
+
+        if(QFile::exists(filename))
+        {
+            QProcess psProcess;
+            QStringList args;
+            args << "-noprofile" <<
+                    "-executionpolicy" << "bypass" <<
+                    "-file" << filename <<
+                    "-oldbuild" << QString::number(updates[i].oldBuild);
+            psProcess.start("PowerShell.exe", args);
+            psProcess.closeWriteChannel();
+            psProcess.waitForFinished();
+        }
+    }
+}
+
+void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArray &versions)
+{
     QString json = "[";
     for(int i=0; i<versions.size(); i++)
     {
@@ -523,8 +555,4 @@ void Updater::installUpdate(const QList<FileInfo> &filesToUpdate, const QSet<QSt
     }
 
     versionJson.write(json.toUtf8());
-
-    // TODO: depedencies
-    // TODO: remove files
-    // TODO: execute post-update scripts
 }

@@ -27,8 +27,6 @@
 
 #include <Windows.h>
 
-const int totalSteps = 3;
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), canClose(true), lastProgress(0)
 {
@@ -58,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     layout = new QVBoxLayout(central);
 
-    stepLbl = new QLabel(tr("Step 1/3: Downloading"), this);
+    stepLbl = new QLabel(tr("Step 1/4: Downloading"), this);
     layout->addWidget(stepLbl);
 
     progressLbl = new QLabel(tr("Downloaded %1 KB of %2 KB (%3 KB/s)").arg(0).arg(0).arg(0), this);
@@ -71,8 +69,11 @@ MainWindow::MainWindow(QWidget *parent)
     updater->setInstallDir(QCoreApplication::arguments().at(1));
     connect(this, &MainWindow::doUpdate, updater, &Updater::doUpdate);
     connect(updater, &Updater::progress, this, &MainWindow::progress);
-    connect(updater, &Updater::verFailed, this, [this](){ QMessageBox::critical(this, tr("Error!"), tr("An error occured during downloading updates!")); done(); });
-    connect(updater, &Updater::updateFinished, this, [this](){ done(); });
+    connect(updater, &Updater::verFailed, this, [this](){
+        QMessageBox::critical(this, tr("Error!"), tr("An error occured during downloading updates!"));
+        done();
+    });
+    connect(updater, &Updater::updateFinished, this, &MainWindow::done);
     updater->moveToThread(&updaterThread);
     updaterThread.start();
 
@@ -92,25 +93,21 @@ void MainWindow::progress(int step, int curr, int max)
     {
     case 0:
     {
-        stepLbl->setText(tr("Step 1/3: Downloading"));
+        stepLbl->setText(tr("Step 1/4: Downloading"));
 
         int transfer = ((curr-lastProgress)/1024.0)/((lastUpdateTime.elapsed())/1000.0);
         lastUpdateTime.restart();
         lastProgress = curr;
         progressLbl->setText(tr("Downloaded %1 KB of %2 KB (%3 KB/s)").arg(curr/1024).arg(max/1024).arg(transfer));
 
-        progressBar->setMaximum(max);
-        progressBar->setValue(curr);
         break;
     }
 
     case 1:
     {
-        stepLbl->setText(tr("Step 2/3: Checking"));
+        stepLbl->setText(tr("Step 2/4: Checking"));
         progressLbl->setText(tr("Verifying file %1 of %2").arg(curr).arg(max));
 
-        progressBar->setMaximum(max);
-        progressBar->setValue(curr);
         break;
     }
 
@@ -119,14 +116,23 @@ void MainWindow::progress(int step, int curr, int max)
         this->canClose = false;
         this->setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint);
         this->show();
-        stepLbl->setText(tr("Step 3/3: Installing"));
+        stepLbl->setText(tr("Step 3/4: Installing"));
         progressLbl->setText(tr("Copying file %1 of %2").arg(curr).arg(max));
 
-        progressBar->setMaximum(max);
-        progressBar->setValue(curr);
+        break;
+    }
+
+    case 3:
+    {
+        stepLbl->setText(tr("Step 4/4: Configuring"));
+        progressLbl->setText(tr("Configuring update %1 of %2").arg(curr).arg(max));
+
         break;
     }
     }
+
+    progressBar->setMaximum(max);
+    progressBar->setValue(curr);
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)

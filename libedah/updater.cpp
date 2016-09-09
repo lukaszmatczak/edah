@@ -26,7 +26,6 @@
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QDebug>
-#include <QDataStream>
 #include <QProcess>
 
 #include <QNetworkRequest>
@@ -133,20 +132,20 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
 
         QJsonObject pluginJson = QJsonDocument::fromJson(file.readAll()).object();
 
-        QJsonObject remote = JsonFindModule(remoteJson, pluginJson.value("id"));
+        QJsonObject remote = JsonFindModule(remoteJson, pluginJson["id"]);
 
-        QStringList dep = remote.value("d").toString().split(" ", QString::SkipEmptyParts);
+        QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
         for(int i=0; i<dep.size(); i++)
             depedencies->insert(dep[i]);
 
-        if(pluginJson.value("build").toInt() < remote.value("b").toInt(0))
+        if(pluginJson["build"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
-            info.name = pluginJson.value("id").toString();
-            info.oldVersion = pluginJson.value("version").toString();
-            info.oldBuild = pluginJson.value("build").toInt();
-            info.newVersion = remote.value("v").toString();
-            info.newBuild = remote.value("b").toInt();
+            info.name = pluginJson["id"].toString();
+            info.oldVersion = pluginJson["version"].toString();
+            info.oldBuild = pluginJson["build"].toInt();
+            info.newVersion = remote["v"].toString();
+            info.newBuild = remote["b"].toInt();
 
             updates->push_back(info);
         }
@@ -168,18 +167,18 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
     {
         QJsonObject local = localJson[i].toObject();
 
-        if(!depedencies.contains(local.value("name").toString()))
+        if(!depedencies.contains(local["name"].toString()))
             continue;
 
-        QJsonObject remote = JsonFindModule(remoteJson, local.value("name"));
-        if(local.value("b").toInt() < remote.value("b").toInt(0))
+        QJsonObject remote = JsonFindModule(remoteJson, local["name"]);
+        if(local["b"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
-            info.name = local.value("name").toString();
-            info.oldVersion = local.value("v").toString();
-            info.oldBuild = local.value("b").toInt();
-            info.newVersion = remote.value("v").toString();
-            info.newBuild = remote.value("b").toInt();
+            info.name = local["name"].toString();
+            info.oldVersion = local["v"].toString();
+            info.oldBuild = local["b"].toInt();
+            info.newVersion = remote["v"].toString();
+            info.newBuild = remote["b"].toInt();
 
             updates->push_back(info);
         }
@@ -204,7 +203,7 @@ QJsonObject Updater::JsonFindModule(const QJsonArray &arr, const QJsonValue &nam
 {
     for(int i=0; i<arr.size(); i++)
     {
-        if(arr[i].toObject().value("name") == name)
+        if(arr[i].toObject()["name"] == name)
             return arr[i].toObject();
     }
 
@@ -308,19 +307,19 @@ QList<FileInfo> Updater::compareChecksums(const QJsonObject &modules, const QSet
 
         if(pluginsList.contains(name) || depedencies.contains(name))
         {
-            QJsonArray files = modules.value(name).toArray();
+            QJsonArray files = modules[name].toArray();
 
             for(int i=0; i<files.size(); i++)
             {
                 FileInfo fi;
                 fi.type = files[i].toObject()["t"].toString() == "f" ? FileInfo::File : FileInfo::Directory;
-                fi.isPlugin = files[i].toObject().value("p").toInt();
+                fi.isPlugin = files[i].toObject()["p"].toInt();
                 fi.module = name;
-                fi.filename = files[i].toObject().value("n").toString();
-                fi.checksum = QByteArray::fromBase64(files[i].toObject().value("c").toString().toUtf8()).toHex();
-                fi.compressedChecksum = QByteArray::fromBase64(files[i].toObject().value("cc").toString().toUtf8()).toHex();
-                fi.size = files[i].toObject().value("s").toInt();
-                fi.compressedSize = files[i].toObject().value("cs").toInt();
+                fi.filename = files[i].toObject()["n"].toString();
+                fi.checksum = QByteArray::fromBase64(files[i].toObject()["c"].toString().toUtf8()).toHex();
+                fi.compressedChecksum = QByteArray::fromBase64(files[i].toObject()["cc"].toString().toUtf8()).toHex();
+                fi.size = files[i].toObject()["s"].toInt();
+                fi.compressedSize = files[i].toObject()["cs"].toInt();
 
                 QString localChecksum;
                 QString prefix = fi.isPlugin ? "plugins/"+name+"/" : "";
@@ -481,11 +480,7 @@ void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
 
             QFile compressedFile(updateDir + "/compressed/" + filesToUpdate[i].checksum);
             compressedFile.open(QIODevice::ReadOnly);
-            QByteArray compressed;
-            QDataStream ds(&compressed, QIODevice::WriteOnly);
-            ds.setByteOrder(QDataStream::BigEndian);
-            ds << filesToUpdate[i].size;
-            compressed += compressedFile.readAll();
+            QByteArray compressed = compressedFile.readAll();
 
             QFile destFile(path);
             destFile.open(QIODevice::WriteOnly);
@@ -503,6 +498,8 @@ void Updater::runPostinstScripts(UpdateInfoArray updates)
 
     for(int i=0; i<updates.size(); i++)
     {
+        emit progress(3, i+1, updates.size());
+
         QString moduleName = updates[i].name;
         bool isPlugin = pluginsList.contains(moduleName);
 
@@ -518,9 +515,10 @@ void Updater::runPostinstScripts(UpdateInfoArray updates)
                     "-executionpolicy" << "bypass" <<
                     "-file" << filename <<
                     "-oldbuild" << QString::number(updates[i].oldBuild);
+            psProcess.setWorkingDirectory(installDir);
             psProcess.start("PowerShell.exe", args);
             psProcess.closeWriteChannel();
-            psProcess.waitForFinished();
+            psProcess.waitForFinished(-1);
         }
     }
 }

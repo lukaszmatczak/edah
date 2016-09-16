@@ -64,7 +64,7 @@ QString Utils::getUsername()
 QString Utils::getDataDir()
 {
 #ifdef Q_OS_WIN
-    return QApplication::applicationDirPath() + "/";
+    return QCoreApplication::applicationDirPath() + "/";
 #endif
 #ifdef Q_OS_LINUX
     return ".."; //return "/usr/share/edah/";

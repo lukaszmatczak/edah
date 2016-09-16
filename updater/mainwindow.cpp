@@ -67,6 +67,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     updater = new Updater;
     updater->setInstallDir(QCoreApplication::arguments().at(1));
+    updater->setInstallPlugin(QCoreApplication::arguments().at(2));
     connect(this, &MainWindow::doUpdate, updater, &Updater::doUpdate);
     connect(updater, &Updater::progress, this, &MainWindow::progress);
     connect(updater, &Updater::verFailed, this, [this](){

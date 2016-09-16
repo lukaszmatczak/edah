@@ -94,7 +94,7 @@ class GeneralTab : public QWidget
     Q_OBJECT
 
 public:
-    GeneralTab();
+    GeneralTab(Updater *updater);
     void loadSettings();
     void writeSettings();
 
@@ -122,12 +122,17 @@ private:
 
     QString currLang;
 
+    Updater *updater;
+
 private slots:
     void installedPluginSelected(const QModelIndex &index);
     void availablePluginSelected(const QModelIndex &index);
     void moveUpBtnClicked();
     void moveDownBtnClicked();
     void downloadPluginClicked();
+
+signals:
+    void installPlugin();
 };
 
 class Settings : public QDialog
@@ -135,7 +140,7 @@ class Settings : public QDialog
     Q_OBJECT
 
 public:
-    Settings(QVector<Plugin> *plugins);
+    Settings(QVector<Plugin> *plugins, Updater *updater);
     virtual ~Settings();
 
 protected:

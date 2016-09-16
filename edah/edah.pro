@@ -30,7 +30,15 @@ HEADERS  += mainwindow.h \
 
 INCLUDEPATH += ..
 
-LIBS += -L$$PWD/../libedah -L$$PWD/../../build-libedah-Qt_5_5_0_msvc2010-Release/release -ledah
+CONFIG(debug) {
+    LIBS += -L$$PWD/../../build-libedah-Qt_5_5_0_msvc2010-Debug/debug
+}
+
+CONFIG(release) {
+    LIBS += -L$$PWD/../../build-libedah-Qt_5_5_0_msvc2010-Release/release
+}
+
+LIBS += -L$$PWD/../libedah -ledah
 
 RESOURCES += \
     common.qrc

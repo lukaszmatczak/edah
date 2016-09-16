@@ -67,6 +67,7 @@ class LIBEDAHSHARED_EXPORT Updater : public QObject
 public:
     explicit Updater(QObject *parent = 0);
     void setInstallDir(QString dir);
+    void setInstallPlugin(QString plugin);
 
 public slots:
     UpdateInfoEx checkUpdates(); // stage 1
@@ -98,6 +99,7 @@ private:
 
     QString installDir;
     QString updateDir;
+    QString installPlugin;
 
     QNetworkAccessManager *manager;
     QNetworkReply *reply;

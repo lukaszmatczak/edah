@@ -17,6 +17,7 @@
 */
 
 #include "settings.h"
+#include "updatedialog.h"
 
 #include <libedah/utils.h>
 
@@ -44,13 +45,13 @@
 /// Settings ///
 ////////////////
 
-Settings::Settings(QVector<Plugin> *plugins) : plugins(plugins)
+Settings::Settings(QVector<Plugin> *plugins, Updater *updater) : plugins(plugins)
 {
     this->setLayout(new QVBoxLayout);
 
     tabs = new QTabWidget(this);
 
-    generalTab = new GeneralTab;
+    generalTab = new GeneralTab(updater);
     tabs->addTab(generalTab, "General");
     generalTab->loadSettings();
 
@@ -123,7 +124,7 @@ void Settings::writeSettings()
 /// GeneralTab ///
 //////////////////
 
-GeneralTab::GeneralTab()
+GeneralTab::GeneralTab(Updater *updater) : updater(updater)
 {
     QFormLayout *layout = new QFormLayout;
     this->setLayout(layout);
@@ -201,6 +202,7 @@ GeneralTab::GeneralTab()
     connect(downloadPlugin, &QPushButton::pressed, this, &GeneralTab::downloadPluginClicked);
     availPluginsLayout->addWidget(downloadPlugin);
 
+    connect(this, &GeneralTab::installPlugin, updater, &Updater::checkUpdates);
 
     pluginDesc = new QTextBrowser(this);
     pluginDesc->setReadOnly(true);
@@ -221,7 +223,7 @@ void GeneralTab::changeEvent(QEvent *e)
         availPluginsLbl->setText(tr("Available plugins:"));
         moveUpBtn->setText(tr("Move up"));
         moveDownBtn->setText(tr("Move down"));
-        downloadPlugin->setText(tr("Download"));
+        downloadPlugin->setText(tr("Download and install"));
 
         pluginsModel->refresh();
         this->installedPluginSelected(pluginsModel->index(pluginsTbl->currentIndex().row(), 1));
@@ -252,6 +254,18 @@ void GeneralTab::downloadPluginClicked()
 {
     int currRow = availPluginsTbl->currentIndex().row();
     if(currRow < 0 || currRow >= availPluginsModel->rowCount(QModelIndex())) return;
+
+#ifdef Q_OS_WIN
+    updater->setInstallPlugin("+" + availPluginsModel->getPluginInfo(currRow).id);
+    connect(updater, &Updater::newUpdates, this, [this](UpdateInfoArray info) {
+        disconnect(updater, &Updater::newUpdates, this, 0);
+        UpdateDialog *dlg = new UpdateDialog(&info, updater);
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->exec();
+    });
+    emit installPlugin();
+#endif
+
 #ifdef Q_OS_LINUX
     QString url = availPluginsModel->getPluginInfo(currRow).url;
     // TODO

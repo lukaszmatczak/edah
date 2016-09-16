@@ -56,7 +56,10 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     buttonBox->button(QDialogButtonBox::No)->setText(tr("No"));
 
     connect(buttonBox, &QDialogButtonBox::accepted, updater, &Updater::prepareUpdate);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &UpdateDialog::close);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, [this]() {
+        this->updater->setInstallPlugin("");
+        this->close();
+    });
 
     layout->addWidget(buttonBox);
 #ifdef Q_OS_WIN

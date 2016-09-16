@@ -83,10 +83,7 @@ UpdateInfoEx Updater::checkUpdates()
     this->checkForPluginsUpdate(info.remoteJson, &info.depedencies, &info.updates);
     this->checkForModulesUpdate(info.remoteJson, info.depedencies, &info.updates);
 
-    if(info.updates.size() > 0)
-    {
-        emit newUpdates(info.updates);
-    }
+    emit newUpdates(info.updates);
 
     return info;
 }
@@ -150,6 +147,26 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
             updates->push_back(info);
         }
     }
+
+    if(this->installPlugin.startsWith("+"))
+    {
+        QString pluginName = this->installPlugin.mid(1);
+
+        QJsonObject remote = JsonFindModule(remoteJson, pluginName);
+
+        QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
+        for(int i=0; i<dep.size(); i++)
+            depedencies->insert(dep[i]);
+
+        UpdateInfo info;
+        info.name = pluginName;
+        info.oldVersion = "";
+        info.oldBuild = 0;
+        info.newVersion = remote["v"].toString();
+        info.newBuild = remote["b"].toInt();
+
+        updates->push_back(info);
+    }
 }
 
 void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> depedencies, UpdateInfoArray *updates)
@@ -163,20 +180,20 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
 
     QJsonArray localJson = QJsonDocument::fromJson(file.readAll()).array();
 
-    for(int i=0; i<localJson.size(); i++)
+    for(int i=0; i<remoteJson.size(); i++)
     {
-        QJsonObject local = localJson[i].toObject();
+        QJsonObject remote = remoteJson[i].toObject();
+        QJsonObject local = JsonFindModule(localJson, remote["name"]);
 
-        if(!depedencies.contains(local["name"].toString()))
+        if(!depedencies.contains(remote["name"].toString()))
             continue;
 
-        QJsonObject remote = JsonFindModule(remoteJson, local["name"]);
-        if(local["b"].toInt() < remote["b"].toInt(0))
+        if(local.isEmpty() || local["b"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
-            info.name = local["name"].toString();
-            info.oldVersion = local["v"].toString();
-            info.oldBuild = local["b"].toInt();
+            info.name = remote["name"].toString();
+            info.oldVersion = local["v"].toString("");
+            info.oldBuild = local["b"].toInt(0);
             info.newVersion = remote["v"].toString();
             info.newBuild = remote["b"].toInt();
 
@@ -305,7 +322,7 @@ QList<FileInfo> Updater::compareChecksums(const QJsonObject &modules, const QSet
     {
         QString name = modules.keys()[i];
 
-        if(pluginsList.contains(name) || depedencies.contains(name))
+        if(pluginsList.contains(name) || depedencies.contains(name) || installPlugin == "+"+name)
         {
             QJsonArray files = modules[name].toArray();
 
@@ -368,7 +385,7 @@ void Updater::prepareUpdate()
     ShellExecuteW(0,
                   L"runas",
                   (LPCWSTR)(updateDir + "/updater.exe").utf16(),
-                  (LPCWSTR)("\"" + installDir + "\"").utf16(),
+                  (LPCWSTR)("\"" + installDir + "\" \"" + installPlugin + "\"").utf16(),
                   (LPCWSTR)updateDir.utf16(),
                   SW_SHOWNORMAL);
 
@@ -553,4 +570,15 @@ void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArr
     }
 
     versionJson.write(json.toUtf8());
+}
+
+void Updater::setInstallPlugin(QString plugin)
+{
+    if(!plugin.startsWith("+") && !plugin.startsWith("-"))
+    {
+        LOG("Command must start with \"+\" or \"-\"!");
+        return;
+    }
+
+    this->installPlugin = plugin;
 }

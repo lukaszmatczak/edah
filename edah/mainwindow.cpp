@@ -785,7 +785,7 @@ void MainWindow::showUpdateDialog()
 
 void MainWindow::showSettings()
 {
-    Settings *settings = new Settings(&plugins);
+    Settings *settings = new Settings(&plugins, updater);
     settings->setAttribute(Qt::WA_DeleteOnClose);
     connect(settings, &Settings::settingsChanged, this, &MainWindow::settingsChanged);
     settings->exec();
@@ -793,14 +793,14 @@ void MainWindow::showSettings()
 
 void MainWindow::showUpdate(UpdateInfoArray info)
 {
-    this->updateAvailable = true;
-    this->updateInfo = info;
+    disconnect(updater, &Updater::newUpdates, this, &MainWindow::showUpdate);
 
-    for(int i=0; i<info.size(); i++)
+    if(info.size() > 0)
     {
-        qDebug() << info[i].name << info[i].oldVersion << info[i].oldBuild << info[i].newVersion << info[i].newBuild;
-    }
+        this->updateAvailable = true;
+        this->updateInfo = info;
 
-    menuBtn->setIcon(QIcon(":/img/menu_info.svg"));
-    menuBtn_bottom->setIcon(QIcon(":/img/menu_info.svg"));
+        menuBtn->setIcon(QIcon(":/img/menu_info.svg"));
+        menuBtn_bottom->setIcon(QIcon(":/img/menu_info.svg"));
+    }
 }

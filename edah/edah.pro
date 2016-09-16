@@ -40,10 +40,26 @@ CONFIG(release) {
 
 LIBS += -L$$PWD/../libedah -ledah
 
+RC_FILE = res.rc
+
 RESOURCES += \
     common.qrc
 
 TRANSLATIONS = lang/lang.pl.ts
+
+CONFIG(debug, debug|release) {
+MY_DESTDIR_TARGET = "$$OUT_PWD/debug"
+}
+CONFIG(release, debug|release) {
+MY_DESTDIR_TARGET = "$$OUT_PWD/release"
+}
+
+win32:CONFIG(release, debug|release) {
+    WINSDK_DIR = C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A
+    WIN_PWD = $$replace(PWD, /, \\)
+    DESTDIR_TARGET_WIN = $$replace(MY_DESTDIR_TARGET, /, \\)
+    QMAKE_POST_LINK += "$$WINSDK_DIR/bin/mt.exe -manifest $$quote($$WIN_PWD\\$$basename(TARGET).exe.manifest) -outputresource:$$quote($$DESTDIR_TARGET_WIN\\$$basename(TARGET).exe;1)"
+}
 
 QMAKE_EXTRA_COMPILERS += lrelease
 lrelease.input         = TRANSLATIONS

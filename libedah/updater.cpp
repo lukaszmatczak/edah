@@ -27,6 +27,7 @@
 #include <QJsonDocument>
 #include <QDebug>
 #include <QProcess>
+#include <QThread>
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -129,7 +130,9 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
 
         QJsonObject pluginJson = QJsonDocument::fromJson(file.readAll()).object();
 
-        QJsonObject remote = JsonFindModule(remoteJson, pluginJson["id"]);
+        QJsonObject remote = JsonFind(remoteJson, [pluginJson](const QJsonObject &obj) {
+            return obj["name"] == pluginJson["id"];
+        });
 
         QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
         for(int i=0; i<dep.size(); i++)
@@ -138,6 +141,7 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
         if(pluginJson["build"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
+            info.action = UpdateInfo::Update;
             info.name = pluginJson["id"].toString();
             info.oldVersion = pluginJson["version"].toString();
             info.oldBuild = pluginJson["build"].toInt();
@@ -152,13 +156,16 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
     {
         QString pluginName = this->installPlugin.mid(1);
 
-        QJsonObject remote = JsonFindModule(remoteJson, pluginName);
+        QJsonObject remote = JsonFind(remoteJson, [pluginName](const QJsonObject &obj) {
+            return obj["name"] == pluginName;
+        });
 
         QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
         for(int i=0; i<dep.size(); i++)
             depedencies->insert(dep[i]);
 
         UpdateInfo info;
+        info.action = UpdateInfo::Install;
         info.name = pluginName;
         info.oldVersion = "";
         info.oldBuild = 0;
@@ -183,7 +190,9 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
     for(int i=0; i<remoteJson.size(); i++)
     {
         QJsonObject remote = remoteJson[i].toObject();
-        QJsonObject local = JsonFindModule(localJson, remote["name"]);
+        QJsonObject local = JsonFind(localJson, [remote](const QJsonObject &obj) {
+            return obj["name"] == remote["name"];
+        });
 
         if(!depedencies.contains(remote["name"].toString()))
             continue;
@@ -191,6 +200,7 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
         if(local.isEmpty() || local["b"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
+            info.action = UpdateInfo::Update;
             info.name = remote["name"].toString();
             info.oldVersion = local["v"].toString("");
             info.oldBuild = local["b"].toInt(0);
@@ -216,11 +226,11 @@ QString Updater::getDeviceId()
     return hash.result().toHex().left(8);
 }
 
-QJsonObject Updater::JsonFindModule(const QJsonArray &arr, const QJsonValue &name)
+QJsonObject Updater::JsonFind(const QJsonArray &arr, std::function<bool(const QJsonObject &)> check)//const QJsonValue &name)
 {
     for(int i=0; i<arr.size(); i++)
     {
-        if(arr[i].toObject()["name"] == name)
+        if(check(arr[i].toObject()))
             return arr[i].toObject();
     }
 
@@ -398,12 +408,80 @@ void Updater::prepareUpdate()
 
 void Updater::doUpdate()
 {
-    UpdateInfoEx info = this->checkFiles();
-    this->downloadUpdates(info.filesToUpdate, info.totalDownloadSize);
-    this->verify(info.filesToUpdate);
-    this->installUpdate(info.filesToUpdate);
-    this->runPostinstScripts(info.updates);
-    this->updateVersionInfo(info.depedencies, info.remoteJson);
+    if(this->installPlugin[0] == '-')
+    {
+        QString name = this->installPlugin.mid(1);
+
+        // depedencies
+        QSet<QString> depedencies;
+        depedencies.insert("core");
+        QStringList pluginsList;
+        int i=0;
+        do
+        {
+            if(i++ > 100)
+            {
+                LOG("Cannot remove plugin \"" + name + "\"");
+                break;
+            }
+
+            QDir(this->installDir + "/plugins/" + name).removeRecursively();
+            pluginsList = getInstalledPlugins();
+            QThread::msleep(10);
+        } while(pluginsList.contains(name));
+
+        for(int i=0; i<pluginsList.size(); i++)
+        {
+            QFile file(this->installDir+"/plugins/"+pluginsList[i]+"/info.json");
+            if(!file.open(QIODevice::ReadOnly))
+            {
+                LOG(QString("Couldn't open file \"%1\"!").arg(file.fileName()));
+                continue;
+            }
+
+            QJsonObject pluginJson = QJsonDocument::fromJson(file.readAll()).object();
+
+            QStringList dep = pluginJson["depedencies"].toString().split(" ", QString::SkipEmptyParts);
+            for(int i=0; i<dep.size(); i++)
+                depedencies.insert(dep[i]);
+        }
+
+        this->cleanupDepedencies(depedencies);
+
+        // updateVersionInfo
+        QFile versionJson(this->installDir + "version.json");
+        if(!versionJson.open(QIODevice::ReadWrite))
+        {
+            LOG(QString("Couldn't open file \"%1\"!").arg(versionJson.fileName()));
+            return;
+        }
+
+        QJsonArray json = QJsonDocument::fromJson(versionJson.readAll()).array();
+        QJsonArray jsonOut;
+        for(int i=0; i<json.size(); i++)
+        {
+            if(depedencies.contains(json[i].toObject()["name"].toString()))
+            {
+                jsonOut.append(json[i]);
+            }
+        }
+
+        QJsonDocument doc;
+        doc.setArray(jsonOut);
+        versionJson.seek(0);
+        versionJson.write(doc.toJson(QJsonDocument::Compact));
+        versionJson.resize(versionJson.pos());
+    }
+    else
+    {
+        UpdateInfoEx info = this->checkFiles();
+        this->downloadUpdates(info.filesToUpdate, info.totalDownloadSize);
+        this->verify(info.filesToUpdate);
+        this->installUpdate(info.filesToUpdate);
+        this->cleanupDepedencies(info.depedencies);
+        this->runPostinstScripts(info.updates);
+        this->updateVersionInfo(info.depedencies, info.remoteJson, info.modules);
+    }
 
     QDir(updateDir).removeRecursively();
     emit updateFinished();
@@ -504,12 +582,39 @@ void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
             destFile.write(qUncompress(compressed));
         }
     }
-
-    // TODO: depedencies
-    // TODO: remove files
 }
 
-void Updater::runPostinstScripts(UpdateInfoArray updates)
+void Updater::cleanupDepedencies(const QSet<QString> &depedencies)
+{
+    QFile versionJson(this->installDir + "version.json");
+    if(!versionJson.open(QIODevice::ReadOnly))
+    {
+        LOG(QString("Couldn't open file \"%1\"!").arg(versionJson.fileName()));
+        return;
+    }
+
+    QJsonArray arr = QJsonDocument::fromJson(versionJson.readAll()).array();
+
+    for(int i=0; i<arr.size(); i++)
+    {
+        if(!depedencies.contains(arr[i].toObject()["name"].toString()))
+        {
+            QJsonArray files = arr[i].toObject()["f"].toArray();
+
+            for(int j=0; j<files.size(); j++)
+            {
+                QString filename = files[j].toString();
+
+                if(filename.startsWith("."))
+                    filename = filename.mid(1);
+
+                QFile::remove(this->installDir + filename);
+            }
+        }
+    }
+}
+
+void Updater::runPostinstScripts(const UpdateInfoArray &updates)
 {
     QStringList pluginsList = this->getInstalledPlugins();
 
@@ -540,7 +645,7 @@ void Updater::runPostinstScripts(UpdateInfoArray updates)
     }
 }
 
-void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArray &versions)
+void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArray &versions, const QJsonObject &modules)
 {
     QString json = "[";
     for(int i=0; i<versions.size(); i++)
@@ -554,10 +659,22 @@ void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArr
             if(json.size() > 1)
                 json += ",";
 
-            json += QString("{\"name\":\"%1\",\"v\":\"%2\",\"b\":%3}")
+            json += QString("{\"name\":\"%1\",\"v\":\"%2\",\"b\":%3,\"f\":[")
                     .arg(name)
                     .arg(version)
                     .arg(build);
+
+            QJsonArray files = modules[name].toArray();
+
+            for(int i=0; i<files.size(); i++)
+            {
+                if(i > 0)
+                    json += ",";
+
+                json += "\"" + files[i].toObject()["n"].toString() + "\"";
+            }
+
+            json += "]}";
         }
     }
     json += "]";
@@ -574,11 +691,24 @@ void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArr
 
 void Updater::setInstallPlugin(QString plugin)
 {
-    if(!plugin.startsWith("+") && !plugin.startsWith("-"))
+    if(plugin.size() && !plugin.startsWith("+") && !plugin.startsWith("-"))
     {
         LOG("Command must start with \"+\" or \"-\"!");
         return;
     }
 
     this->installPlugin = plugin;
+}
+
+void Updater::uninstallPlugin()
+{
+    UpdateInfoArray updates;
+
+    UpdateInfo info;
+    info.action = UpdateInfo::Uninstall;
+    info.name = this->installPlugin.mid(1);
+
+    updates.push_back(info);
+
+    emit newUpdates(updates);
 }

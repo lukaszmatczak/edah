@@ -304,7 +304,7 @@ bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
 
     if(!plugin->plugin)
     {
-        LOG(plugin->loader->errorString());
+        LOG(utils->getPluginPath(id) + ": " + plugin->loader->errorString());
     }
 
     return plugin->plugin;

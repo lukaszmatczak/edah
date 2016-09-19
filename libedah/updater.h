@@ -21,6 +21,8 @@
 
 #include "libedah.h"
 
+#include <functional>
+
 #include <QObject>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -29,6 +31,9 @@
 
 struct UpdateInfo
 {
+    enum Action { Update, Install, Uninstall };
+
+    Action action;
     QString name;
     QString oldVersion;
     QString newVersion;
@@ -74,6 +79,7 @@ public slots:
     UpdateInfoEx checkFiles(); // stage 2
     void prepareUpdate(); // stage 3
     void doUpdate(); // stage 4
+    void uninstallPlugin();
 
 private:
     QStringList getInstalledPlugins();
@@ -82,7 +88,7 @@ private:
     QJsonArray download_getBuild();
     void checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> *depedencies, UpdateInfoArray *updates);
     void checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> depedencies, UpdateInfoArray *updates);
-    QJsonObject JsonFindModule(const QJsonArray &arr, const QJsonValue &name);
+    QJsonObject JsonFind(const QJsonArray &arr, std::function<bool(const QJsonObject &)> check);
     QString getDeviceId();
 
     // stage 2
@@ -94,8 +100,9 @@ private:
     void downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSize);
     void verify(const QList<FileInfo> &filesToUpdate);
     void installUpdate(const QList<FileInfo> &filesToUpdate);
-    void runPostinstScripts(UpdateInfoArray updates);
-    void updateVersionInfo(const QSet<QString> &depedencies, const QJsonArray &versions);
+    void cleanupDepedencies(const QSet<QString> &depedencies);
+    void runPostinstScripts(const UpdateInfoArray &updates);
+    void updateVersionInfo(const QSet<QString> &depedencies, const QJsonArray &versions, const QJsonObject &modules);
 
     QString installDir;
     QString updateDir;

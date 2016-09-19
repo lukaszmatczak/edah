@@ -200,9 +200,11 @@ GeneralTab::GeneralTab(Updater *updater) : updater(updater)
 
     downloadPlugin = new QPushButton(this);
     connect(downloadPlugin, &QPushButton::pressed, this, &GeneralTab::downloadPluginClicked);
+    downloadPlugin->setEnabled(false);
     availPluginsLayout->addWidget(downloadPlugin);
 
     connect(this, &GeneralTab::installPlugin, updater, &Updater::checkUpdates);
+    connect(this, &GeneralTab::uninstallPlugin, updater, &Updater::uninstallPlugin);
 
     pluginDesc = new QTextBrowser(this);
     pluginDesc->setReadOnly(true);
@@ -223,7 +225,7 @@ void GeneralTab::changeEvent(QEvent *e)
         availPluginsLbl->setText(tr("Available plugins:"));
         moveUpBtn->setText(tr("Move up"));
         moveDownBtn->setText(tr("Move down"));
-        downloadPlugin->setText(tr("Download and install"));
+        downloadPlugin->setText(tr("Download and install")); // TODO
 
         pluginsModel->refresh();
         this->installedPluginSelected(pluginsModel->index(pluginsTbl->currentIndex().row(), 1));
@@ -252,18 +254,27 @@ void GeneralTab::moveDownBtnClicked()
 
 void GeneralTab::downloadPluginClicked()
 {
-    int currRow = availPluginsTbl->currentIndex().row();
-    if(currRow < 0 || currRow >= availPluginsModel->rowCount(QModelIndex())) return;
+//    int currRow = availPluginsTbl->currentIndex().row();
+//    if(currRow < 0 || currRow >= availPluginsModel->rowCount(QModelIndex())) return;
 
 #ifdef Q_OS_WIN
-    updater->setInstallPlugin("+" + availPluginsModel->getPluginInfo(currRow).id);
+    updater->setInstallPlugin(pluginToChange);
+
     connect(updater, &Updater::newUpdates, this, [this](UpdateInfoArray info) {
         disconnect(updater, &Updater::newUpdates, this, 0);
         UpdateDialog *dlg = new UpdateDialog(&info, updater);
         dlg->setAttribute(Qt::WA_DeleteOnClose);
         dlg->exec();
     });
-    emit installPlugin();
+
+    if(pluginToChange[0] == '+')
+    {
+        emit installPlugin();
+    }
+    else if(pluginToChange[0] == '-')
+    {
+        emit uninstallPlugin();
+    }
 #endif
 
 #ifdef Q_OS_LINUX
@@ -274,6 +285,9 @@ void GeneralTab::downloadPluginClicked()
 
 void GeneralTab::installedPluginSelected(const QModelIndex &index)
 {
+    if(!index.isValid())
+        return;
+
     if(index.column() == 0)
     {
         pluginsModel->toggleChecked(index.row());
@@ -284,15 +298,30 @@ void GeneralTab::installedPluginSelected(const QModelIndex &index)
     text += "<br/><br/>" + pluginsModel->getPluginInfo(index.row()).desc;
 
     pluginDesc->setText(text);
+
+    downloadPlugin->setText(tr("Uninstall plugin"));
+    pluginToChange = "-" + pluginsModel->getPluginInfo(index.row()).id;
+    downloadPlugin->setEnabled(true);
+
+    availPluginsTbl->clearSelection();
 }
 
 void GeneralTab::availablePluginSelected(const QModelIndex &index)
 {
+    if(!index.isValid())
+        return;
+
     QString text = "<b>" + availPluginsModel->getPluginInfo(index.row()).name + "</b>";
     text += " <b>" + availPluginsModel->getPluginInfo(index.row()).version + "</b>";
     text += "<br/><br/>" + availPluginsModel->getPluginInfo(index.row()).desc;
 
     pluginDesc->setText(text);
+
+    downloadPlugin->setText(tr("Download and install plugin"));
+    pluginToChange = "+" + availPluginsModel->getPluginInfo(index.row()).id;
+    downloadPlugin->setEnabled(true);
+
+    pluginsTbl->clearSelection();
 }
 
 void GeneralTab::loadSettings()

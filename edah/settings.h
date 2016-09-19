@@ -123,6 +123,7 @@ private:
     QString currLang;
 
     Updater *updater;
+    QString pluginToChange;
 
 private slots:
     void installedPluginSelected(const QModelIndex &index);
@@ -133,6 +134,7 @@ private slots:
 
 signals:
     void installPlugin();
+    void uninstallPlugin();
 };
 
 class Settings : public QDialog

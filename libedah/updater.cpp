@@ -122,7 +122,7 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
     for(int i=0; i<pluginsList.size(); i++)
     {
         QFile file(this->installDir+"/plugins/"+pluginsList[i]+"/info.json");
-        if(!file.open(QIODevice::ReadOnly))
+        if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
         {
             LOG(QString("Couldn't open file \"%1\"!").arg(file.fileName()));
             continue;
@@ -179,7 +179,7 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
 void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> depedencies, UpdateInfoArray *updates)
 {
     QFile file(this->installDir + "version.json");
-    if(!file.open(QIODevice::ReadOnly))
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         LOG(QString("Couldn't open file \"%1\"!").arg(file.fileName()));
         return;
@@ -433,7 +433,7 @@ void Updater::doUpdate()
         for(int i=0; i<pluginsList.size(); i++)
         {
             QFile file(this->installDir+"/plugins/"+pluginsList[i]+"/info.json");
-            if(!file.open(QIODevice::ReadOnly))
+            if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
             {
                 LOG(QString("Couldn't open file \"%1\"!").arg(file.fileName()));
                 continue;
@@ -450,7 +450,7 @@ void Updater::doUpdate()
 
         // updateVersionInfo
         QFile versionJson(this->installDir + "version.json");
-        if(!versionJson.open(QIODevice::ReadWrite))
+        if(!versionJson.open(QIODevice::ReadWrite | QIODevice::Text))
         {
             LOG(QString("Couldn't open file \"%1\"!").arg(versionJson.fileName()));
             return;
@@ -587,7 +587,7 @@ void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
 void Updater::cleanupDepedencies(const QSet<QString> &depedencies)
 {
     QFile versionJson(this->installDir + "version.json");
-    if(!versionJson.open(QIODevice::ReadOnly))
+    if(!versionJson.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         LOG(QString("Couldn't open file \"%1\"!").arg(versionJson.fileName()));
         return;
@@ -680,7 +680,7 @@ void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArr
     json += "]";
 
     QFile versionJson(this->installDir + "version.json");
-    if(!versionJson.open(QIODevice::WriteOnly))
+    if(!versionJson.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         LOG(QString("Couldn't open file \"%1\"!").arg(versionJson.fileName()));
         return;

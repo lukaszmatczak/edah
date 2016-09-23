@@ -27,15 +27,45 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     layout = new QVBoxLayout(this);
     this->setLayout(layout);
 
+    int install = 0, remove = 0, update = 0;
+    for(int i=0; i<info->size(); i++)
+    {
+        switch(info->at(i).action)
+        {
+        case UpdateInfo::Install: install++; break;
+        case UpdateInfo::Uninstall: remove++; break;
+        case UpdateInfo::Update: update++; break;
+        }
+    }
+
     label = new QLabel(this);
-    QString text = tr("<b>New version is available!</b><br/><br/>Following components can be updated:<br/>");
+    QString text;
+
+    if((update > 0) && (install == 0) && (remove == 0))
+        text += tr("<b>New version is available!</b><br/><br/>");
+
+    text += tr("Following components will be changed:<br/>");
 
     for(int i=0; i<info->size(); i++)
     {
-        text += QString("&nbsp;&nbsp;&nbsp;%1 (%2 -> %3)<br/>")
-                .arg(info->at(i).name)
-                .arg(info->at(i).oldVersion)
-                .arg(info->at(i).newVersion);
+        switch(info->at(i).action)
+        {
+        case UpdateInfo::Install:
+            text += tr("&nbsp;&nbsp;&nbsp;\"%1\" (%2) will be installed<br/>")
+                    .arg(info->at(i).name)
+                    .arg(info->at(i).newVersion);
+            break;
+        case UpdateInfo::Uninstall:
+            text += tr("&nbsp;&nbsp;&nbsp;\"%1\" will be removed<br/>")
+                    .arg(info->at(i).name);
+            break;
+        case UpdateInfo::Update:
+            text += tr("&nbsp;&nbsp;&nbsp;\"%1\" will be updated from version %2 to %3<br/>")
+                    .arg(info->at(i).name)
+                    .arg(info->at(i).oldVersion)
+                    .arg(info->at(i).newVersion);
+            break;
+        }
     }
 
     label->setText(text);
@@ -44,7 +74,10 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     sizeLabel = new QLabel(tr("Size of data to download: ... KB"), this);
     layout->addWidget(sizeLabel);
 
-    QLabel *label2 = new QLabel(tr("Do you want to download and install updates?"), this);
+    if((update == 0) && (install == 0))
+        sizeLabel->hide();
+
+    QLabel *label2 = new QLabel(tr("Do you want to close Edah and apply these changes?"), this);
     layout->addWidget(label2);
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Yes | QDialogButtonBox::No,
@@ -62,10 +95,9 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     });
 
     layout->addWidget(buttonBox);
-#ifdef Q_OS_WIN
+
     connect(this, &UpdateDialog::checkFiles, updater, &Updater::checkFiles);
     connect(updater, &Updater::filesChecked, this, &UpdateDialog::filesChecked);
-#endif
 
     emit checkFiles();
 }

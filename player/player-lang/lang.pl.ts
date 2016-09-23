@@ -12,12 +12,12 @@
 <context>
     <name>Player</name>
     <message>
-        <location filename="../player.cpp" line="93"/>
+        <location filename="../player.cpp" line="182"/>
         <source>Invalid device &quot;%1&quot;!</source>
         <translation>Problem z urządzeniem &quot;%1&quot;!</translation>
     </message>
     <message>
-        <location filename="../player.cpp" line="155"/>
+        <location filename="../player.cpp" line="130"/>
         <source>Player</source>
         <translation>Odtwarzanie</translation>
     </message>
@@ -25,17 +25,17 @@
 <context>
     <name>SettingsTab</name>
     <message>
-        <location filename="../settingstab.cpp" line="45"/>
+        <location filename="../settingstab.cpp" line="47"/>
         <source>Audio device: </source>
         <translation>Urządzenie audio: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="51"/>
+        <location filename="../settingstab.cpp" line="53"/>
         <source>Select directory</source>
         <translation>Wybierz katalog</translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="55"/>
+        <location filename="../settingstab.cpp" line="57"/>
         <source>Songs directory: </source>
         <translation>Katalog z pieśniami: </translation>
     </message>
@@ -43,7 +43,7 @@
 <context>
     <name>SmallPanel</name>
     <message>
-        <location filename="../smallpanel.cpp" line="86"/>
+        <location filename="../smallpanel.cpp" line="87"/>
         <source>Autoplay
 </source>
         <translation>Autoodtwarzanie

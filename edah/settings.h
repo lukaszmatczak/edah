@@ -50,7 +50,7 @@ class PluginTableModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    void load();
+    QStringList load();
     PluginInfo loadFromFile(QFile &file);
     void refresh();
     int rowCount(const QModelIndex &parent) const;
@@ -60,6 +60,7 @@ public:
 
     PluginInfo getPluginInfo(int i);
     void toggleChecked(int i);
+    QStringList getIds();
 
 private:
     QVector<PluginInfo> plugins;
@@ -78,15 +79,14 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
 
     PluginInfo getPluginInfo(int i);
-
-private slots:
-    void pluginsDownloaded();
+    void refresh(QStringList skipPlugins);
 
 private:
     QNetworkAccessManager *manager;
     QNetworkReply *reply;
 
     QVector<PluginInfo> plugins;
+    QJsonObject json;
 };
 
 class GeneralTab : public QWidget

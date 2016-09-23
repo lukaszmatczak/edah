@@ -130,9 +130,7 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
 
         QJsonObject pluginJson = QJsonDocument::fromJson(file.readAll()).object();
 
-        QJsonObject remote = JsonFind(remoteJson, [pluginJson](const QJsonObject &obj) {
-            return obj["name"] == pluginJson["id"];
-        });
+        QJsonObject remote = JsonFindModule(remoteJson, pluginJson["id"]);
 
         QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
         for(int i=0; i<dep.size(); i++)
@@ -156,9 +154,7 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
     {
         QString pluginName = this->installPlugin.mid(1);
 
-        QJsonObject remote = JsonFind(remoteJson, [pluginName](const QJsonObject &obj) {
-            return obj["name"] == pluginName;
-        });
+        QJsonObject remote = JsonFindModule(remoteJson, pluginName);
 
         QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
         for(int i=0; i<dep.size(); i++)
@@ -190,9 +186,7 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
     for(int i=0; i<remoteJson.size(); i++)
     {
         QJsonObject remote = remoteJson[i].toObject();
-        QJsonObject local = JsonFind(localJson, [remote](const QJsonObject &obj) {
-            return obj["name"] == remote["name"];
-        });
+        QJsonObject local = JsonFindModule(localJson, remote["name"]);
 
         if(!depedencies.contains(remote["name"].toString()))
             continue;
@@ -226,11 +220,11 @@ QString Updater::getDeviceId()
     return hash.result().toHex().left(8);
 }
 
-QJsonObject Updater::JsonFind(const QJsonArray &arr, std::function<bool(const QJsonObject &)> check)//const QJsonValue &name)
+QJsonObject Updater::JsonFindModule(const QJsonArray &arr, const QJsonValue &name)
 {
     for(int i=0; i<arr.size(); i++)
     {
-        if(check(arr[i].toObject()))
+        if(arr[i].toObject()["name"] == name)
             return arr[i].toObject();
     }
 

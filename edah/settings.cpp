@@ -163,6 +163,7 @@ GeneralTab::GeneralTab(Updater *updater) : updater(updater)
     pluginsTbl->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     pluginsTbl->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     pluginsTbl->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    pluginsTbl->setWordWrap(false);
     connect(pluginsTbl, &QTableView::pressed, this, &GeneralTab::installedPluginSelected);
     installedPluginsLayout->addWidget(pluginsTbl);
 
@@ -195,6 +196,7 @@ GeneralTab::GeneralTab(Updater *updater) : updater(updater)
     availPluginsTbl->setShowGrid(false);
     availPluginsTbl->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     availPluginsTbl->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    availPluginsTbl->setWordWrap(false);
     connect(availPluginsTbl, &QTableView::pressed, this, &GeneralTab::availablePluginSelected);
     availPluginsLayout->addWidget(availPluginsTbl);
 
@@ -347,7 +349,8 @@ void GeneralTab::loadSettings()
 
     fullscreenChk->setChecked(settings->value("fullscreen", false).toBool());
 
-    pluginsModel->load();
+    QStringList pluginsId = pluginsModel->load();
+    availPluginsModel->refresh(pluginsId);
 }
 
 void GeneralTab::writeSettings()
@@ -377,11 +380,11 @@ void GeneralTab::writeSettings()
 /// PluginTableModel ///
 ////////////////////////
 
-void PluginTableModel::load()
+QStringList PluginTableModel::load()
 {
     emit layoutAboutToBeChanged();
 
-    QVector<QString> pluginsId;
+    QStringList pluginsId;
     plugins.clear();
 
     QVector<PluginCfgEntry> cfg;
@@ -421,10 +424,13 @@ void PluginTableModel::load()
         pi.enabled = false;
 
         plugins.push_back(pi);
+        pluginsId.push_back(pluginDir);
     }
 
     emit layoutChanged();
     emit dataChanged(createIndex(0, 0), createIndex(plugins.size()-1, 2));
+
+    return pluginsId;
 }
 
 PluginInfo PluginTableModel::loadFromFile(QFile &file)
@@ -471,7 +477,12 @@ QVariant PluginTableModel::data(const QModelIndex &index, int role) const
         switch(index.column())
         {
         case 1: return plugins[index.row()].name.toString();
-        case 2: return plugins[index.row()].desc.toString();
+        case 2:
+        {
+            QTextDocument text;
+            text.setHtml(plugins[index.row()].desc.toString());
+            return text.toPlainText();
+        }
         }
     }
     else if(role == Qt::CheckStateRole)
@@ -507,6 +518,18 @@ void PluginTableModel::swapEntries(int pos1, int pos2)
     qSwap(plugins[pos1], plugins[pos2]);
 }
 
+QStringList PluginTableModel::getIds()
+{
+    QStringList ret;
+
+    for(int i=0; i<plugins.size(); i++)
+    {
+        ret.append(plugins[i].id);
+    }
+
+    return ret;
+}
+
 /////////////////////////////
 /// AvailPluginTableModel ///
 /////////////////////////////
@@ -514,10 +537,13 @@ void PluginTableModel::swapEntries(int pos1, int pos2)
 AvailPluginTableModel::AvailPluginTableModel()
 {
     manager = new QNetworkAccessManager;
-    QNetworkRequest url(QUrl(utils->getServerUrl() + "/api/get_linux_plugins.php"));
+    QNetworkRequest url(QUrl(utils->getServerUrl() + "/api/get_plugins.php"));
     reply = manager->get(url);
 
-    connect(reply, &QNetworkReply::finished, this, &AvailPluginTableModel::pluginsDownloaded);
+    connect(reply, &QNetworkReply::finished, this, [this](){
+        json = QJsonDocument::fromJson(reply->readAll()).object();
+        this->refresh(QStringList());
+    });
 }
 
 AvailPluginTableModel::~AvailPluginTableModel()
@@ -525,27 +551,36 @@ AvailPluginTableModel::~AvailPluginTableModel()
     delete manager;
 }
 
-void AvailPluginTableModel::pluginsDownloaded()
+void AvailPluginTableModel::refresh(QStringList skipPlugins)
 {
-    emit layoutAboutToBeChanged();
+    static QStringList skip;
 
-    QJsonObject json = QJsonDocument::fromJson(reply->readAll()).object();
+    if(skipPlugins.size() > 0)
+        skip = skipPlugins;
+
+    plugins.clear();
+
+    emit layoutAboutToBeChanged();
 
     for(int i=0; i<json.size(); i++)
     {
-        PluginInfo pi;
-
         QString id = json.keys()[i];
-        pi.id = id;
-        pi.version = json[id].toObject().value("version").toString();
+
+        if(!skip.contains(id))
+        {
+            PluginInfo pi;
+
+            pi.id = id;
+            pi.version = json[id].toObject().value("version").toString();
 #ifdef Q_OS_LINUX
-        pi.url = json[id].toObject().value("deb_url").toString();
+            pi.url = json[id].toObject().value("deb_url").toString();
 #endif
 
-        pi.name = MultilangString::fromJson(json[id].toObject().value("name").toObject());
-        pi.desc = MultilangString::fromJson(json[id].toObject().value("desc").toObject());
+            pi.name = MultilangString::fromJson(json[id].toObject()["name"].toObject());
+            pi.desc = MultilangString::fromJson(json[id].toObject()["desc"].toObject());
 
-        plugins.push_back(pi);
+            plugins.push_back(pi);
+        }
     }
 
     emit layoutChanged();
@@ -575,7 +610,12 @@ QVariant AvailPluginTableModel::data(const QModelIndex &index, int role) const
         switch(index.column())
         {
         case 0: return plugins[index.row()].name.toString();
-        case 1: return plugins[index.row()].desc.toString();
+        case 1:
+        {
+            QTextDocument text;
+            text.setHtml(plugins[index.row()].desc.toString());
+            return text.toPlainText();
+        }
         }
     }
 

@@ -41,10 +41,17 @@ AboutDialog::AboutDialog()
                   "<br/>"
                   + tr("Edah<br/>") +
                   "<br/>"
-                  "Copyright (C) 2016 Łukasz Matczak &lt;<a href=\"mailto:lukasz1235@gmail.com\">lukasz1235@gmail.com</a>&gt;<br/>"
+                  "This software contains:<br/>"
+                  "&#8226; <a href=\"http://www.typicons.com/\">Typicons</a> by Stephen Hutchings licensed under <a href=\"https://creativecommons.org/licenses/by-sa/3.0/\">CC BY-SA</a><br/>"
+                  "&#8226; <a href=\"https://www.openssl.org/\">OpenSSL</a> by The OpenSSL Project licensed under <a href=\"https://raw.githubusercontent.com/openssl/openssl/master/LICENSE\">OpenSSL License</a><br/>"
+                  "&#8226; <a href=\"https://github.com/qtproject/qt-solutions/tree/master/qtsingleapplication\">QtSingleApplication</a> by Digia Plc and/or its subsidiary(-ies) licensed under BSD license<br/>"
+                  "&#8226; <a href=\"http://www.google.com/fonts/specimen/Open+Sans\">Open Sans</a> by Steve Matteson licensed under <a href=\"http://www.apache.org/licenses/LICENSE-2.0\">Apache License 2.0</a><br/>"
+                  "<br/>"
+                  "Copyright (C) 2016 Łukasz Matczak &lt;<a href=\"mailto:luk.matczak@gmail.com\">luk.matczak@gmail.com</a>&gt;<br/>"
                   "This program comes with ABSOLUTELY NO WARRANTY. This is<br/>"
                   "free software, and you are welcome to redistribute it under<br/>"
                   "certain conditions<br/>");
+    text->setOpenExternalLinks(true);
     layout->addWidget(text, 0, 1);
 
     QDialogButtonBox *btns = new QDialogButtonBox(QDialogButtonBox::Close);

@@ -47,10 +47,10 @@ RESOURCES += \
 
 TRANSLATIONS = lang/lang.pl.ts
 
-CONFIG(debug, debug|release) {
+CONFIG(debug) {
 MY_DESTDIR_TARGET = "$$OUT_PWD/debug"
 }
-CONFIG(release, debug|release) {
+CONFIG(release) {
 MY_DESTDIR_TARGET = "$$OUT_PWD/release"
 }
 

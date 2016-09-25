@@ -32,6 +32,7 @@
 #include <QGraphicsDropShadowEffect>
 #include <QTimeLine>
 #include <QMenu>
+#include <QThreadPool>
 
 #include <QDebug>
 
@@ -54,6 +55,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     QCoreApplication::setOrganizationName("Lukasz Matczak");
     QCoreApplication::setApplicationName("Edah");
+
+    QThreadPool::globalInstance()->setMaxThreadCount(QThread::idealThreadCount()/2);
 
     utils = new Utils;
     logger = new Logger;

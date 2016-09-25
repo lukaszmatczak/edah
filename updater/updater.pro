@@ -15,7 +15,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h
 
-#QMAKE_LFLAGS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
+QMAKE_LFLAGS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 
 INCLUDEPATH += ..
 

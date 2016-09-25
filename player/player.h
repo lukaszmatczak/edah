@@ -54,6 +54,7 @@ public:
 private:
     int number;
     QString filepath;
+    QMutex mutex;
 
 signals:
     void done(int id, int duration, QByteArray waveform);

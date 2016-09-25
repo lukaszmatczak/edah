@@ -408,14 +408,30 @@ void SongInfoWorker::run()
     HSTREAM stream;
     QByteArray form;
 
-    int trials = 1024; // TODO??
+/*    int trials = 1024; // TODO??
 
     while((!(stream = BASS_StreamCreateFile(FALSE,
                                             filepath.utf16(),
                                             0,
                                             0,
                                             BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT | BASS_UNICODE)))
-          && trials--);
+          && trials--);*/
+
+    mutex.lock();
+    stream = BASS_StreamCreateFile(FALSE,
+                                   filepath.utf16(),
+                                   0,
+                                   0,
+                                   BASS_STREAM_DECODE | BASS_SAMPLE_MONO | BASS_STREAM_PRESCAN | BASS_SAMPLE_FLOAT | BASS_UNICODE);
+    mutex.unlock();
+
+    if(!stream)
+    {
+        LOG(QString("Cannot create waveform of file \"%1\" (error %2)")
+            .arg(filepath)
+            .arg(BASS_ErrorGetCode()));
+        return;
+    }
 
     QWORD length = BASS_ChannelGetLength(stream, BASS_POS_BYTE);
     float *buf = new float[length/1024+1];

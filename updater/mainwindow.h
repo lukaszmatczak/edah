@@ -54,6 +54,7 @@ private:
     QProgressBar *progressBar;
 
     bool canClose;
+    bool isDialogVisible;
     QTime lastUpdateTime;
     int lastProgress;
 

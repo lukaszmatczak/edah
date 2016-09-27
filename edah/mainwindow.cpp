@@ -525,7 +525,7 @@ void MainWindow::createTitleBar(QWidget *parent)
     titleBar->layout()->addWidget(menuBtn);
 
     QLabel *iconLbl = new QLabel(titleBar);
-    iconLbl->setPixmap(QPixmap(":/img/icon.svg"));
+    iconLbl->setPixmap(QIcon(":/img/icon.svg").pixmap(24, 24));
     titleBar->layout()->addWidget(iconLbl);
 
     this->setWindowTitle("Edah");

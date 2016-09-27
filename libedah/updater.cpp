@@ -101,7 +101,7 @@ QJsonArray Updater::download_getBuild()
     url.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     url.setRawHeader("User-Agent",
                      QString("Edah/%1 (Windows NT %2.%3.%4)")
-                     .arg(/*currBuild*/0)
+                     .arg(utils->getAppBuild())
                      .arg(winver.dwMajorVersion)
                      .arg(winver.dwMinorVersion)
                      .arg(winver.dwBuildNumber).toUtf8());
@@ -470,11 +470,13 @@ void Updater::doUpdate()
     {
         UpdateInfoEx info = this->checkFiles();
         this->downloadUpdates(info.filesToUpdate, info.totalDownloadSize);
-        this->verify(info.filesToUpdate);
-        this->installUpdate(info.filesToUpdate);
-        this->cleanupDepedencies(info.depedencies);
-        this->runPostinstScripts(info.updates);
-        this->updateVersionInfo(info.depedencies, info.remoteJson, info.modules);
+        if(this->verify(info.filesToUpdate))
+        {
+            this->installUpdate(info.filesToUpdate);
+            this->cleanupDepedencies(info.depedencies);
+            this->runPostinstScripts(info.updates);
+            this->updateVersionInfo(info.depedencies, info.remoteJson, info.modules);
+        }
     }
 
     QDir(updateDir).removeRecursively();
@@ -515,7 +517,7 @@ void Updater::downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSiz
     }
 }
 
-void Updater::verify(const QList<FileInfo> &filesToUpdate)
+bool Updater::verify(const QList<FileInfo> &filesToUpdate)
 {
     for(int i=0; i<filesToUpdate.size(); i++)
     {
@@ -529,7 +531,7 @@ void Updater::verify(const QList<FileInfo> &filesToUpdate)
         if(!file.open(QIODevice::ReadOnly))
         {
             emit verFailed();
-            return;
+            return false;
         }
 
         QCryptographicHash hash(QCryptographicHash::Sha256);
@@ -539,9 +541,11 @@ void Updater::verify(const QList<FileInfo> &filesToUpdate)
         if(filesToUpdate[i].compressedChecksum != localChecksum)
         {
             emit verFailed();
-            return;
+            return false;
         }
     }
+
+    return true;
 }
 
 void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)

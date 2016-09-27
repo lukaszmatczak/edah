@@ -27,6 +27,9 @@
 #include <QApplication>
 #include <QStandardPaths>
 #include <QDir>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 Utils *utils;
 LIBEDAHSHARED_EXPORT QSettings *settings;
@@ -37,6 +40,21 @@ Utils::Utils()
     if(!confDir.exists())
     {
         confDir.mkpath(".");
+    }
+
+    QFile file(QCoreApplication::applicationDirPath() + "/version.json");
+    if(file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QJsonArray json = QJsonDocument::fromJson(file.readAll()).array();
+        for(int i=0; i<json.size(); i++)
+        {
+            if(json[i].toObject()["name"] == "core")
+            {
+                appVersion = json[i].toObject()["v"].toString();
+                appBuild   = json[i].toObject()["b"].toInt();
+                break;
+            }
+        }
     }
 }
 
@@ -92,7 +110,17 @@ QString Utils::getConfigPath()
 
 QString Utils::getServerUrl()
 {
-    return "http://192.168.1.225/edah/";
+    return "http://edah.mn.xaa.pl/";
+}
+
+QString Utils::getAppVersion()
+{
+    return appVersion;
+}
+
+int Utils::getAppBuild()
+{
+    return appBuild;
 }
 
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)

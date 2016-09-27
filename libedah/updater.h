@@ -96,7 +96,7 @@ private:
 
     // stage 4
     void downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSize);
-    void verify(const QList<FileInfo> &filesToUpdate);
+    bool verify(const QList<FileInfo> &filesToUpdate);
     void installUpdate(const QList<FileInfo> &filesToUpdate);
     void cleanupDepedencies(const QSet<QString> &depedencies);
     void runPostinstScripts(const UpdateInfoArray &updates);

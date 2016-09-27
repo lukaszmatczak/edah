@@ -28,7 +28,7 @@
 #include <Windows.h>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), canClose(true), lastProgress(0)
+    : QMainWindow(parent), canClose(true), lastProgress(0), isDialogVisible(false)
 {
     logger = new Logger;
     utils = new Utils;
@@ -71,7 +71,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::doUpdate, updater, &Updater::doUpdate);
     connect(updater, &Updater::progress, this, &MainWindow::progress);
     connect(updater, &Updater::verFailed, this, [this](){
+        isDialogVisible = true;
         QMessageBox::critical(this, tr("Error!"), tr("An error occured during downloading updates!"));
+        isDialogVisible = false;
         done();
     });
     connect(updater, &Updater::updateFinished, this, &MainWindow::done);
@@ -253,6 +255,9 @@ cleanup:
 
 void MainWindow::done()
 {
+    if(isDialogVisible)
+        return;
+
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
     SecureZeroMemory(&si, sizeof(si));

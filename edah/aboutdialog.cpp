@@ -18,6 +18,8 @@
 
 #include "aboutdialog.h"
 
+#include <libedah/utils.h>
+
 #include <QGridLayout>
 #include <QLabel>
 #include <QDialogButtonBox>
@@ -37,7 +39,7 @@ AboutDialog::AboutDialog()
     layout->addWidget(icon, 0, 0, 2, 1, Qt::AlignTop);
 
     QLabel *text = new QLabel(this);
-    text->setText("<b>Edah</b><br/>"
+    text->setText(QString("<b>Edah %1</b><br/>").arg(utils->getAppVersion()) +
                   "<br/>"
                   + tr("Edah<br/>"));
     text->setWordWrap(true);

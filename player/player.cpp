@@ -60,6 +60,10 @@ Player::Player() : currNumber(0), autoplay(false)
 
     qApp->installTranslator(&translator);
 
+    BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
+    BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
+    BASS_SetConfig(BASS_CONFIG_UNICODE, true);
+
     bPanel = new BigPanel(this);
     connect(bPanel, &BigPanel::play, this, &Player::play);
     connect(bPanel, &BigPanel::stop, this, &Player::stop);
@@ -72,9 +76,6 @@ Player::Player() : currNumber(0), autoplay(false)
     settingsTab = new SettingsTab(this);
 
     this->settingsChanged();
-
-    BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
-    BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
 
     connect(this, &Player::stateChanged, bPanel, &BigPanel::playerStateChanged);
     connect(this, &Player::stateChanged, sPanel, &SmallPanel::playerStateChanged);

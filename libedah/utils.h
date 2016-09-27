@@ -35,6 +35,8 @@ public:
     QString getPluginPath(QString plugin);
     QString getConfigPath();
     QString getServerUrl();
+    QString getAppVersion();
+    int getAppBuild();
 
     void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
     void addShadowEffect(QWidget *widget, QColor color);
@@ -44,6 +46,9 @@ private:
     Utils();
 
     friend class MainWindow;
+
+    QString appVersion;
+    int appBuild;
 };
 
 LIBEDAHSHARED_EXPORT extern Utils *utils;

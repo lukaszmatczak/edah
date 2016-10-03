@@ -1,37 +1,111 @@
+/*
+    Edah
+    Copyright (C) 2016  Lukasz Matczak
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "recorder.h"
+
+#include <libedah/utils.h>
+#include <libedah/logger.h>
+
+#include <bassenc.h>
 
 #include <QWidget>
 #include <QPushButton>
 #include <QGridLayout>
+#include <QApplication>
+#include <QMessageBox>
 
 #include <QDebug>
 
 Recorder::Recorder(QObject *parent) :
-    QObject(parent)
+    QObject(parent), recordingActive(false)
 {
-    bigFrame = new QWidget;
-    bigFrame->setLayout(new QGridLayout);
+    QString localeStr = settings->value("lang", "").toString();
+    if(localeStr.isEmpty())
+    {
+        localeStr = QLocale::system().name().left(2);
+    }
+    if(localeStr != "en")
+    {
+        if(!translator.load(QLocale(localeStr), "lang", ".", ":/player-lang"))
+        {
+            LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
+        }
+    }
 
-    QPushButton *btn = new QPushButton("Hello Recorder plugin!", bigFrame);
-    bigFrame->layout()->addWidget(btn);
+    qApp->installTranslator(&translator);
 
-    smallWidget = new QLabel(this->getPluginName());
+    BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
+    BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
+    BASS_SetConfig(BASS_CONFIG_UNICODE, true);
+
+    bPanel = new BigPanel(this);
+    connect(bPanel, &BigPanel::record, this, &Recorder::record);
+    connect(bPanel, &BigPanel::stop, this, &Recorder::stop);
+    bPanel->retranslate();
+
+    sPanel = new SmallPanel(this);
+    sPanel->retranslate();
+
+    settingsTab = new SettingsTab(this);
+
+    this->settingsChanged();
+
+    connect(this, &Recorder::stateChanged, bPanel, &BigPanel::recorderStateChanged);
+    connect(this, &Recorder::stateChanged, sPanel, &SmallPanel::recorderStateChanged);
+
+    connect(this, &Recorder::positionChanged, bPanel, &BigPanel::recorderPositionChanged);
+    connect(this, &Recorder::positionChanged, sPanel, &SmallPanel::recorderPositionChanged);
+
+    timer.setInterval(35);
+    connect(&timer, &QTimer::timeout, this, &Recorder::refreshState);
+    timer.start();
+
+    peakMeter = new PeakMeter;
+    peakMeter->setColors(qRgb(115, 50, 150), qRgb(255, 255, 0), qRgb(255, 0, 0));
 }
 
 Recorder::~Recorder()
 {
-    delete bigFrame;
-    delete smallWidget;
+    delete bPanel;
+    delete sPanel;
+    delete settingsTab;
+
+    BASS_RecordFree();
 }
 
 QWidget *Recorder::bigPanel()
 {
-    return bigFrame;
+    sPanel->removePeakMeter(peakMeter);
+    bPanel->addPeakMeter(peakMeter);
+
+    bPanel->nameEdit->grabKeyboard();
+
+    return bPanel;
 }
 
 QWidget *Recorder::smallPanel()
 {
-    return smallWidget;
+    bPanel->removePeakMeter(peakMeter);
+    sPanel->addPeakMeter(peakMeter);
+
+    bPanel->nameEdit->releaseKeyboard();
+
+    return sPanel;
 }
 
 bool Recorder::hasPanel() const
@@ -41,7 +115,7 @@ bool Recorder::hasPanel() const
 
 QWidget *Recorder::getSettingsTab()
 {
-    return nullptr;
+    return settingsTab;
 }
 
 QString Recorder::getPluginName() const
@@ -56,15 +130,167 @@ QString Recorder::getPluginId() const
 
 void Recorder::loadSettings()
 {
-
+    settingsTab->loadSettings();
 }
 
 void Recorder::writeSettings()
 {
-
+    settingsTab->writeSettings();
 }
 
 void Recorder::settingsChanged()
 {
+    QLocale locale = QLocale(settings->value("lang", "").toString());
+    translator.load(locale, "lang", ".", ":/recorder-lang");
 
+    settings->beginGroup(this->getPluginId());
+    QString recDev = settings->value("device", "").toString();
+    int channels = settings->value("channels", 1).toInt();
+    int sampleRate = settings->value("sampleRate", 44100).toInt();
+    settings->endGroup();
+
+    static bool initialized = false;
+    int recDevNo = -1;
+
+    BASS_DEVICEINFO info;
+
+    for(int i=0; BASS_RecordGetDeviceInfo(i, &info); i++)
+    {
+        if(recDev == info.name)
+        {
+            recDevNo = i;
+            break;
+        }
+    }
+
+    if((BASS_RecordGetDevice() != recDevNo) || !initialized)
+    {
+        BASS_RecordFree();
+
+        if(!BASS_RecordInit(recDevNo))
+        {
+            int code = BASS_ErrorGetCode();
+            QString text = QString("BASS error: %1").arg(code);
+            LOG(text);
+
+            if(code == 23)
+                text += tr("\nProblem with device: \"%1\"!").arg(recDev);
+
+            QMessageBox msg(QMessageBox::Critical, tr("Error!"), text);
+            msg.exec();
+        }
+        else
+        {
+            initialized = true;
+
+            recStream = BASS_RecordStart(sampleRate, channels, 0, nullptr, 0);
+        }
+    }
+}
+
+bool Recorder::isRecording()
+{
+    return recordingActive;
+}
+
+void Recorder::refreshState()
+{
+    BASS_CHANNELINFO info;
+
+    if(BASS_ChannelGetInfo(recStream, &info))
+    {
+        QVector<float> levels(2);
+
+        DWORD flags = info.chans == 1 ? BASS_LEVEL_MONO : BASS_LEVEL_STEREO;
+
+        BASS_ChannelGetLevelEx(recStream, levels.data(), 0.035f, flags);
+        peakMeter->setPeak(levels[0], levels[1]);
+        peakMeter->setChannels(info.chans);
+    }
+
+    if(recordingActive)
+        emit positionChanged(QTime(0,0).addSecs(startTime.secsTo(QDateTime::currentDateTime())));
+}
+
+void Recorder::record()
+{
+    settings->beginGroup(this->getPluginId());
+    QString recDir = settings->value("recsDir").toString();
+    QString filenameFormat = settings->value("filenameFormat", "%n% %yyyy%-%MM%-%dd% %hh%.%mm%").toString();
+    int bitrate = settings->value("bitrate", 64).toInt();
+    int channels = settings->value("channels", 1).toInt();
+    int sampleRate = settings->value("sampleRate", 44100).toInt();
+    settings->endGroup();
+
+    BASS_ChannelStop(recStream);
+
+    if(!(recStream=BASS_RecordStart(sampleRate, channels, 0, nullptr, 0)))
+    {
+        return;
+    }
+
+#ifdef Q_OS_WIN
+    QString lameBin = utils->getDataDir() + "/plugins/" + this->getPluginId() + "/lame.exe";
+#endif
+#ifdef Q_OS_LINUX
+    QString lameBin = "lame";
+#endif
+
+    startTime = QDateTime::currentDateTime();
+    QString filename = genNextFilename(recDir + "/" + utils->parseFilename(filenameFormat, tr("Recording"), startTime), ".mp3");
+
+    if(!BASS_Encode_Start(recStream,
+                          (wchar_t*)QString("%1 -b %2 - \"%3\"").arg(lameBin).arg(bitrate).arg(filename).utf16(),
+                          BASS_UNICODE,
+                          nullptr,
+                          0))
+    {
+        LOG(QString("Cannot start recording to file \"%1\"! Error code = %2")
+            .arg(filename)
+            .arg(BASS_ErrorGetCode()));
+
+        return;
+    }
+
+    recordingActive = true;
+    currFile = filename;
+
+    emit stateChanged();
+}
+
+void Recorder::stop(QString filename)
+{
+    settings->beginGroup(this->getPluginId());
+    QString recDir = settings->value("recsDir").toString();
+    QString filenameFormat = settings->value("filenameFormat", "%n% %yyyy%-%MM%-%dd% %hh%.%mm%").toString();
+    int channels = settings->value("channels", 1).toInt();
+    int sampleRate = settings->value("sampleRate", 44100).toInt();
+    settings->endGroup();
+
+    BASS_ChannelStop(recStream);
+    BASS_Encode_StopEx(recStream, true);
+
+    recStream = BASS_RecordStart(sampleRate, channels, 0, nullptr, 0);
+
+    if(filename.length() > 0)
+    {
+        QFile file(currFile);
+        file.rename(genNextFilename(recDir + "/" + utils->parseFilename(filenameFormat, filename, startTime), ".mp3"));
+    }
+
+    recordingActive = false;
+
+    emit stateChanged();
+}
+
+QString Recorder::genNextFilename(const QString &filename, const QString &ext)
+{
+    QString nextFilename = filename + ext;
+
+    for(int i=2; QFile(nextFilename).exists(); i++)
+    {
+        nextFilename = QString(filename + "_%1" + ext).arg(i, 4, 10, QLatin1Char('0'));
+    }
+
+    return nextFilename;
 }

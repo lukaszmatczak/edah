@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>recorder-img/stop.svg</file>
+        <file>recorder-img/record.svg</file>
+    </qresource>
+</RCC>

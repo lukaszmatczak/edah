@@ -38,6 +38,8 @@ public:
     QString getAppVersion();
     int getAppBuild();
 
+    QString parseFilename(QString fmt, const QString &name, const QDateTime &time);
+
     void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
     void addShadowEffect(QWidget *widget, QColor color);
     void updateStyle(QWidget *widget);

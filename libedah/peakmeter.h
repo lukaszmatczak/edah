@@ -16,8 +16,9 @@ public:
     bool hasHeightForWidth() const;
     int heightForWidth(int width) const;
 
-    void setPeakStereo(float left, float right);
+    void setPeak(float left, float right);
     void setColors(QRgb low, QRgb mid, QRgb high);
+    void setChannels(int count);
 
 protected:
     void paintEvent(QPaintEvent *e);
@@ -28,6 +29,8 @@ private:
     float peaks[2];
     float max[2];
     float speed[2];
+
+    int channels;
 
     QRgb colors[32];
 

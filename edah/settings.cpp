@@ -60,7 +60,9 @@ Settings::Settings(QVector<Plugin> *plugins, Updater *updater) : plugins(plugins
         QWidget *t = p.plugin->getSettingsTab();
         if(t)
         {
+            //qDebug() << t->parent();// << p.plugin->getPluginName();
             tabs->addTab(t, p.plugin->getPluginName());
+            //qDebug() << t->parent();
             p.plugin->loadSettings();
         }
     }
@@ -87,9 +89,11 @@ Settings::Settings(QVector<Plugin> *plugins, Updater *updater) : plugins(plugins
 
 Settings::~Settings()
 {
-    for(int i=1; i<tabs->count(); i++)
+    int count = tabs->count()-1;
+
+    for(int i=0; i<count; i++)
     {
-        tabs->widget(i)->setParent(0);
+        tabs->widget(1)->setParent(0);
     }
 }
 

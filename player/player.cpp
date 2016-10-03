@@ -349,7 +349,7 @@ void Player::refreshState()
         sPanel->playerPositionChanged(currNumber, pos, total, autoplay);
     }
 
-    peakMeter->setPeakStereo(levels[0], levels[1]);
+    peakMeter->setPeak(levels[0], levels[1]);
 }
 
 bool Player::isPlaying()

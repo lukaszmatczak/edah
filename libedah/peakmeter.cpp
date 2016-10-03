@@ -6,7 +6,7 @@
 #include <QtMath>
 #include <QDebug>
 
-PeakMeter::PeakMeter(QWidget *parent) : QWidget(parent)
+PeakMeter::PeakMeter(QWidget *parent) : QWidget(parent), channels(2)
 {
     for(int i=0; i<2; i++)
     {
@@ -37,12 +37,17 @@ int PeakMeter::heightForWidth(int width) const
     return width*2;
 }
 
-void PeakMeter::setPeakStereo(float left, float right)
+void PeakMeter::setPeak(float left, float right)
 {
     peaks[0] = qMax(peaks[0], left);
     peaks[1] = qMax(peaks[1], right);
 
     this->update();
+}
+
+void PeakMeter::setChannels(int count)
+{
+    this->channels = count;
 }
 
 QRgb PeakMeter::blendColors(QRgb color1, QRgb color2, float r)
@@ -73,7 +78,7 @@ void PeakMeter::paintEvent(QPaintEvent *e)
     QRadialGradient gradient(0.5, 0.5, 0.5);
     gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
 
-    for(int channel=0; channel<2; channel++)
+    for(int channel=0; channel<this->channels; channel++)
     {
         for(int i=0; i<32; i++)
         {

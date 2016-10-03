@@ -30,6 +30,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QDateTime>
 
 Utils *utils;
 LIBEDAHSHARED_EXPORT QSettings *settings;
@@ -121,6 +122,35 @@ QString Utils::getAppVersion()
 int Utils::getAppBuild()
 {
     return appBuild;
+}
+
+QString Utils::parseFilename(QString fmt, const QString &name, const QDateTime &time)
+{
+    fmt.replace(QString("'"), QString("''"));
+    fmt.replace(QString("%n%"), QString(":thisshouldntoccurinfilename:"));
+    fmt.replace(QString("%%"), QString(""));
+    fmt.replace(QString("%"), QString("'"));
+
+    if(!fmt.startsWith("'"))
+        fmt = "'" + fmt;
+
+    if(!fmt.endsWith("'"))
+        fmt += "'";
+
+    QString filename = time.toString(fmt);
+
+    if(filename.contains(":thisshouldntoccurinfilename:"))
+    {
+        filename.replace(QString(":thisshouldntoccurinfilename:"), name);
+    }
+    else
+    {
+        filename += " " + name;
+    }
+
+    filename.replace(QRegExp("[:\\\\\\/*?\"<>|]"), QString(""));
+
+    return filename;
 }
 
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)

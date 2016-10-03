@@ -16,8 +16,18 @@ DESTDIR = ../plugins/recorder
 
 INCLUDEPATH += ..
 
-SOURCES += recorder.cpp
+SOURCES += recorder.cpp \
+    settingstab.cpp \
+    bigpanel.cpp \
+    smallpanel.cpp
 
-HEADERS += recorder.h
+HEADERS += recorder.h \
+    settingstab.h \
+    bigpanel.h \
+    smallpanel.h
 
-DISTFILES += recorder.json
+LIBS += -L. -lbass -lbassenc
+win32: LIBS += -ledah
+
+RESOURCES += \
+    common.qrc

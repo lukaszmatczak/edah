@@ -41,7 +41,7 @@ Recorder::Recorder(QObject *parent) :
     }
     if(localeStr != "en")
     {
-        if(!translator.load(QLocale(localeStr), "lang", ".", ":/player-lang"))
+        if(!translator.load(QLocale(localeStr), "lang", ".", ":/recorder-lang"))
         {
             LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
         }

@@ -62,7 +62,7 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     bitrate = new QComboBox(this);
     QList<int> values;
-    values << 8 << 16 << 24 << 32 << 40 << 48 << 56 << 64 << 80 << 96 << 112 << 128 << 160 << 192 << 224 << 256 << 320;
+    values << 32 << 40 << 48 << 56 << 64 << 80 << 96 << 112 << 128 << 160 << 192 << 224 << 256 << 320;
     for(int i=0; i<values.size(); i++)
         bitrate->addItem(QString("%1 kbit/s").arg(values[i]), values[i]);
 
@@ -70,7 +70,7 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     sampleRate = new QComboBox(this);
     values.clear();
-    values << 8000 << 11025 << 12000 << 16000 << 22050 << 24000 << 32000 << 44100 << 48000;
+    values << 32000 << 44100 << 48000;
     for(int i=0; i<values.size(); i++)
         sampleRate->addItem(QString("%1 Hz").arg(values[i]), values[i]);
     layout->addRow(tr("Sample rate: "), sampleRate);

@@ -60,9 +60,7 @@ Settings::Settings(QVector<Plugin> *plugins, Updater *updater) : plugins(plugins
         QWidget *t = p.plugin->getSettingsTab();
         if(t)
         {
-            //qDebug() << t->parent();// << p.plugin->getPluginName();
             tabs->addTab(t, p.plugin->getPluginName());
-            //qDebug() << t->parent();
             p.plugin->loadSettings();
         }
     }

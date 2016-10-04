@@ -31,3 +31,11 @@ win32: LIBS += -ledah
 
 RESOURCES += \
     common.qrc
+
+TRANSLATIONS = recorder-lang/lang.pl.ts
+
+QMAKE_EXTRA_COMPILERS += lrelease
+lrelease.input         = TRANSLATIONS
+lrelease.output        = ${QMAKE_FILE_BASE}.qm
+lrelease.commands      = $$[QT_INSTALL_BINS]/lrelease ${QMAKE_FILE_IN}
+lrelease.CONFIG       += no_link target_predeps

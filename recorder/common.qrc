@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>recorder-img/stop.svg</file>
         <file>recorder-img/record.svg</file>
+        <file>recorder-lang/lang.pl.qm</file>
     </qresource>
 </RCC>

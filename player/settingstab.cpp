@@ -28,23 +28,45 @@
 #include <QStyle>
 #include <QFileDialog>
 #include <QLabel>
+#include <QScreen>
+#include <QMessageBox>
+
+#include <QDebug>
+
+QVector<AudioInfo> SettingsTab::ainfo;
 
 SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 {
     QFormLayout *layout = new QFormLayout;
     this->setLayout(layout);
 
-    QHBoxLayout *songsLayout = new QHBoxLayout;
+    this->setStyleSheet("#monitorsFrame {"
+                        "   background-color: gray;"
+                        "}"
+                        "#monitorsFrame .QPushButton {"
+                        "   border: 1px solid black;"
+                        "   font-size: 14px;"
+                        "   color: white;"
+                        "}");
+
+    selectedScreenLbl = new QLabel(this);
+    layout->addRow(tr("Output video device: "), selectedScreenLbl);
+
+    monitorsFrame = new QFrame(this);
+    monitorsFrame->setObjectName("monitorsFrame");
+    monitorsFrame->setMinimumHeight(100);
+    monitorsFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    layout->addRow("", monitorsFrame);
+
+    connect(qApp, &QApplication::screenAdded, this, [this](QScreen*){ drawMonitors(); });
+    connect(qApp, &QApplication::screenRemoved, this, [this](QScreen*){ drawMonitors(); });
 
     playDevBox = new QComboBox(this);
     playDevBox->setEditable(true);
     playDevBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-
-    BASS_DEVICEINFO info;
-    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
-        playDevBox->addItem(info.name);
-
     layout->addRow(tr("Audio device: "), playDevBox);
+
+    QHBoxLayout *songsLayout = new QHBoxLayout;
 
     songsDir = new QLineEdit(this);
     songsLayout->addWidget(songsDir);
@@ -55,6 +77,82 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
     songsLayout->addWidget(songsDirBtn);
 
     layout->addRow(tr("Songs directory: "), songsLayout);
+}
+
+void SettingsTab::resizeEvent(QResizeEvent *e)
+{
+    Q_UNUSED(e)
+
+    this->drawMonitors();
+}
+
+void SettingsTab::setScreenLbl()
+{
+    foreach (QScreen *screen, QGuiApplication::screens())
+    {
+        if(screen->geometry() == selectedMonitor)
+        {
+            QString friendlyName = utils->getFriendlyName(screen->name());
+            friendlyName += QString(" [%1x%2]").arg(screen->size().width()).arg(screen->size().height());
+            selectedScreenLbl->setText(friendlyName);
+        }
+    }
+}
+
+void SettingsTab::drawMonitors()
+{
+    QList<QScreen*> screens = QGuiApplication::screens();
+
+    double scale = qMin((monitorsFrame->height()-10.0)/screens[0]->virtualSize().height(),
+            (monitorsFrame->width()-10.0)/screens[0]->virtualSize().width());
+
+    while(QPushButton *w = monitorsFrame->findChild<QPushButton*>())
+        delete w;
+
+    int minX = screens[0]->virtualGeometry().x();
+    int minY = screens[0]->virtualGeometry().y();
+
+    foreach(QScreen *screen, screens)
+    {
+        QString name = QString("%1x%2").arg(screen->size().width()).arg(screen->size().height());
+        QPushButton *monitorBtn = new QPushButton(monitorsFrame);
+
+        if(screen->geometry() == QGuiApplication::primaryScreen()->geometry())
+        {
+            name += tr("\nMain");
+            monitorBtn->setStyleSheet("background-color: rgb(76,76,76);");
+        }
+        else if(screen->geometry() == selectedMonitor)
+        {
+            monitorBtn->setStyleSheet("background-color: rgb(0,62,198);");
+            monitorBtn->setCursor(QCursor(Qt::PointingHandCursor));
+        }
+        else
+        {
+            monitorBtn->setStyleSheet("background-color: rgb(36,36,76);");
+            monitorBtn->setCursor(QCursor(Qt::PointingHandCursor));
+        }
+
+        monitorBtn->setText(name);
+
+        QRect geom = screen->geometry();
+        geom.translate(-minX, -minY);
+        monitorBtn->setGeometry(QRect(geom.topLeft()*scale+QPoint(5,5), geom.size()*scale));
+
+        connect(monitorBtn, &QPushButton::clicked, this, [this, screen](){
+            if(screen->geometry() == QGuiApplication::primaryScreen()->geometry())
+                QMessageBox::warning(this, "", tr("You couldn't choose main display!"));
+            else
+            {
+                selectedMonitor = screen->geometry();
+                drawMonitors();
+            }
+        });
+
+        monitorBtn->show();
+    }
+
+    this->setScreenLbl();
 }
 
 void SettingsTab::songsDirBtn_clicked()
@@ -68,20 +166,46 @@ void SettingsTab::songsDirBtn_clicked()
 
 void SettingsTab::loadSettings()
 {
-    settings->beginGroup(plugin->getPluginId());
+    //AudioInfo
+    playDevBox->clear();
+    AudioInfo savedAinfo(plugin->getPluginId());
 
+    int foundAt = -1;
+    for(int i=0; i<ainfo.size(); i++)
+    {
+        if(ainfo[i] == savedAinfo) foundAt = i;
+    }
+
+    if(foundAt == -1 && !savedAinfo.id.isEmpty())
+    {
+        ainfo.push_front(savedAinfo);
+        foundAt = 0;
+    }
+
+    foreach(AudioInfo info, ainfo)
+    {
+        playDevBox->addItem(info.toString(), QVariant::fromValue(info));
+    }
+
+    playDevBox->setCurrentIndex(foundAt);
+
+    settings->beginGroup(plugin->getPluginId());
+    selectedMonitor = settings->value("displayGeometry").toRect();
     playDevBox->setCurrentText(settings->value("device", "").toString());
     songsDir->setText(settings->value("songsDir", "").toString());
     settings->endGroup();
 
+    this->setScreenLbl();
+    this->drawMonitors();
 }
 
 void SettingsTab::writeSettings()
 {
+    AudioInfo ainfo = playDevBox->itemData(playDevBox->currentIndex()).value<AudioInfo>();
+    ainfo.save(plugin->getPluginId());
+
     settings->beginGroup(plugin->getPluginId());
-
-    settings->setValue("device", playDevBox->currentText());
+    settings->setValue("displayGeometry", selectedMonitor);
     settings->setValue("songsDir", songsDir->text());
-
     settings->endGroup();
 }

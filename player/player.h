@@ -22,6 +22,9 @@
 #include "bigpanel.h"
 #include "smallpanel.h"
 #include "settingstab.h"
+#include "playlistmodel.h"
+#include "mpv.h"
+#include "videowindow.h"
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
@@ -33,6 +36,10 @@
 #include <QRunnable>
 #include <QTranslator>
 
+#ifdef Q_OS_WIN
+#include <endpointvolume.h>
+#endif
+
 struct Song
 {
     QString filename;
@@ -40,24 +47,6 @@ struct Song
     int duration;
     qint64 mtime;
     QByteArray waveform;
-};
-
-class SongInfoWorker : public QObject, public QRunnable
-{
-    Q_OBJECT
-public:
-    SongInfoWorker(int id, QString filepath);
-
-    void run();
-    bool autoDelete();
-
-private:
-    int number;
-    QString filepath;
-    QMutex mutex;
-
-signals:
-    void done(int id, int duration, QByteArray waveform);
 };
 
 class Player : public QObject, public IPlugin
@@ -83,10 +72,13 @@ public:
 
     bool isPlaying();
     QMap<int, Song> songs;
+    PlaylistModel playlistModel;
 
 private:
     void loadSongs();
     void loadSongsInfo();
+    void playFile(int n);
+    void initPeakMeter(qint64 pid);
 
     QTranslator translator;
 
@@ -96,20 +88,38 @@ private:
 
     QDir songsDir;
     PeakMeter *peakMeter;
+    VideoWindow *videoWindow;
+    MPV *mpv;
 
     HSTREAM playStream;
     bool playing;
-    int currNumber;
+    bool paused;
+    double currPos;
+    //int currNumber;
     bool autoplay;
 
     QTimer timer;
+    QTimer peakTimer;
+
+#ifdef Q_OS_WIN
+    IAudioMeterInformation *pAudioMeterInformation;
+#endif
 
 private slots:
-    void play(int number, bool autoplay);
+    void play(int entry, bool autoplay);
     void stop();
     void seek(int ms);
 
     void refreshState();
+
+    void setPaused(bool paused);
+    void setCurrPos(double currPos);
+    void mpvEOF();
+
+    void screenAdded(QScreen *screen);
+    void screenRemoved(QScreen *screen);
+
+    void getPeak();
 
 signals:
     void stateChanged(bool isPlaying);

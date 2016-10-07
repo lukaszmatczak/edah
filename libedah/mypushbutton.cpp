@@ -67,6 +67,10 @@ void MyPushButton::timerTimeout()
     int prevColor = hoverColor;
     hoverColor = this->underMouse() ? qMin(hoverColor+8, 40)
                                     : qMax(hoverColor-2, 0);
+
+    if(!this->isEnabled())
+        hoverColor = 0;
+
     if(hoverColor != prevColor)
     {
         this->setStyleSheet(QString("QPushButton { background-color: rgb(36,36,%1); }")

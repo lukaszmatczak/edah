@@ -44,6 +44,9 @@ public:
     void addShadowEffect(QWidget *widget, QColor color);
     void updateStyle(QWidget *widget);
 
+    QString getFriendlyName(QString dev);
+    QString getOutputTechnologyString(int number);
+
 private:
     Utils();
 

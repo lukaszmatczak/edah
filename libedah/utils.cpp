@@ -32,6 +32,10 @@
 #include <QJsonObject>
 #include <QDateTime>
 
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif
+
 Utils *utils;
 LIBEDAHSHARED_EXPORT QSettings *settings;
 
@@ -193,3 +197,96 @@ void Utils::updateStyle(QWidget *widget)
     widget->update();
 }
 
+QString Utils::getFriendlyName(QString dev)
+{
+#ifdef Q_OS_WIN
+    UINT32 PathCount, ModeCount;
+    int error = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &PathCount, &ModeCount);
+
+    if (error != ERROR_SUCCESS)
+    {
+        return "";
+    }
+
+    DISPLAYCONFIG_PATH_INFO *DisplayPaths = new DISPLAYCONFIG_PATH_INFO[PathCount];
+    DISPLAYCONFIG_MODE_INFO *DisplayModes = new DISPLAYCONFIG_MODE_INFO[ModeCount];
+    error = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &PathCount, DisplayPaths, &ModeCount, DisplayModes, NULL);
+
+    if (error != ERROR_SUCCESS)
+    {
+        delete [] DisplayPaths;
+        delete [] DisplayModes;
+        return "";
+    }
+
+    for (UINT32 i = 0; i < PathCount; i++)
+    {
+        DISPLAYCONFIG_DEVICE_INFO_HEADER hdr;
+
+        hdr.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+        hdr.id = DisplayPaths[i].sourceInfo.id;
+        hdr.adapterId = DisplayPaths[i].sourceInfo.adapterId;
+        hdr.size = sizeof(DISPLAYCONFIG_SOURCE_DEVICE_NAME);
+
+        DISPLAYCONFIG_SOURCE_DEVICE_NAME srcInfo;
+        memset(&srcInfo, 0, sizeof(srcInfo));
+        srcInfo.header = hdr;
+
+        DisplayConfigGetDeviceInfo(&srcInfo.header);
+
+        if(!wcscmp(srcInfo.viewGdiDeviceName, dev.toStdWString().c_str()))
+        {
+            hdr.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+            hdr.id = DisplayPaths[i].targetInfo.id;
+            hdr.adapterId = DisplayPaths[i].targetInfo.adapterId;
+            hdr.size = sizeof(DISPLAYCONFIG_TARGET_DEVICE_NAME);
+
+            DISPLAYCONFIG_TARGET_DEVICE_NAME info;
+            memset(&info, 0, sizeof(info));
+            info.header = hdr;
+
+            DisplayConfigGetDeviceInfo(&info.header);
+
+            delete [] DisplayPaths;
+            delete [] DisplayModes;
+
+            QString ret = QString::fromUtf16((ushort*)info.monitorFriendlyDeviceName);
+
+            if(this->getOutputTechnologyString(info.outputTechnology) != "")
+                ret += " (" + this->getOutputTechnologyString(info.outputTechnology) + ")";
+
+            return ret;
+        }
+    }
+
+    delete [] DisplayPaths;
+    delete [] DisplayModes;
+    return "";
+#endif
+}
+
+QString Utils::getOutputTechnologyString(int number)
+{
+#ifdef Q_OS_WIN
+    switch(number)
+    {
+    case 0: return "VGA";
+    case 1: return "S-Video";
+    case 2: return "Composite video";
+    case 3: return "Component video";
+    case 4: return "DVI";
+    case 5: return "HDMI";
+    case 6: return "LVDS";
+    case 8: return "D Video";
+    case 9: return "SDI";
+    case 10: return "DisplayPort";
+    case 11: return "DisplayPort [internal]";
+    case 12: return "UDI";
+    case 13: return "UDI [internal]";
+    case 14: return "SDTV";
+    case 15: return "Miracast";
+    case 0x80000000: return "Internal display";
+    default: return "";
+    }
+#endif
+}

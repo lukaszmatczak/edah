@@ -20,11 +20,51 @@
 #define SETTINGSTAB_H
 
 #include <libedah/iplugin.h>
+#include <libedah/utils.h>
 
 #include <QWidget>
 #include <QLineEdit>
 #include <QComboBox>
 #include <QSettings>
+#include <QLabel>
+
+struct AudioInfo
+{
+    QString id;
+    QString name;
+
+    AudioInfo()
+    {
+
+    }
+
+    AudioInfo(QString pluginId)
+    {
+        settings->beginGroup(pluginId);
+        id = settings->value("audioDeviceId").toString();
+        name = settings->value("audioDeviceName").toString();
+        settings->endGroup();
+    }
+
+    void save(QString pluginId)
+    {
+        settings->beginGroup(pluginId);
+        settings->setValue("audioDeviceId", id);
+        settings->setValue("audioDeviceName", name);
+        settings->endGroup();
+    }
+
+    QString toString()
+    {
+        return name;
+    }
+
+    inline bool operator==(const AudioInfo& x)
+    {
+        return (!x.id.isEmpty() && (x.id == this->id));
+    }
+};
+Q_DECLARE_METATYPE(AudioInfo)
 
 class SettingsTab : public QWidget
 {
@@ -35,10 +75,22 @@ public:
     void loadSettings();
     void writeSettings();
 
+    static QVector<AudioInfo> ainfo;
+
+protected:
+    void resizeEvent(QResizeEvent *e);
+
 private:
+    void setScreenLbl();
+    void drawMonitors();
+
     IPlugin *plugin;
+    QLabel *selectedScreenLbl;
+    QFrame *monitorsFrame;
     QComboBox *playDevBox;
     QLineEdit *songsDir;
+
+    QRect selectedMonitor;
 
 private slots:
     void songsDirBtn_clicked();

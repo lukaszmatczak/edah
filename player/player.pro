@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui widgets
+win32: QT += winextras
 
 TARGET = player
 TEMPLATE = lib
@@ -14,26 +15,32 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
 
 DESTDIR = ../plugins/player
 
-INCLUDEPATH += ..
+INCLUDEPATH += .. C:/Users/lukasz/Desktop/taglib/include
 
 SOURCES += player.cpp \
     bigpanel.cpp \
     settingstab.cpp \
     waveform.cpp \
-    smallpanel.cpp
+    smallpanel.cpp \
+    playlistmodel.cpp \
+    mpv.cpp \
+    videowindow.cpp
 
 HEADERS += player.h \
     bigpanel.h \
     settingstab.h \
     waveform.h \
-    smallpanel.h
+    smallpanel.h \
+    playlistmodel.h \
+    mpv.h \
+    videowindow.h
 
 DISTFILES += player.json
 
 TRANSLATIONS = player-lang/lang.pl.ts
 
-LIBS += -L. -ltag -lbass
-win32: LIBS += -ledah
+LIBS += -LC:/Users/lukasz/Desktop/taglib/lib -ltag -lbass
+win32: LIBS += -ledah -lole32
 
 RESOURCES += \
     common.qrc

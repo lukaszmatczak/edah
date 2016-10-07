@@ -1,0 +1,108 @@
+/*
+    Edah
+    Copyright (C) 2015-2016  Lukasz Matczak
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef PLAYLISTMODEL_H
+#define PLAYLISTMODEL_H
+
+#include <QAbstractItemModel>
+#include <QWidget>
+#include <QTimer>
+#include <QRunnable>
+
+#define EF_WIN_SCALE      (1 << 0)
+#define EF_WIN_WITHCURSOR (1 << 1)
+
+struct EntryInfo
+{
+    enum Type {Empty, AV, Image, Window};
+    Type type;
+    QString title;
+    int duration;
+    bool exists;
+    QPixmap thumbnail;
+    QByteArray waveform;
+
+    // Type: AV, Image
+    QString filename;
+
+    // Type: Window
+    WId winID;
+    int flags;
+
+    EntryInfo()
+    {
+        type = Empty;
+        duration = 0;
+        exists = false;
+        winID = 0;
+        flags = 0;
+    }
+};
+
+class SongInfoWorker : public QObject, public QRunnable
+{
+    Q_OBJECT
+public:
+    SongInfoWorker(int id, QString filepath);
+
+    void run();
+    bool autoDelete();
+
+private:
+    int number;
+    QString filepath;
+    QMutex mutex;
+
+signals:
+    void done(int id, QByteArray waveform);
+};
+
+class PlaylistModel : public QAbstractItemModel
+{
+Q_OBJECT
+public:
+    PlaylistModel();
+    ~PlaylistModel();
+
+    QModelIndex index(int row, int column, const QModelIndex &parent) const;
+    QModelIndex parent(const QModelIndex &child) const;
+    int rowCount(const QModelIndex &parent) const;
+    int columnCount(const QModelIndex &parent) const;
+    QVariant data(const QModelIndex &index, int role) const;
+
+    void addFile(QString filename);
+    void addWindow(WId winID, int flags);
+    void removeEntry(int pos);
+    void swapEntries(int pos1, int pos2);
+
+    EntryInfo getItemInfo(int n);
+    EntryInfo getCurrentItemInfo();
+    void setCurrentItem(int n);
+    int getCurrentItem();
+
+private:
+    QVector<EntryInfo> entries;
+    int currItem;
+
+    QTimer timer;
+
+private slots:
+    void updateEntries();
+};
+
+#endif // PLAYLISTMODEL_H

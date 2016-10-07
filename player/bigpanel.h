@@ -29,6 +29,7 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QProxyStyle>
+#include <QTableView>
 
 #include <random>
 
@@ -80,11 +81,13 @@ public:
     void addPeakMeter(PeakMeter *peakMeter);
     void removePeakMeter(PeakMeter *peakMeter);
 
-    void playerPositionChanged(double pos, double duration);
+    void playerPositionChanged(bool paused, double pos, double duration);
+    void setCurrentPlaylistEntry(int n);
 
     void retranslate();
 
     ShufflePlaylist *rndPlaylist;
+    QTableView *playlistView;
 
 protected:
     void showEvent(QShowEvent *e);
@@ -100,15 +103,23 @@ private:
 
     Player *player;
 
-
     QGridLayout *layout;
-    QVector<MyPushButton*> numberBtns;
-    QLabel *numberLbl;
-    QWidget *titleLine;
+    //QVector<MyPushButton*> numberBtns;
+
     QLabel *titleLbl;
     MyPushButton *rndBtn;
-    MyPushButton *btnBack;
+    //MyPushButton *btnBack;
     MyPushButton *playBtn;
+    MyPushButton *stopBtn;
+    MyPushButton *keyboardBtn;
+    QFrame *songInfoFrm;
+    QWidget *playlistBtnArea;
+    MyPushButton *addFileBtn;
+    MyPushButton *addWindowBtn;
+    MyPushButton *removeFileBtn;
+    MyPushButton *UpBtn;
+    MyPushButton *DownBtn;
+
     QPushButton *nonstopIcon;
     QLabel *nonstopLbl;
     QLabel *posLbl;
@@ -118,18 +129,24 @@ private:
     bool nonstop;
 
 public slots:
-    void playerStateChanged(bool isPlaying);
+    //void playerStateChanged(bool isPlaying);
 
 private slots:
     void btnRnd_clicked();
     void numberBtn_clicked();
     void btnBack_clicked();
     void playBtn_clicked();
+    void stopBtn_clicked();
     void posBar_valueChanged(int value);
     void posBar_released();
 
+    void addFileBtn_clicked();
+    void removeFileBtn_clicked();
+    void UpBtn_clicked();
+    void DownBtn_clicked();
+
 signals:
-    void play(int number, bool autoplay);
+    void play(int entry, bool autoplay);
     void stop();
     void seek(int ms);
 };

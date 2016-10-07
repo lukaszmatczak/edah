@@ -7,5 +7,9 @@
         <file>player-img/nonstop-off.svg</file>
         <file>player-img/nonstop-on.svg</file>
         <file>player-lang/lang.pl.qm</file>
+        <file>player-img/arrow-up.svg</file>
+        <file>player-img/minus.svg</file>
+        <file>player-img/plus.svg</file>
+        <file>player-img/arrow-down.svg</file>
     </qresource>
 </RCC>

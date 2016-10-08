@@ -42,7 +42,7 @@ void PeakMeter::setPeak(float left, float right)
     peaks[0] = qMax(peaks[0], left);
     peaks[1] = qMax(peaks[1], right);
 
-    this->update();
+    //this->update();
 }
 
 void PeakMeter::setChannels(int count)
@@ -114,6 +114,9 @@ void PeakMeter::setColors(QRgb low, QRgb mid, QRgb high)
 
 void PeakMeter::timerTimeout()
 {
+    static float prevPeaks[2];
+    static float prevMax[2];
+
     for(int i=0; i<2; i++)
     {
         max[i] = qMax(0.0f, max[i]-(float)qPow(speed[i],12.0f));
@@ -133,4 +136,17 @@ void PeakMeter::timerTimeout()
 
         peaks[i] = qMax(0.0f, peaks[i]-0.04f);
     }
+
+    if((prevPeaks[0] != peaks[0]) ||
+            (prevPeaks[1] != peaks[1]) ||
+            (prevMax[0] != max[0]) ||
+            (prevMax[1] != max[1]))
+    {
+        this->update();
+    }
+
+    prevPeaks[0] = peaks[0];
+    prevPeaks[1] = peaks[1];
+    prevMax[0] = max[0];
+    prevMax[1] = max[1];
 }

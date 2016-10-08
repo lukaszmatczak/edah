@@ -573,6 +573,7 @@ void Player::initPeakMeter(qint64 pid)
     HRESULT hr = S_OK;
     IMMDeviceEnumerator *pMMDeviceEnumerator = NULL;
     IMMDeviceCollection *pMMDeviceCollection = NULL;
+    REFERENCE_TIME defaultPeriod = 100, minPeriod = 100;
 
     hr = CoCreateInstance(
                 __uuidof(MMDeviceEnumerator), NULL,
@@ -674,27 +675,56 @@ void Player::initPeakMeter(qint64 pid)
                 LOG(QString("IAudioSessionControl::QueryInterface(IAudioMeterInformation) failed: hr = %1").arg(hr));
                 return;
             }
+
+            IAudioClient *pAudioClient = NULL;
+            hr = pMMDevice->Activate(
+                        __uuidof(IAudioClient),
+                        CLSCTX_ALL,
+                        nullptr,
+                        reinterpret_cast<void **>(&pAudioClient));
+            if (FAILED(hr))
+            {
+                LOG(QString("IMMDevice::Activate(IAudioClient) failed: hr = %1").arg(hr));
+                return;
+            }
+
+            pAudioClient->GetDevicePeriod(&defaultPeriod, &minPeriod);
         }
     }
-    // TODO: IAudioMeterInformation::GetMeteringChannelCount
 
     connect(&peakTimer, &QTimer::timeout, this, &Player::getPeak);
-    this->peakTimer.start(100); // TODO: IAudioClient::GetDevicePeriod
+    this->peakTimer.start(defaultPeriod/10000);
 #endif
 }
 
 void Player::getPeak()
 {
 #ifdef Q_OS_WIN
-    float peak = 0.0f;
-    if(pAudioMeterInformation)
+    if(!pAudioMeterInformation)
+        return;
+
+    static unsigned int i;
+    static float max[2];
+    static int interval = (32/qMax(1, peakTimer.interval()+1)); // 30Hz
+    static UINT count;
+    static HRESULT ret = pAudioMeterInformation->GetMeteringChannelCount(&count); // call it only once
+    static QVector<float> peaks(count);
+
+    pAudioMeterInformation->GetChannelsPeakValues(count, peaks.data());
+
+    for(int j=0; j<count; j++)
     {
-        HRESULT hr = pAudioMeterInformation->GetPeakValue(&peak);
-        if (FAILED(hr)) {
-            LOG(QString("AudioMeterInformation::GetPeakValue() failed: hr = %1").arg(hr));
-        }
+        max[j%2] = qMax(max[j%2], peaks[j]);
     }
 
-    peakMeter->setPeak(peak, 0);
+    if(i%interval == 0)
+    {
+        peakMeter->setPeak(max[0], max[1]);
+
+        max[0] = 0.0f;
+        max[1] = 0.0f;
+    }
+
+    i++;
 #endif
 }

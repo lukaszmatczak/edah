@@ -583,8 +583,8 @@ void BigPanel::updateTitle(int number)
 
 void BigPanel::setCurrentPlaylistEntry(int n)
 {
-    titleLbl->setText(player->playlistModel.getCurrentItemInfo().title);
-    posBar->setWaveform(player->playlistModel.getCurrentItemInfo().waveform);
+    titleLbl->setText(player->playlistModel.getItemInfo(n).title);
+    posBar->setWaveform(player->playlistModel.getItemInfo(n).waveform);
 
     player->playlistModel.setCurrentItem(n);
     QModelIndex index = player->playlistModel.index(player->playlistModel.getCurrentItem(), 0, QModelIndex());
@@ -667,7 +667,13 @@ void BigPanel::playerStateChanged(bool isPlaying)
 */
 void BigPanel::playerPositionChanged(bool paused, double pos, double duration)
 {
-    playBtn->setIcon(QIcon(paused ? ":/player-img/play.svg" : ":/player-img/pause.svg"));
+    static bool prevPaused = true;
+
+    if(prevPaused != paused)
+    {
+        playBtn->setIcon(QIcon(paused ? ":/player-img/play.svg" : ":/player-img/pause.svg"));
+        prevPaused = paused;
+    }
 
     currDuration = duration;
 

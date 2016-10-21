@@ -23,6 +23,9 @@
 MyPushButton::MyPushButton(const QString &text, QWidget *parent) :
     QPushButton(text, parent), hoverColor(0)
 {
+    this->setAttribute(Qt::WA_AcceptTouchEvents);
+    this->grabGesture(Qt::TapGesture);
+
     connect(&timer, &QTimer::timeout, this, &MyPushButton::timerTimeout);
     timer.setInterval(1000/30);
 }

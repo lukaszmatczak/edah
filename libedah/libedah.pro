@@ -19,7 +19,9 @@ SOURCES += logger.cpp \
     utils.cpp \
     mypushbutton.cpp \
     peakmeter.cpp \
-    multilangstring.cpp
+    multilangstring.cpp \
+    bluropacityeffect.cpp \
+    popup.cpp
 
 HEADERS += iplugin.h \
         logger.h \
@@ -27,7 +29,9 @@ HEADERS += iplugin.h \
     mypushbutton.h \
     libedah.h \
     peakmeter.h \
-    multilangstring.h
+    multilangstring.h \
+    bluropacityeffect.h \
+    popup.h
 
 win32 {
     SOURCES += updater.cpp

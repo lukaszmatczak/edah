@@ -15,7 +15,7 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
 
 DESTDIR = ../plugins/player
 
-INCLUDEPATH += .. C:/Users/lukasz/Desktop/taglib/include
+win32:INCLUDEPATH += .. C:/Users/lukas/Desktop/taglib/include C:/Users/lukas/Desktop/bass
 
 SOURCES += player.cpp \
     bigpanel.cpp \
@@ -24,7 +24,8 @@ SOURCES += player.cpp \
     smallpanel.cpp \
     playlistmodel.cpp \
     mpv.cpp \
-    videowindow.cpp
+    videowindow.cpp \
+    keypad.cpp
 
 HEADERS += player.h \
     bigpanel.h \
@@ -33,14 +34,21 @@ HEADERS += player.h \
     smallpanel.h \
     playlistmodel.h \
     mpv.h \
-    videowindow.h
-
-DISTFILES += player.json
+    videowindow.h \
+    keypad.h
 
 TRANSLATIONS = player-lang/lang.pl.ts
 
-LIBS += -LC:/Users/lukasz/Desktop/taglib/lib -ltag -lbass
-win32: LIBS += -ledah -lole32
+LIBS += -ltag -lbass
+win32: LIBS += -LC:/Users/lukas/Desktop/bass -ledah -lole32
+
+CONFIG(debug) {
+    #win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Debug/debug -LC:/Users/lukas/Desktop/taglib/debug/lib
+}
+
+CONFIG(release) {
+    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Release/release -LC:/Users/lukas/Desktop/taglib/lib
+}
 
 RESOURCES += \
     common.qrc

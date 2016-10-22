@@ -20,6 +20,7 @@
 #define BIGPANEL_H
 
 #include "waveform.h"
+#include "keypad.h"
 
 #include <libedah/mypushbutton.h>
 #include <libedah/peakmeter.h>
@@ -30,6 +31,7 @@
 #include <QProgressBar>
 #include <QProxyStyle>
 #include <QTableView>
+#include <QPointer>
 
 #include <random>
 
@@ -52,24 +54,6 @@ public:
     }
 };
 
-class ShufflePlaylist : public QObject
-{
-    Q_OBJECT
-public:
-    ShufflePlaylist(QMap<int, Song> *songs);
-    virtual ~ShufflePlaylist();
-    int getNext();
-    void generateNewPlaylist();
-
-private:
-    void shuffle(QVector<int>& vec);
-
-    QMap<int, Song> *songs;
-    QVector<int> playlist;
-
-    std::mt19937 *mtEngine;
-    int currPos;
-};
 
 class BigPanel : public QWidget
 {
@@ -86,8 +70,9 @@ public:
 
     void retranslate();
 
-    ShufflePlaylist *rndPlaylist;
+
     QTableView *playlistView;
+    Waveform *posBar;
 
 protected:
     void showEvent(QShowEvent *e);
@@ -98,10 +83,10 @@ protected:
 private:
     void recalcSizes(const QSize &size);
     void updateTitle(int number);
-    void addDigit(int digit);
     void setNonstop(bool isSet);
 
     Player *player;
+    QPointer<Keypad> keyboardPopup;
 
     QGridLayout *layout;
     //QVector<MyPushButton*> numberBtns;
@@ -123,7 +108,7 @@ private:
     QPushButton *nonstopIcon;
     QLabel *nonstopLbl;
     QLabel *posLbl;
-    Waveform *posBar;
+
     SliderStyle sliderStyle;
     double currDuration;
     bool nonstop;
@@ -133,12 +118,11 @@ public slots:
 
 private slots:
     void btnRnd_clicked();
-    void numberBtn_clicked();
-    void btnBack_clicked();
     void playBtn_clicked();
     void stopBtn_clicked();
     void posBar_valueChanged(int value);
     void posBar_released();
+    void keyboardBtn_clicked();
 
     void addFileBtn_clicked();
     void removeFileBtn_clicked();
@@ -146,7 +130,8 @@ private slots:
     void DownBtn_clicked();
 
 signals:
-    void play(int entry, bool autoplay);
+    void play(int entry);
+    void playSong(int number, bool autoplay);
     void stop();
     void seek(int ms);
 };

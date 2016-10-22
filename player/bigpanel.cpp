@@ -18,6 +18,7 @@
 
 #include "bigpanel.h"
 #include "player.h"
+
 #include <libedah/utils.h>
 
 #include <QFrame>
@@ -31,124 +32,102 @@
 
 #include <QDebug>
 
-QString styles = "#songInfoFrm { "
-                 "  background-color: rgb(36,36,36);"
-                 "  border-color:  rgb(0,0,0);"
-                 "  border-top-color: rgb(70, 70, 70);"
-                 "  border-left-color:  rgb(70, 70, 70);"
-                 "  border-width : 1 2 2 1px;"
-                 "  border-style: solid;"
-                 "  " // TODO
-                 "}"
-                 "#titleLine {"
-                    "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
-                 "  stop:0 rgba(255, 255, 255, 0),"
-                 "  stop:0.5 rgba(255,255,255,255),"
-                 "  stop:1 rgba(255,255,255,0));"
-                 "  border-style: none;"
-                 "}"
-                 "#posBar {"
-                 "  background-color: rgb(36,36,36);"
-                 "  border-color:  rgb(0,0,0);"
-                 "  border-top-color: rgb(70, 70, 70);"
-                 "  border-left-color:  rgb(70, 70, 70);"
-                 "  border-width : 1 2 2 1px;"
-                 "  border-style: solid;"
-                 "}"
-                 "#posBar::groove:horizontal {"
-                 "  border-radius: 0px;"
-                 "}"
-                 "#posBar::sub-page:horizontal {"
-                 "  background-color: rgb(0,80,255);"
-                 "}"
-                 "#posBar::add-page:horizontal {"
-                 "}"
-                 "#posBar::handle:horizontal {"
-                 "  background-color: rgb(36,36,36);"
-                 "  width: 1px;"
-                 "}"
-                 "#nonstopIcon {"
-                 "  border: none;"
-                 "  background: transparent;"
-                 "}"
-                 "#stopBtn, #keyboardBtn {"
-                 "   border-radius: 0px;"
-                 "}"
-                 "#addWindowBtn, #removeFileBtn, #UpBtn {"
-                 "   border-radius: 0px;"
-                 "}"
-                 "QScrollBar:vertical {"
-                 "  border: 0px;"
-                 "  background: rgb(36,36,36);"
-                 "  width: 8px;"
-                 "}"
-                 "QScrollBar::handle:vertical {"
-                 "  background: white;"
-                 "  min-height: 10px;"
-                 "  border-radius: 4px;"
-                 "}"
-                 "QScrollBar::handle:hover:vertical {"
-                 "  background: rgb(200,200,200);"
-                 " }"
-                 "QScrollBar::add-line:vertical {"
-                 "  background: none;"
-                 "}"
-                 "QScrollBar::sub-line:vertical {"
-                 "  background: none;"
-                 "}"
-                 "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
-                 "  background: none;"
-                 "}"
-                 "QTableView {"
-                 "  font: 16px;"
-                 "  selection-color: white;"
-                 "  background-color: rgb(36,36,36);"
-                 "  border-color:  rgb(0,0,0);"
-                 "  border-bottom-color: rgb(70, 70, 70);"
-                 "  border-right-color:  rgb(70, 70, 70);"
-                 "  border-width : 2 1 1 2px;"
-                 "  border-style: solid;"
-                 "}"
-                 "QTableView::item {"
-                 "  border-width: 0 0 1 0px;"
-                 "  border-color: black;"
-                 "  border-style: dashed;"
-                 "}"
-                 "QTableView::item:selected {"
-                 "  background-color: rgb(36,36,76);"
-                 "}";
+const QString styles = "#songInfoFrm { "
+                       "  background-color: rgb(36,36,36);"
+                       "  border-color:  rgb(0,0,0);"
+                       "  border-top-color: rgb(70, 70, 70);"
+                       "  border-left-color:  rgb(70, 70, 70);"
+                       "  border-width : 1 2 2 1px;"
+                       "  border-style: solid;"
+                       "}"
+                       "#titleLine {"
+                       "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
+                       "  stop:0 rgba(255, 255, 255, 0),"
+                       "  stop:0.5 rgba(255,255,255,255),"
+                       "  stop:1 rgba(255,255,255,0));"
+                       "  border-style: none;"
+                       "}"
+                       "#posBar {"
+                       "  background-color: rgb(36,36,36);"
+                       "  border-color:  rgb(0,0,0);"
+                       "  border-top-color: rgb(70, 70, 70);"
+                       "  border-left-color:  rgb(70, 70, 70);"
+                       "  border-width : 1 2 2 1px;"
+                       "  border-style: solid;"
+                       "}"
+                       "#posBar::groove:horizontal {"
+                       "  border-radius: 0px;"
+                       "}"
+                       "#posBar::sub-page:horizontal {"
+                       "  background-color: rgb(0,80,255);"
+                       "}"
+                       "#posBar::add-page:horizontal {"
+                       "}"
+                       "#posBar::handle:horizontal {"
+                       "  background-color: rgb(36,36,36);"
+                       "  width: 1px;"
+                       "}"
+                       "#nonstopIcon {"
+                       "  border: none;"
+                       "  background: transparent;"
+                       "}"
+                       "#stopBtn, #keyboardBtn {"
+                       "   border-radius: 0px;"
+                       "}"
+                       "#addWindowBtn, #removeFileBtn, #UpBtn {"
+                       "   border-radius: 0px;"
+                       "}"
+                       "QScrollBar:vertical {"
+                       "  border: 0px;"
+                       "  background: rgb(36,36,36);"
+                       "  width: 8px;"
+                       "}"
+                       "QScrollBar::handle:vertical {"
+                       "  background: white;"
+                       "  min-height: 10px;"
+                       "  border-radius: 4px;"
+                       "}"
+                       "QScrollBar::handle:hover:vertical {"
+                       "  background: rgb(200,200,200);"
+                       " }"
+                       "QScrollBar::add-line:vertical {"
+                       "  background: none;"
+                       "}"
+                       "QScrollBar::sub-line:vertical {"
+                       "  background: none;"
+                       "}"
+                       "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+                       "  background: none;"
+                       "}"
+                       "QTableView {"
+                       "  font: 16px;"
+                       "  selection-color: white;"
+                       "  background-color: rgb(36,36,36);"
+                       "  border-color:  rgb(0,0,0);"
+                       "  border-bottom-color: rgb(70, 70, 70);"
+                       "  border-right-color:  rgb(70, 70, 70);"
+                       "  border-width : 2 1 1 2px;"
+                       "  border-style: solid;"
+                       "}"
+                       "QTableView::item {"
+                       "  border-width: 0 0 1 0px;"
+                       "  border-color: black;"
+                       "  border-style: dashed;"
+                       "}"
+                       "QTableView::item:selected {"
+                       "  background-color: rgb(36,36,76);"
+                       "}"
+                       "#keyboardPopup {"
+                       "  background-color: rgb(40, 40, 40);"
+                       "}";
 
 BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 {
     layout = new QGridLayout(this);
     this->setLayout(layout);
 
-    rndPlaylist = new ShufflePlaylist(&player->songs);
-/*
-    MyPushButton *btn0 = new MyPushButton("0", this);
-    btn0->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    layout->addWidget(btn0, 3, 1);
-    numberBtns.push_back(btn0);
 
-    btnBack = new MyPushButton("", this);
-    btnBack->setIcon(QIcon(":/player-img/back.svg"));
-    btnBack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    connect(btnBack, &MyPushButton::clicked, this, &BigPanel::btnBack_clicked);
-    layout->addWidget(btnBack, 3, 2);
 
-    for(int i=0; i<9; i++)
-    {
-        MyPushButton *btn = new MyPushButton(QString::number(i+1), this);
-        btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        layout->addWidget(btn, i/3, i%3);
-        numberBtns.push_back(btn);
-    }
-
-    for(int i=0; i<numberBtns.size(); i++)
-    {
-        connect(numberBtns[i], &MyPushButton::clicked, this, &BigPanel::numberBtn_clicked);
-    }
-*/
 
     QVBoxLayout *playlistLayout = new QVBoxLayout;
     layout->addLayout(playlistLayout, 1, 0, 3, 3);
@@ -229,6 +208,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     keyboardBtn->setObjectName("keyboardBtn");
     //keyboardBtn->setIcon(QIcon(":/player-img/keyboard.svg"));
     keyboardBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    connect(keyboardBtn, &MyPushButton::pressed, this, &BigPanel::keyboardBtn_clicked);
 
     playBtn->raise();
 
@@ -286,7 +266,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 
 BigPanel::~BigPanel()
 {
-    delete rndPlaylist;
+
 }
 
 void BigPanel::addPeakMeter(PeakMeter *peakMeter)
@@ -316,7 +296,7 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
 {
     e->setAccepted(false);
 
-    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9))
+/*    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9)) // TODO
     {
         this->addDigit(e->key() - Qt::Key_0);
         e->setAccepted(true);
@@ -326,7 +306,7 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
         this->btnBack_clicked();
         e->setAccepted(true);
     }
-    else if(((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return)) && !player->isPlaying())
+    else*/ if(((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return)) && !player->isPlaying())
     {
         this->playBtn_clicked();
         e->setAccepted(true);
@@ -441,6 +421,10 @@ void BigPanel::recalcSizes(const QSize &size)
     iconSize = QSize(numberBtns[0]->width()/6, numberBtns[0]->width()/6);*/iconSize = QSize(playBtn->width()/12, playBtn->width()/12);
     nonstopIcon->setIconSize(iconSize);
     nonstopIcon->setFixedSize(iconSize);
+
+    if(keyboardPopup)
+        keyboardPopup->resize();
+        //keyboardPopup->resize(this->height()*0.65f, this->height()*0.9f);
 }
 
 void BigPanel::addFileBtn_clicked()
@@ -499,126 +483,56 @@ void BigPanel::DownBtn_clicked()
     playlistView->setCurrentIndex(idx);
 }
 
-void BigPanel::addDigit(int digit)
-{
-/*    if (player->isPlaying())
-        return;
-
-    int newNumber = (numberLbl->text() + QString::number(digit)).toInt();
-
-    if (digit == 0 && newNumber == 0)
-       return;
-
-    int maxSong = -1;
-
-    if(!player->songs.isEmpty())
-        maxSong = player->songs.lastKey();
-
-    if (newNumber <= maxSong)
-    {
-       numberLbl->setText(QString::number(newNumber));
-       updateTitle(newNumber);
-    }
-    this->setNonstop(false);*/
-}
-
 void BigPanel::btnRnd_clicked()
 {
     if (player->isPlaying())
         return;
 
-    int random;
-    //if((numberLbl->text().length() > 0) && !nonstop)
-    //    random = numberLbl->text().toInt();
-    //else
-        random = rndPlaylist->getNext();
-    //numberLbl->setText(QString::number(random));
-    updateTitle(random);
     this->setNonstop(true);
+
+    emit playSong(-1, true);
 }
 
-void BigPanel::numberBtn_clicked()
+void BigPanel::keyboardBtn_clicked()
 {
-    this->addDigit(((MyPushButton*)QObject::sender())->text().toInt());
-}
-
-void BigPanel::btnBack_clicked()
-{
-/*    if (player->isPlaying())
-        return;
-
-    if (numberLbl->text().length() > 0)
-       numberLbl->setText(numberLbl->text().left(numberLbl->text().length() - 1));
-
-    if (numberLbl->text().length() > 0)
+    if(!keyboardPopup)
     {
-       int newNumber = numberLbl->text().toInt();
-       updateTitle(newNumber);
+        keyboardPopup = new Keypad(player, this);
+        connect(keyboardPopup, &Keypad::songEntered, this, [this](int number) {
+            this->setNonstop(false);
+            emit playSong(number, nonstop);
+        });
+        keyboardPopup->setObjectName("keyboardPopup");
+        //keyboardPopup->resize(this->height()*0.65f, this->height()*0.9f); // TODO
+        keyboardPopup->setSize(0.42f, 0.9f); // TODO
+        keyboardPopup->setAttribute(Qt::WA_DeleteOnClose);
+
+        keyboardPopup->showAnimated();
     }
-    else
-       updateTitle(0);*/
-}
-
-void BigPanel::updateTitle(int number)
-{
-/*    if(player->songs.contains(number))
-    {
-        titleLbl->setText(player->songs[number].title);
-        numberLbl->setStyleSheet("");
-        titleLine->setVisible(true);
-
-        posBar->setWaveform(player->songs[number].waveform);
-        this->playerPositionChanged(-1, player->songs[number].duration/1000.0);
-    }
-    else
-    {
-        numberLbl->setStyleSheet("color: rgb(127, 127, 127);");
-        titleLbl->setText("");
-        titleLine->setVisible(false);
-
-        posBar->setWaveform(nullptr);
-        this->playerPositionChanged(-1, -1);
-    }*/
 }
 
 void BigPanel::setCurrentPlaylistEntry(int n)
 {
-    titleLbl->setText(player->playlistModel.getItemInfo(n).title);
-    posBar->setWaveform(player->playlistModel.getItemInfo(n).waveform);
+    if(n >= 0)
+    {
+        player->playlistModel.setCurrentItem(n);
+        QModelIndex index = player->playlistModel.index(player->playlistModel.getCurrentItem(), 0, QModelIndex());
+        playlistView->setCurrentIndex(index);
+        playlistView->scrollTo(index);
+        playlistView->repaint();
+    }
 
-    player->playlistModel.setCurrentItem(n);
-    QModelIndex index = player->playlistModel.index(player->playlistModel.getCurrentItem(), 0, QModelIndex());
-    playlistView->setCurrentIndex(index);
-    playlistView->scrollTo(index);
-    playlistView->repaint();
+    titleLbl->setText(player->playlistModel.getCurrentItemInfo().title);
+    posBar->setWaveform(player->playlistModel.getCurrentItemInfo().waveform);
 }
 
 void BigPanel::playBtn_clicked()
 {
-/*    if(player->isPlaying())
-    {
-        this->setNonstop(false);
-        emit stop();
-    }
-    else
-    {
-        int number = numberLbl->text().toInt();
-        if(number == 0) return;
-        playBtn->setIcon(QIcon(":/player-img/stop.svg"));
-        qApp->processEvents();
-        emit play(number, nonstop);
-    }
-
-    this->update();*/
-
     int currItem = playlistView->currentIndex().row();
     if(currItem < 0) currItem = player->playlistModel.getCurrentItem();
     if(currItem >= player->playlistModel.rowCount(QModelIndex())) currItem = 0;
 
-    if(player->playlistModel.getItemInfo(currItem).type == EntryInfo::Empty)
-        return;
-
-    emit play(currItem, nonstop);
+    emit play(currItem);
 }
 
 void BigPanel::stopBtn_clicked()
@@ -688,6 +602,8 @@ void BigPanel::playerPositionChanged(bool paused, double pos, double duration)
         posBar->setValue(pos>0 ? pos*10 : 0);
         posBar->setMaximum(duration>0 ? duration*10 : 1);
     }
+
+    posBar->setEnabled(duration > 0.0);
 }
 
 void BigPanel::posBar_valueChanged(int value)
@@ -702,53 +618,4 @@ void BigPanel::posBar_valueChanged(int value)
 void BigPanel::posBar_released()
 {
     emit seek(posBar->value()*100);
-}
-
-ShufflePlaylist::ShufflePlaylist(QMap<int, Song> *songs) : songs(songs)
-{
-    mtEngine = new std::mt19937(QDateTime::currentMSecsSinceEpoch());
-
-    this->generateNewPlaylist();
-}
-
-ShufflePlaylist::~ShufflePlaylist()
-{
-    delete mtEngine;
-}
-
-int ShufflePlaylist::getNext()
-{
-    if(currPos >= playlist.size())
-        generateNewPlaylist();
-
-    if(playlist.size() < 1)
-        return 0;
-
-    return playlist[currPos++];
-}
-
-void ShufflePlaylist::generateNewPlaylist()
-{
-    currPos = 0;
-    playlist.clear();
-
-    auto numbers = songs->keys();
-    for(int i=0; i<numbers.size(); i++)
-    {
-        playlist.push_back(numbers[i]);
-    }
-
-    shuffle(playlist);
-}
-
-void ShufflePlaylist::shuffle(QVector<int>& vec)
-{
-    if(vec.size() == 0)
-        return;
-
-    std::uniform_int_distribution<int> distribution(0, vec.size()-1);
-    for(int i=0; i<vec.size(); i++)
-    {
-        qSwap(vec[i], vec[distribution(*mtEngine)]);
-    }
 }

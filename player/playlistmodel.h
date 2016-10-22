@@ -23,6 +23,7 @@
 #include <QWidget>
 #include <QTimer>
 #include <QRunnable>
+#include <QMutex>
 
 #define EF_WIN_SCALE      (1 << 0)
 #define EF_WIN_WITHCURSOR (1 << 1)
@@ -86,6 +87,7 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
 
     void addFile(QString filename);
+    void setCurrentFile(QString filename);
     void addWindow(WId winID, int flags);
     void removeEntry(int pos);
     void swapEntries(int pos1, int pos2);
@@ -94,15 +96,20 @@ public:
     EntryInfo getCurrentItemInfo();
     void setCurrentItem(int n);
     int getCurrentItem();
+    void nextItem();
+
+    EntryInfo currFile;
 
 private:
     QVector<EntryInfo> entries;
     int currItem;
-
     QTimer timer;
 
 private slots:
     void updateEntries();
+
+signals:
+    void waveformChanged();
 };
 
 #endif // PLAYLISTMODEL_H

@@ -44,9 +44,28 @@ struct Song
 {
     QString filename;
     QString title;
-    int duration;
+    //int duration;
     qint64 mtime;
-    QByteArray waveform;
+    //QByteArray waveform;
+};
+
+class ShufflePlaylist : public QObject
+{
+    Q_OBJECT
+public:
+    ShufflePlaylist(QMap<int, Song> *songs);
+    virtual ~ShufflePlaylist();
+    int getNext();
+    void generateNewPlaylist();
+
+private:
+    void shuffle(QVector<int>& vec);
+
+    QMap<int, Song> *songs;
+    QVector<int> playlist;
+
+    std::mt19937 *mtEngine;
+    int currPos;
 };
 
 class Player : public QObject, public IPlugin
@@ -76,9 +95,7 @@ public:
 
 private:
     void loadSongs();
-    void loadSongsInfo();
-    void playFile(int n);
-    void initPeakMeter(qint64 pid);
+    bool initPeakMeter(qint64 pid);
 
     QTranslator translator;
 
@@ -90,9 +107,9 @@ private:
     PeakMeter *peakMeter;
     VideoWindow *videoWindow;
     MPV *mpv;
+    ShufflePlaylist *rndPlaylist;
 
-    HSTREAM playStream;
-    bool playing;
+    //bool playing;
     bool paused;
     double currPos;
     //int currNumber;
@@ -106,7 +123,8 @@ private:
 #endif
 
 private slots:
-    void play(int entry, bool autoplay);
+    void play(int entry);
+    void playSong(int number, bool autoplay);
     void stop();
     void seek(int ms);
 

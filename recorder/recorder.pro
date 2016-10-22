@@ -14,7 +14,7 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
 
 DESTDIR = ../plugins/recorder
 
-INCLUDEPATH += ..
+win32:INCLUDEPATH += .. C:/Users/lukas/Desktop/bass
 
 SOURCES += recorder.cpp \
     settingstab.cpp \
@@ -27,7 +27,11 @@ HEADERS += recorder.h \
     smallpanel.h
 
 LIBS += -L. -lbass -lbassenc
-win32: LIBS += -ledah
+win32: LIBS += -LC:/Users/lukas/Desktop/bass -ledah
+
+CONFIG(debug) {
+    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Debug/debug
+}
 
 RESOURCES += \
     common.qrc

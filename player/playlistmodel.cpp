@@ -116,12 +116,53 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
         else if(role == Qt::FontRole)
         {
             QFont font;
-            if(index.row() == currItem) font.setBold(true);
-            if(!entries[index.row()].exists) font.setStrikeOut(true);
+            if(index.row() == currItem && currFile.type == EntryInfo::Empty)
+                font.setBold(true);
+
+            if(!entries[index.row()].exists)
+                font.setStrikeOut(true);
+
             return font;
         }
     }
     return QVariant();
+}
+
+void PlaylistModel::setCurrentFile(QString filename)
+{
+    currFile.filename = filename;
+    currFile.type = EntryInfo::AV;
+    currFile.thumbnail = QPixmap(64, 64);
+    currFile.thumbnail.fill(Qt::red);
+
+#ifdef Q_OS_WIN
+    TagLib::FileRef filetag(filename.toStdWString().c_str());
+#else
+    TagLib::FileRef filetag(filename.toStdString().c_str());
+#endif
+    TagLib::Tag *tag = filetag.tag();
+#ifdef Q_OS_WIN
+    if(tag) currFile.title = QString::fromUtf16((ushort*)tag->title().toCWString());
+#else
+    if(tag) currFile.title = QString::fromUtf8(tag->title().toCString(true));
+#endif
+    if(currFile.title.isEmpty()) currFile.title = QFileInfo(filename).fileName();
+
+    TagLib::AudioProperties *audioProperties = filetag.audioProperties();
+    if(audioProperties) currFile.duration = audioProperties->length();
+    currFile.exists = QFileInfo(filename).exists();
+
+    // Waveforms
+    SongInfoWorker *worker = new SongInfoWorker(-1, filename);
+    connect(worker, &SongInfoWorker::done, this, [this](int id, QByteArray waveform) {
+        if(currFile.type == EntryInfo::AV)
+        {
+            currFile.waveform = waveform;
+            emit waveformChanged();
+        }
+    });
+
+    QThreadPool::globalInstance()->start(worker);
 }
 
 void PlaylistModel::addFile(QString filename)
@@ -197,6 +238,9 @@ void PlaylistModel::addFile(QString filename)
     SongInfoWorker *worker = new SongInfoWorker(entries.size()-1, filename);
     connect(worker, &SongInfoWorker::done, this, [this](int id, QByteArray waveform) {
         entries[id].waveform = waveform;
+
+        if(id == this->currItem)
+            emit waveformChanged();
     });
 
     QThreadPool::globalInstance()->start(worker);
@@ -256,6 +300,9 @@ EntryInfo PlaylistModel::getItemInfo(int n)
 
 EntryInfo PlaylistModel::getCurrentItemInfo()
 {
+    if(currFile.type == EntryInfo::AV)
+        return currFile;
+
     return getItemInfo(this->currItem);
 }
 
@@ -265,6 +312,7 @@ void PlaylistModel::setCurrentItem(int n)
     int prev = this->currItem;
 
     this->currItem = n;
+    currFile.type = EntryInfo::Empty;
 
     emit dataChanged(createIndex(prev, 0), createIndex(prev, 0));
     emit dataChanged(createIndex(n, 0), createIndex(n, 0));
@@ -275,6 +323,16 @@ void PlaylistModel::setCurrentItem(int n)
 int PlaylistModel::getCurrentItem()
 {
     return this->currItem;
+}
+
+void PlaylistModel::nextItem()
+{
+    int nextItem = this->currItem;
+
+    if(currFile.type == EntryInfo::Empty)
+        nextItem++;
+
+    this->setCurrentItem(nextItem);
 }
 
 void PlaylistModel::updateEntries()

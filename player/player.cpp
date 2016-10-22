@@ -47,6 +47,9 @@
 
 
 Player::Player() : autoplay(false), currPos(0.0)
+  #ifdef Q_OS_WIN
+  , pAudioMeterInformation(nullptr)
+  #endif
 {
     QString localeStr = settings->value("lang", "").toString();
     if(localeStr.isEmpty())
@@ -67,13 +70,20 @@ Player::Player() : autoplay(false), currPos(0.0)
     BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
     BASS_SetConfig(BASS_CONFIG_UNICODE, true);
 
+    rndPlaylist = new ShufflePlaylist(&songs);
+
     bPanel = new BigPanel(this);
     connect(bPanel, &BigPanel::play, this, &Player::play);
+    connect(bPanel, &BigPanel::playSong, this, &Player::playSong);
     connect(bPanel, &BigPanel::stop, this, &Player::stop);
     connect(bPanel, &BigPanel::seek, this, &Player::seek);
     bPanel->retranslate();
 
     bPanel->playlistView->setModel(&playlistModel);
+
+    connect(&playlistModel, &PlaylistModel::waveformChanged, this, [this]() {
+        bPanel->posBar->setWaveform(playlistModel.getCurrentItemInfo().waveform);
+    });
 
     sPanel = new SmallPanel(this);
     sPanel->retranslate();
@@ -140,12 +150,17 @@ Player::~Player()
 
     //utils->setPreviousScreenTopology(); //TODO
 
+    videoWindow->canClose = true;
+    videoWindow->close();
+
     delete mpv;
     delete videoWindow;
 
     delete bPanel;
     delete sPanel;
     delete settingsTab;
+
+    delete rndPlaylist;
 
     BASS_Free();
 }
@@ -242,12 +257,12 @@ void Player::settingsChanged()
     }
 
     this->loadSongs();
-    this->bPanel->rndPlaylist->generateNewPlaylist();
+    rndPlaylist->generateNewPlaylist();
 }
 
 void Player::loadSongs()
 {
-/*    QFileInfoList songsListDir = songsDir.entryInfoList(QStringList() << "*.mp3", QDir::Files, QDir::Name | QDir::Reversed);
+    QFileInfoList songsListDir = songsDir.entryInfoList(QStringList() << "*.mp3" << "*.mp4", QDir::Files, QDir::Name | QDir::Reversed);
     QFileInfoList songsList;
     QVector<int> songsInDir;
     bool removed = false, added = false;
@@ -305,7 +320,6 @@ void Player::loadSongs()
         {
             Song s;
             s.filename = filename;
-            s.duration = -1;
             s.mtime = mtime;
 
 #ifdef Q_OS_WIN
@@ -338,40 +352,6 @@ void Player::loadSongs()
         QDataStream stream(&file);
         stream << songs;
     }
-
-    this->loadSongsInfo();*/
-}
-
-void Player::loadSongsInfo()
-{
-/*    static int progress;
-    progress = 0;
-
-    QList<int> keys = songs.keys();
-    for(int i=0; i<keys.size(); i++)
-    {
-        if(songs[keys[i]].duration != -1)
-            continue;
-
-        progress++;
-
-        QString filepath = songsDir.filePath(songs[keys[i]].filename);
-        SongInfoWorker *worker = new SongInfoWorker(keys[i], filepath);
-        connect(worker, &SongInfoWorker::done, this, [this](int id, int duration, QByteArray waveform) {
-            songs[id].duration = duration;
-            songs[id].waveform = waveform;
-
-            if(--progress <= 0)
-            {
-                QFile file(utils->getConfigPath() + "/" + this->getPluginId() + "_songs.cfg", this);
-                file.open(QIODevice::WriteOnly);
-                QDataStream stream(&file);
-                stream << songs;
-            }
-        });
-
-        QThreadPool::globalInstance()->start(worker);
-    }*/
 }
 
 void Player::refreshState()
@@ -394,36 +374,11 @@ void Player::refreshState()
     {
         videoWindow->setHidden(false);
     }
-
-    bool prevPlaying = playing;
-    playing = (BASS_ChannelIsActive(playStream) == BASS_ACTIVE_PLAYING);
-
-    if(prevPlaying != playing)
-    {
-        emit stateChanged(playing);
-    }
-/*
-    float levels[2] = {0.0f, 0.0f};
-    if(playing)
-    {
-        BASS_ChannelGetLevelEx(playStream, levels, 0.035f, BASS_LEVEL_STEREO);
-
-        QWORD posBytes = BASS_ChannelGetPosition(playStream, BASS_POS_BYTE);
-        double pos = BASS_ChannelBytes2Seconds(playStream, posBytes);
-
-        QWORD totalBytes = BASS_ChannelGetLength(playStream, BASS_POS_BYTE);
-        double total = BASS_ChannelBytes2Seconds(playStream, totalBytes);
-
-        bPanel->playerPositionChanged(pos, total);
-        //sPanel->playerPositionChanged(currNumber, pos, total, autoplay); // TODO, TODO: paused
-    }
-
-    peakMeter->setPeak(levels[0], levels[1]);*/
 }
 
 bool Player::isPlaying()
 {
-    return playing;
+    return currPos != 0.0;
 }
 
 void Player::setPaused(bool paused)
@@ -433,81 +388,91 @@ void Player::setPaused(bool paused)
 
 void Player::setCurrPos(double currPos)
 {
-    int totalPos = playlistModel.getCurrentItemInfo().duration;
     this->currPos = currPos;
+    int totalPos = playlistModel.getCurrentItemInfo().duration;
 
     bPanel->playerPositionChanged(paused, currPos, totalPos);
 
     static bool done = false;
     if(currPos != 0.0f && !done)
     {
-        this->initPeakMeter(mpv->getPID());
-        done = true;
+        done = this->initPeakMeter(mpv->getPID());
     }
 }
 
 void Player::mpvEOF()
 {
-    bPanel->setCurrentPlaylistEntry(playlistModel.getCurrentItem()+1);
+    if(autoplay)
+    {
+        this->playSong(-1, true);
+    }
+    else
+    {
+        playlistModel.nextItem();
+        bPanel->setCurrentPlaylistEntry(playlistModel.getCurrentItem());
 
-    mpv->setPause(true);
+        mpv->setPause(true);
+    }
 }
 
-void Player::play(int entry, bool autoplay)
+void Player::play(int entry)
 {
-    this->autoplay = autoplay;
+    if(playlistModel.getCurrentItemInfo().type == EntryInfo::Empty)
+        return;
+
+    this->autoplay = false;
+
+    videoWindow->hideImage();
+    videoWindow->hideWindow();
 
     if(paused && (currPos == 0.0))
     {
         bPanel->setCurrentPlaylistEntry(entry);
-        this->playFile(entry);
+
+        if(playlistModel.getCurrentItemInfo().type == EntryInfo::Image)
+        {
+            mpv->stop();
+            videoWindow->showImage(playlistModel.getItemInfo(entry).filename);
+        }
+        else if(playlistModel.getCurrentItemInfo().type == EntryInfo::Window)
+        {
+            mpv->stop();
+            videoWindow->showWindow(playlistModel.getItemInfo(entry).winID, playlistModel.getItemInfo(entry).flags);
+        }
+        else
+        {
+            mpv->playFile(playlistModel.getItemInfo(entry).filename);
+        }
+
         return;
     }
 
     mpv->pause();
-
-/*    const QString filename = songsDir.filePath(songs[entry].filename);
-
-    if (playStream = BASS_StreamCreateFile(FALSE,
-                                           filename.utf16(),
-                                           0,
-                                           0,
-                                           BASS_STREAM_AUTOFREE | BASS_ASYNCFILE | BASS_SAMPLE_FLOAT | BASS_UNICODE))
-    {
-        playing = BASS_ChannelPlay(playStream, FALSE);
-        emit stateChanged(playing);
-    }
-    else
-
-    {
-        LOG(QString("Can't play: error code = ") + QString::number(BASS_ErrorGetCode()));
-        LOG("Can't play file " + filename);
-    }*/
 }
 
-void Player::playFile(int n)
+void Player::playSong(int number, bool autoplay)
 {
+    this->autoplay = autoplay;
+
+    if(autoplay && number == -1)
+        number = rndPlaylist->getNext();
+
     videoWindow->hideImage();
     videoWindow->hideWindow();
 
-    if(playlistModel.getCurrentItemInfo().type == EntryInfo::Image)
-    {
-        mpv->stop();
-        videoWindow->showImage(playlistModel.getItemInfo(n).filename);
-    }
-    else if(playlistModel.getCurrentItemInfo().type == EntryInfo::Window)
-    {
-        mpv->stop();
-        videoWindow->showWindow(playlistModel.getItemInfo(n).winID, playlistModel.getItemInfo(n).flags);
-    }
-    else
-    {
-        mpv->playFile(playlistModel.getItemInfo(n).filename);
-    }
+    QString filename = songsDir.absolutePath() + "/" + songs[number].filename;
+
+    playlistModel.setCurrentFile(filename);
+    bPanel->setCurrentPlaylistEntry(-1);
+
+    mpv->playFile(filename);
+    mpv->setPause(false);
 }
 
 void Player::stop()
 {
+    this->autoplay = false;
+
     if(playlistModel.getCurrentItemInfo().type == EntryInfo::Image)
     {
         videoWindow->hideImage();
@@ -523,16 +488,13 @@ void Player::stop()
         mpv->stop();
     }
 
-/*    BASS_ChannelStop(playStream);
-    playing = false;
-    currNumber = 0;
-    emit stateChanged(playing);*/
+    if(playlistModel.currFile.type == EntryInfo::AV)
+        this->mpvEOF();
 }
 
 void Player::seek(int ms)
 {
-    QWORD bytes = BASS_ChannelSeconds2Bytes(playStream, ms/1000.0);
-    BASS_ChannelSetPosition(playStream, bytes, BASS_POS_BYTE);
+    mpv->seek(ms/1000);
 }
 
 void Player::screenAdded(QScreen *screen)
@@ -551,21 +513,21 @@ void Player::screenRemoved(QScreen *screen)
 
 QDataStream &operator<<(QDataStream &stream, const Song &song)
 {
-    stream << song.filename << song.title << song.duration
-           << song.mtime << song.waveform;
+    stream << song.filename << song.title /*<< song.duration*/
+           << song.mtime /*<< song.waveform*/;
 
     return stream;
 }
 
 QDataStream &operator>>(QDataStream &stream, Song &song)
 {
-    stream >> song.filename >> song.title >> song.duration
-           >> song.mtime >> song.waveform;
+    stream >> song.filename >> song.title /*>> song.duration*/
+           >> song.mtime /*>> song.waveform*/;
 
     return stream;
 }
 
-void Player::initPeakMeter(qint64 pid)
+bool Player::initPeakMeter(qint64 pid)
 {
 #ifdef Q_OS_WIN
     //TODO: Release interfaces
@@ -581,14 +543,14 @@ void Player::initPeakMeter(qint64 pid)
                 (void**)&pMMDeviceEnumerator);
     if (FAILED(hr))
     {
-        return;
+        return false;
     }
 
     hr = pMMDeviceEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &pMMDeviceCollection);
     if (FAILED(hr))
     {
         LOG(QString("IMMDeviceEnumerator::EnumAudioEndpoints failed: hr = %1").arg(hr));
-        return;
+        return false;
     }
 
     UINT32 nDevices;
@@ -596,7 +558,7 @@ void Player::initPeakMeter(qint64 pid)
     if (FAILED(hr))
     {
         LOG(QString("IMMDeviceCollection::GetCount failed: hr = %1").arg(hr));
-        return;
+        return false;
     }
 
     for (UINT32 d = 0; d < nDevices; d++)
@@ -619,7 +581,7 @@ void Player::initPeakMeter(qint64 pid)
         if (FAILED(hr))
         {
             LOG(QString("IMMDevice::Activate(IAudioSessionManager2) failed: hr = %1").arg(hr));
-            return;
+            return false;
         }
 
         IAudioSessionEnumerator *pAudioSessionEnumerator = NULL;
@@ -627,7 +589,7 @@ void Player::initPeakMeter(qint64 pid)
         if (FAILED(hr))
         {
             LOG(QString("IAudioSessionManager2::GetSessionEnumerator() failed: hr = %1").arg(hr));
-            return;
+            return false;
         }
 
         // iterate over all the sessions
@@ -636,7 +598,7 @@ void Player::initPeakMeter(qint64 pid)
         if (FAILED(hr))
         {
             LOG(QString("IAudioSessionEnumerator::GetCount() failed: hr = %1").arg(hr));
-            return;
+            return false;
         }
 
         for (int session = 0; session < count; session++)
@@ -647,7 +609,7 @@ void Player::initPeakMeter(qint64 pid)
             if (FAILED(hr))
             {
                 LOG(QString("IAudioSessionEnumerator::GetSession() failed: hr = %1").arg(hr));
-                return;
+                return false;
             }
 
             IAudioSessionControl2 *pAudioSessionControl2;
@@ -655,7 +617,7 @@ void Player::initPeakMeter(qint64 pid)
             if (FAILED(hr))
             {
                 LOG(QString("IAudioSessionControl::QueryInterface(IAudioSessionControl2) failed: hr = %1").arg(hr));
-                return;
+                return false;
             }
 
             DWORD processId = 0;
@@ -663,7 +625,7 @@ void Player::initPeakMeter(qint64 pid)
             if (FAILED(hr))
             {
                 LOG(QString("IAudioSessionControl2::GetProcessId() failed: hr = %1").arg(hr));
-                return;
+                return false;
             }
 
             if(processId != pid) continue;
@@ -673,7 +635,7 @@ void Player::initPeakMeter(qint64 pid)
             if (FAILED(hr))
             {
                 LOG(QString("IAudioSessionControl::QueryInterface(IAudioMeterInformation) failed: hr = %1").arg(hr));
-                return;
+                return false;
             }
 
             IAudioClient *pAudioClient = NULL;
@@ -685,7 +647,7 @@ void Player::initPeakMeter(qint64 pid)
             if (FAILED(hr))
             {
                 LOG(QString("IMMDevice::Activate(IAudioClient) failed: hr = %1").arg(hr));
-                return;
+                return false;
             }
 
             pAudioClient->GetDevicePeriod(&defaultPeriod, &minPeriod);
@@ -694,6 +656,8 @@ void Player::initPeakMeter(qint64 pid)
 
     connect(&peakTimer, &QTimer::timeout, this, &Player::getPeak);
     this->peakTimer.start(defaultPeriod/10000);
+
+    return pAudioMeterInformation;
 #endif
 }
 
@@ -712,7 +676,7 @@ void Player::getPeak()
 
     pAudioMeterInformation->GetChannelsPeakValues(count, peaks.data());
 
-    for(int j=0; j<count; j++)
+    for(unsigned j=0; j<count; j++)
     {
         max[j%2] = qMax(max[j%2], peaks[j]);
     }
@@ -727,4 +691,53 @@ void Player::getPeak()
 
     i++;
 #endif
+}
+
+ShufflePlaylist::ShufflePlaylist(QMap<int, Song> *songs) : songs(songs)
+{
+    mtEngine = new std::mt19937(QDateTime::currentMSecsSinceEpoch());
+
+    this->generateNewPlaylist();
+}
+
+ShufflePlaylist::~ShufflePlaylist()
+{
+    delete mtEngine;
+}
+
+int ShufflePlaylist::getNext()
+{
+    if(currPos >= playlist.size())
+        generateNewPlaylist();
+
+    if(playlist.size() < 1)
+        return 0;
+
+    return playlist[currPos++];
+}
+
+void ShufflePlaylist::generateNewPlaylist()
+{
+    currPos = 0;
+    playlist.clear();
+
+    auto numbers = songs->keys();
+    for(int i=0; i<numbers.size(); i++)
+    {
+        playlist.push_back(numbers[i]);
+    }
+
+    shuffle(playlist);
+}
+
+void ShufflePlaylist::shuffle(QVector<int>& vec)
+{
+    if(vec.size() == 0)
+        return;
+
+    std::uniform_int_distribution<int> distribution(0, vec.size()-1);
+    for(int i=0; i<vec.size(); i++)
+    {
+        qSwap(vec[i], vec[distribution(*mtEngine)]);
+    }
 }

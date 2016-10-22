@@ -49,6 +49,26 @@ void Popup::showAnimated()
     loop.exec();
 }
 
+void Popup::closeAnimated()
+{
+    QTimeLine timeLine(200);
+    BlurOpacityEffect *blurEffect = new BlurOpacityEffect(nullptr);
+    blurEffect->setBlurRadiusAndOpacity(0.0f, 1.0f);
+    this->setGraphicsEffect(blurEffect);
+
+    timeLine.setFrameRange(0, 100);
+    connect(&timeLine, &QTimeLine::frameChanged, this, [blurEffect](int frame) {
+        blurEffect->setBlurRadiusAndOpacity(frame, (100-frame)/100.0f);
+    });
+    timeLine.start();
+
+    QEventLoop loop;
+    connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    this->close();
+}
+
 void Popup::setSize(float width, float height)
 {
     this->percentWidth = width;

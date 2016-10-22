@@ -32,6 +32,7 @@ public:
 
 public slots:
     void showAnimated();
+    void closeAnimated();
     void resize();
 
 private:

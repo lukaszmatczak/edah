@@ -11,5 +11,9 @@
         <file>player-img/minus.svg</file>
         <file>player-img/plus.svg</file>
         <file>player-img/arrow-down.svg</file>
+        <file>player-img/keypad.svg</file>
+        <file>player-img/keypad-cancel.svg</file>
+        <file>player-img/keypad-play.svg</file>
+        <file>player-img/pause.svg</file>
     </qresource>
 </RCC>

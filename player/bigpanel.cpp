@@ -40,13 +40,6 @@ const QString styles = "#songInfoFrm { "
                        "  border-width : 1 2 2 1px;"
                        "  border-style: solid;"
                        "}"
-                       "#titleLine {"
-                       "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1,"
-                       "  stop:0 rgba(255, 255, 255, 0),"
-                       "  stop:0.5 rgba(255,255,255,255),"
-                       "  stop:1 rgba(255,255,255,0));"
-                       "  border-style: none;"
-                       "}"
                        "#posBar {"
                        "  background-color: rgb(36,36,36);"
                        "  border-color:  rgb(0,0,0);"
@@ -116,18 +109,12 @@ const QString styles = "#songInfoFrm { "
                        "}"
                        "QTableView::item:selected {"
                        "  background-color: rgb(36,36,76);"
-                       "}"
-                       "#keyboardPopup {"
-                       "  background-color: rgb(40, 40, 40);"
                        "}";
 
 BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 {
     layout = new QGridLayout(this);
     this->setLayout(layout);
-
-
-
 
     QVBoxLayout *playlistLayout = new QVBoxLayout;
     layout->addLayout(playlistLayout, 1, 0, 3, 3);
@@ -139,6 +126,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     playlistView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     playlistView->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     playlistView->setShowGrid(false);
+    playlistView->setSelectionBehavior(QAbstractItemView::SelectRows);
     playlistView->horizontalHeader()->setVisible(false);
     playlistView->horizontalHeader()->setStretchLastSection(true);
     playlistView->verticalHeader()->setVisible(false);
@@ -204,9 +192,9 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     stopBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     connect(stopBtn, &MyPushButton::pressed, this, &BigPanel::stopBtn_clicked);
 
-    keyboardBtn = new MyPushButton("KEY", playControlsFrm);
+    keyboardBtn = new MyPushButton("", playControlsFrm);
     keyboardBtn->setObjectName("keyboardBtn");
-    //keyboardBtn->setIcon(QIcon(":/player-img/keyboard.svg"));
+    keyboardBtn->setIcon(QIcon(":/player-img/keypad.svg"));
     keyboardBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     connect(keyboardBtn, &MyPushButton::pressed, this, &BigPanel::keyboardBtn_clicked);
 
@@ -341,8 +329,11 @@ void BigPanel::recalcSizes(const QSize &size)
 
     playlistView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 
-    int s = qMin(playBtn->parentWidget()->height(), playBtn->parentWidget()->width());
-    s = qMax(1, s);
+    int s = playBtn->parentWidget()->height();
+
+    rndBtn->setGeometry(0, s*0.2f, size.width()*0.13f, s*0.6f);
+    rndBtn->setIconSize(QSize(s/3, s/3));
+
     QSize playBtnSize(s, s);
     playBtn->setGeometry(size.width()*0.10f, 0, s, s);
 
@@ -352,16 +343,16 @@ void BigPanel::recalcSizes(const QSize &size)
     QRegion mask(0, 0, playBtnSize.width(), playBtnSize.height(), QRegion::Ellipse);
     playBtn->setMask(mask);
 
-    rndBtn->setGeometry(0, s*0.2f, size.width()*0.13f, s*0.6f);
-    rndBtn->setIconSize(QSize(s/3, s/3));
-
-    stopBtn->setGeometry(size.width()*0.07f+s, s*0.2f, s*0.9f, s*0.6f);
+    int x = size.width()*0.07f+s;
+    stopBtn->setGeometry(x, s*0.2f, s*0.9f, s*0.6f);
     stopBtn->setIconSize(QSize(s/3, s/3));
+    x += s*0.9f;
 
-    keyboardBtn->setGeometry(size.width()*0.07f+s*1.9f, s*0.2f, s*0.9f, s*0.6f);
+    keyboardBtn->setGeometry(x, s*0.2f, s*0.9f, s*0.6f);
     keyboardBtn->setIconSize(QSize(s/3, s/3));
+    x += s*0.9f;
 
-    songInfoFrm->setGeometry(size.width()/2, s*0.2f, size.width()/2, s*0.6f);
+    songInfoFrm->setGeometry(x, s*0.2f, songInfoFrm->parentWidget()->width()-x, s*0.6f);
 
     playlistBtnArea->setFixedHeight(size.height()/12);
 
@@ -371,6 +362,7 @@ void BigPanel::recalcSizes(const QSize &size)
     removeFileBtn->setIconSize(iconSize);
     UpBtn->setIconSize(iconSize);
     DownBtn->setIconSize(iconSize);
+    keyboardBtn->setIconSize(iconSize);
 
     this->setStyleSheet(styles +  QString(
                             ".QPushButton, #numberLbl {"
@@ -412,19 +404,12 @@ void BigPanel::recalcSizes(const QSize &size)
                         .arg(qMax(1, s/4))
                         .arg(qMax(1, size.height()/24)));
 
-
-/*
-    iconSize = QSize(btnBack->width()/2, btnBack->width()/2);
-    btnBack->setIconSize(iconSize);
-    rndBtn->setIconSize(iconSize);
-
-    iconSize = QSize(numberBtns[0]->width()/6, numberBtns[0]->width()/6);*/iconSize = QSize(playBtn->width()/12, playBtn->width()/12);
+    iconSize = QSize(size.height()/24, size.height()/24);
     nonstopIcon->setIconSize(iconSize);
     nonstopIcon->setFixedSize(iconSize);
 
     if(keyboardPopup)
         keyboardPopup->resize();
-        //keyboardPopup->resize(this->height()*0.65f, this->height()*0.9f);
 }
 
 void BigPanel::addFileBtn_clicked()
@@ -502,11 +487,8 @@ void BigPanel::keyboardBtn_clicked()
             this->setNonstop(false);
             emit playSong(number, nonstop);
         });
-        keyboardPopup->setObjectName("keyboardPopup");
-        //keyboardPopup->resize(this->height()*0.65f, this->height()*0.9f); // TODO
         keyboardPopup->setSize(0.42f, 0.9f); // TODO
         keyboardPopup->setAttribute(Qt::WA_DeleteOnClose);
-
         keyboardPopup->showAnimated();
     }
 }

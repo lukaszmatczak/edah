@@ -21,21 +21,30 @@
 
 #include "libedah.h"
 
-#include <QWidget>
+#include <QDialog>
 
-class LIBEDAHSHARED_EXPORT Popup : public QWidget
+class LIBEDAHSHARED_EXPORT Popup : public QDialog
 {
     Q_OBJECT
 public:
-    explicit Popup(QWidget *parent = 0);
+    explicit Popup(QWidget *parent);
     void setSize(float width, float height);
+    int exec();
+    void setStyleSheet(const QString &stylesheet);
+
+protected:
+    void paintEvent(QPaintEvent *e);
+    void closeEvent(QCloseEvent *e);
 
 public slots:
-    void showAnimated();
-    void closeAnimated();
     void resize();
 
 private:
+    void showAnimated();
+
+    QWidget *parent;
+    QString stylesheet;
+
     float percentWidth;
     float percentHeight;
 };

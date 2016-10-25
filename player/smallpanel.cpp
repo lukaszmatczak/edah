@@ -31,10 +31,6 @@ SmallPanel::SmallPanel(Player *player) : player(player)
     nameLbl = new QLabel;
     nameLbl->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
     layout->addWidget(nameLbl, 1);
-
-    infoLbl = new QLabel("\n-\n-:--/-:--");
-    infoLbl->setAlignment(Qt::AlignCenter | Qt::AlignBottom);
-    layout->addWidget(infoLbl, 1);
 }
 
 void SmallPanel::showEvent(QShowEvent *e)
@@ -59,7 +55,7 @@ void SmallPanel::recalcSizes(const QSize &size)
 
 void SmallPanel::retranslate()
 {
-    nameLbl->setText(player->getPluginName());
+    this->playerStateChanged(false);
 }
 
 void SmallPanel::changeEvent(QEvent *e)
@@ -78,22 +74,29 @@ void SmallPanel::playerStateChanged(bool isPlaying)
 {
     if(!isPlaying)
     {
-        infoLbl->setText("\n-\n-:--/-:--");
+        nameLbl->setText(player->getPluginName());
     }
 }
 
-void SmallPanel::playerPositionChanged(int number, double pos, double duration, bool autoplay)
+void SmallPanel::playerPositionChanged(double pos, double duration, bool autoplay)
 {
-    QString text = autoplay ? tr("Autoplay\n") : "\n";
-    text += QString::number(number) + "\n";
+    //QString text = autoplay ? tr("Autoplay\n") : "\n";
+    //text += QString::number(number) + "\n";
 
-    QString posStr = "-:--";
-    QString durationStr = "/-:--";
-    if(pos > -1) posStr = QTime(0, 0).addSecs(pos).toString("m:ss");
-    if(duration > -1) durationStr = QTime(0, 0).addSecs(duration).toString("/m:ss");
-    text += posStr + durationStr;
+    QString text;
 
-    infoLbl->setText(text);
+    if(pos >= 0 && duration > 0)
+    {
+        QString posStr = QTime(0, 0).addSecs(pos).toString("\nmm:ss");
+        QString durationStr = QTime(0, 0).addSecs(duration).toString("/mm:ss");
+        text = "\n" + player->getPluginName() + posStr + durationStr;
+    }
+    else
+    {
+        text = player->getPluginName();
+    }
+
+    nameLbl->setText(text);
 }
 
 void SmallPanel::addPeakMeter(PeakMeter *peakMeter)
@@ -105,4 +108,15 @@ void SmallPanel::addPeakMeter(PeakMeter *peakMeter)
 void SmallPanel::removePeakMeter(PeakMeter *peakMeter)
 {
     layout->removeWidget(peakMeter);
+}
+
+void SmallPanel::addThumbnail(ThumbnailWidget *thumb)
+{
+    thumb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    layout->addWidget(thumb, 1);
+}
+
+void SmallPanel::removeThumbnail(ThumbnailWidget *thumb)
+{
+    layout->removeWidget(thumb);
 }

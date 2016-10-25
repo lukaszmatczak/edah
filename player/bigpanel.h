@@ -24,6 +24,7 @@
 
 #include <libedah/mypushbutton.h>
 #include <libedah/peakmeter.h>
+#include <libedah/thumbnailwidget.h>
 
 #include <QWidget>
 #include <QGridLayout>
@@ -31,7 +32,6 @@
 #include <QProgressBar>
 #include <QProxyStyle>
 #include <QTableView>
-#include <QPointer>
 
 #include <random>
 
@@ -64,6 +64,8 @@ public:
 
     void addPeakMeter(PeakMeter *peakMeter);
     void removePeakMeter(PeakMeter *peakMeter);
+    void addThumbnail(ThumbnailWidget *thumb);
+    void removeThumbnail(ThumbnailWidget *thumb);
 
     void playerPositionChanged(bool paused, double pos, double duration);
     void setCurrentPlaylistEntry(int n);
@@ -75,6 +77,7 @@ public:
     Waveform *posBar;
 
 protected:
+    bool event(QEvent *event);
     void showEvent(QShowEvent *e);
     void resizeEvent(QResizeEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
@@ -84,9 +87,9 @@ private:
     void recalcSizes(const QSize &size);
     void updateTitle(int number);
     void setNonstop(bool isSet);
+    void showKeyboard(int number);
 
     Player *player;
-    QPointer<Keypad> keyboardPopup;
 
     QGridLayout *layout;
     //QVector<MyPushButton*> numberBtns;

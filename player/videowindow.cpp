@@ -32,9 +32,9 @@
     #include <QtWin>
 #endif
 
-VideoWindow::VideoWindow(QLabel *thumbnail, Player *player, QWidget *parent)
-    : QMainWindow(parent), player(player), canClose(false),
-      manualScreen(nullptr), cursor(nullptr)
+VideoWindow::VideoWindow(Player *player, QWidget *parent)
+    : QMainWindow(parent), player(player),
+      canClose(false), manualScreen(nullptr), cursor(nullptr)
 {
     this->move(64,64);
     this->resize(853, 480);
@@ -65,8 +65,6 @@ VideoWindow::VideoWindow(QLabel *thumbnail, Player *player, QWidget *parent)
 
     windowThumbnail = -1;
 
-    //videoThumbnail = utils->createThumbnail(this->winId(), thumbnail, false, false);
-
     QList<QScreen*> screens = QGuiApplication::screens();
     foreach (QScreen *screen, screens)
         connect(screen, &QScreen::geometryChanged, this, &VideoWindow::configurationChanged);
@@ -75,6 +73,11 @@ VideoWindow::VideoWindow(QLabel *thumbnail, Player *player, QWidget *parent)
 VideoWindow::~VideoWindow()
 {
 
+}
+
+void VideoWindow::setVideoThumbnail(int id)
+{
+    this->videoThumbnail = id;
 }
 
 void VideoWindow::fadeInOut(QWidget *widget, int duration, int start, int stop)
@@ -254,9 +257,9 @@ void VideoWindow::resizeEvent(QResizeEvent *event)
     }
 
     winLbl->setGeometry(0,0, this->width(), this->height());
-    //utils->moveThumbnail(windowThumbnail, QSize());
+    utils->moveThumbnail(windowThumbnail, QSize());
 
-    //utils->moveThumbnail(videoThumbnail, event->size());
+    utils->moveThumbnail(videoThumbnail, event->size());
 }
 
 void VideoWindow::moveEvent(QMoveEvent *event)
@@ -269,13 +272,13 @@ void VideoWindow::moveEvent(QMoveEvent *event)
 void VideoWindow::showEvent(QShowEvent *e)
 {
     Q_UNUSED(e);
-    //utils->showThumbnail(videoThumbnail, true);
+    utils->showThumbnail(videoThumbnail, true);
 }
 
 void VideoWindow::hideEvent(QHideEvent *e)
 {
     Q_UNUSED(e);
-    //utils->showThumbnail(videoThumbnail, false);
+    utils->showThumbnail(videoThumbnail, false);
 }
 
 void VideoWindow::setFullscreenMode(QScreen *destScreen)

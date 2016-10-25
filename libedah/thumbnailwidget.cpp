@@ -16,28 +16,27 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IPLUGIN_H
-#define IPLUGIN_H
+#include "thumbnailwidget.h"
 
-#include <QWidget>
-
-class IPlugin
+ThumbnailWidget::ThumbnailWidget(QWidget *parent) : QLabel(parent)
 {
-public:
-    virtual QWidget *bigPanel() = 0;
-    virtual QWidget *smallPanel() = 0;
-    virtual bool hasPanel() const = 0;
-    virtual QWidget *getSettingsTab() = 0;
-    virtual QString getPluginName() const = 0;
-    virtual QString getPluginId() const = 0;
 
-    virtual void loadSettings() = 0;
-    virtual void writeSettings() = 0;
-    virtual void settingsChanged() = 0;
+}
 
-    virtual void setPanelOpacity(int opacity) = 0;
-};
+void ThumbnailWidget::showEvent(QShowEvent *e)
+{
+    Q_UNUSED(e)
+    emit positionChanged();
+}
 
-Q_DECLARE_INTERFACE(IPlugin, "edah.iplugin")
+void ThumbnailWidget::moveEvent(QMoveEvent *e)
+{
+    Q_UNUSED(e)
+    emit positionChanged();
+}
 
-#endif // IPLUGIN_H
+void ThumbnailWidget::resizeEvent(QResizeEvent *e)
+{
+    Q_UNUSED(e)
+    emit positionChanged();
+}

@@ -30,8 +30,10 @@ class VideoWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit VideoWindow(QLabel *thumbnail, Player *player, QWidget *parent = 0);
+    explicit VideoWindow(Player *player, QWidget *parent = 0);
     ~VideoWindow();
+
+    void setVideoThumbnail(int id);
 
     void showImage(QString filename);
     void hideImage();

@@ -32,6 +32,8 @@
 #include <QJsonObject>
 #include <QDateTime>
 
+#include <QDebug>
+
 #ifdef Q_OS_WIN
 #include <Windows.h>
 #endif
@@ -39,7 +41,10 @@
 Utils *utils;
 LIBEDAHSHARED_EXPORT QSettings *settings;
 
-Utils::Utils()
+QMap<int, Utils::ThumbInfo> Utils::thumbInfoTable;
+int Utils::currThumbInfoIdx;
+
+Utils::Utils(QWidget *mainwindow) : mainwindow(mainwindow)
 {
     QDir confDir(this->getConfigPath());
     if(!confDir.exists())
@@ -157,7 +162,7 @@ QString Utils::parseFilename(QString fmt, const QString &name, const QDateTime &
     return filename;
 }
 
-void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop)
+void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop, std::function<void(int)> callback)
 {
     QTimeLine timeLine(duration);
     QGraphicsOpacityEffect *effect1 = new QGraphicsOpacityEffect;
@@ -169,10 +174,11 @@ void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int sto
     w2->setGraphicsEffect(effect2);
 
     timeLine.setFrameRange(start, stop);
-    connect(&timeLine, &QTimeLine::frameChanged, this, [effect1, effect2](int frame) {
+    connect(&timeLine, &QTimeLine::frameChanged, this, [effect1, effect2, callback](int frame) {
         const float opacity = frame/255.0;
         effect1->setOpacity(opacity);
         effect2->setOpacity(opacity);
+        callback(frame);
     });
     timeLine.start();
 
@@ -289,4 +295,172 @@ QString Utils::getOutputTechnologyString(int number)
     default: return "";
     }
 #endif
+}
+
+int Utils::createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale, bool onMainwindow)
+{
+    ThumbInfo ti;
+    ti.srcID = srcID;
+    ti.dest = dest;
+    ti.withFrame = withFrame;
+    ti.noScale = noScale;
+    ti.scale = -1.0;
+    ti.srcSize = QSize();
+
+    BOOL dwmEnabled = false;
+    DwmIsCompositionEnabled(&dwmEnabled);
+    if(!dwmEnabled)
+    {
+        dest->setText("Podgląd okna niedostępny\nNależy włączyć Aero Glass");
+        return -1;
+    }
+
+    QWidget *destWindow = onMainwindow ? mainwindow : dest->window();
+
+    HRESULT hr = DwmRegisterThumbnail((HWND)destWindow->winId(), (HWND)srcID, &ti.thumb);
+    if(!SUCCEEDED(hr)) return -1;
+
+    DWM_THUMBNAIL_PROPERTIES props;
+
+    props.dwFlags = DWM_TNP_VISIBLE |
+            DWM_TNP_RECTDESTINATION |
+            DWM_TNP_SOURCECLIENTAREAONLY;
+
+    QPoint leftTop;
+    if(destWindow->children().contains(dest))
+        leftTop = dest->mapTo(destWindow, QPoint(0,0));
+
+    props.rcDestination.left = leftTop.x();
+    props.rcDestination.top = leftTop.y();
+    props.rcDestination.right = leftTop.x()+dest->width();
+    props.rcDestination.bottom = leftTop.y()+dest->height();
+
+    props.fVisible = TRUE;
+    props.fSourceClientAreaOnly = !withFrame;
+    DwmUpdateThumbnailProperties(ti.thumb, &props);
+
+    DWORD pid;
+    DWORD tid = GetWindowThreadProcessId((HWND)srcID, &pid);
+/*
+    ti.hook = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE,
+                              EVENT_OBJECT_LOCATIONCHANGE,
+                              NULL,
+                              WinEventProc,
+                              pid,
+                              tid,
+                              WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+*/ // TODO
+    int id = currThumbInfoIdx++;
+    thumbInfoTable.insert(id, ti);
+
+    this->moveThumbnail(id, QSize());
+
+    return id;
+}
+
+void Utils::moveThumbnail(int id, QSize srcSize)
+{
+    if(!thumbInfoTable.contains(id))
+        return;
+
+    ThumbInfo *ti = &thumbInfoTable[id];
+
+    if(!ti->thumb) return;
+
+    if(!srcSize.isValid())
+    {
+        SIZE size;
+        if(DwmQueryThumbnailSourceSize(ti->thumb, &size) == S_OK)
+            srcSize = QSize(size.cx, size.cy);
+    }
+
+    if(srcSize.isValid())
+    {
+        ti->srcSize = srcSize;
+    }
+    else
+    {
+        srcSize = ti->srcSize;
+    }
+
+    QSize thumbSize = ti->noScale ? srcSize : srcSize.scaled(ti->dest->size(), Qt::KeepAspectRatio);
+
+    DWM_THUMBNAIL_PROPERTIES props;
+    props.dwFlags = 0;
+
+    QMargins offset = QMargins(0, 0, 0, 0); //windows10IsTerrible((HWND)ti->srcID); // TODO
+
+    if(ti->scale > 0) // if scale is set
+    {
+        props.dwFlags |= DWM_TNP_RECTSOURCE;
+        QSize size = ti->dest->size()/ti->scale;
+
+        props.rcSource.top = qMax(0, (srcSize.height()-size.height())/2)+offset.top();
+        props.rcSource.left = qMax(0, (srcSize.width()-size.width())/2)+offset.left();
+        props.rcSource.bottom = srcSize.height() - props.rcSource.top+offset.top();
+        props.rcSource.right = srcSize.width() - props.rcSource.left+offset.left();
+        thumbSize = QSize(props.rcSource.right-props.rcSource.left, props.rcSource.bottom-props.rcSource.top)*ti->scale;
+    }
+    else
+    {
+        props.dwFlags |= DWM_TNP_RECTSOURCE;
+        props.rcSource.top = offset.top();
+        props.rcSource.left = offset.left();
+        props.rcSource.bottom = srcSize.height()+offset.top();
+        props.rcSource.right = srcSize.width()+offset.left();
+    }
+
+    props.dwFlags |= DWM_TNP_RECTDESTINATION;
+
+    QPoint leftTop = ti->dest->mapTo(ti->dest->window(), QPoint(0,0));
+    props.rcDestination.top = leftTop.y()+(ti->dest->height()-thumbSize.height())/2;
+    props.rcDestination.left = leftTop.x()+(ti->dest->width()-thumbSize.width())/2;
+    props.rcDestination.right = props.rcDestination.left+thumbSize.width();
+    props.rcDestination.bottom = props.rcDestination.top+thumbSize.height();
+
+    DwmUpdateThumbnailProperties(ti->thumb, &props);
+}
+
+void Utils::showThumbnail(int id, bool visible)
+{
+    if(!thumbInfoTable.contains(id))
+        return;
+
+    ThumbInfo *ti = &thumbInfoTable[id];
+
+    if(!ti->thumb) return;
+
+    DWM_THUMBNAIL_PROPERTIES props;
+    props.dwFlags = DWM_TNP_VISIBLE;
+    props.fVisible = visible;
+
+    DwmUpdateThumbnailProperties(ti->thumb, &props);
+}
+
+void Utils::setThumbnailOpacity(int id, int opacity)
+{
+    if(!thumbInfoTable.contains(id))
+        return;
+
+    ThumbInfo *ti = &thumbInfoTable[id];
+
+    if(!ti->thumb) return;
+
+    DWM_THUMBNAIL_PROPERTIES props;
+    props.dwFlags = DWM_TNP_OPACITY;
+    props.opacity = opacity;
+
+    DwmUpdateThumbnailProperties(ti->thumb, &props);
+}
+
+void Utils::destroyThumbnail(int id)
+{
+    if(!thumbInfoTable.contains(id))
+        return;
+
+    DwmUnregisterThumbnail(thumbInfoTable[id].thumb);
+
+    UnhookWinEvent(thumbInfoTable[id].hook);
+
+    thumbInfoTable.remove(id);
 }

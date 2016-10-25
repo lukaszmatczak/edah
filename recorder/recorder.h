@@ -54,6 +54,8 @@ public:
     void writeSettings();
     void settingsChanged();
 
+    void setPanelOpacity(int opacity);
+
     bool isRecording();
 
 private:

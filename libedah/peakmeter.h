@@ -13,9 +13,6 @@ public:
     explicit PeakMeter(QWidget *parent = 0);
     virtual ~PeakMeter();
 
-    bool hasHeightForWidth() const;
-    int heightForWidth(int width) const;
-
     void setPeak(float left, float right);
     void setColors(QRgb low, QRgb mid, QRgb high);
     void setChannels(int count);

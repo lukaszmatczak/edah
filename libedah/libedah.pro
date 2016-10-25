@@ -21,7 +21,8 @@ SOURCES += logger.cpp \
     peakmeter.cpp \
     multilangstring.cpp \
     bluropacityeffect.cpp \
-    popup.cpp
+    popup.cpp \
+    thumbnailwidget.cpp
 
 HEADERS += iplugin.h \
         logger.h \
@@ -31,13 +32,14 @@ HEADERS += iplugin.h \
     peakmeter.h \
     multilangstring.h \
     bluropacityeffect.h \
-    popup.h
+    popup.h \
+    thumbnailwidget.h
 
 win32 {
     SOURCES += updater.cpp
     HEADERS += updater.h
 
-    LIBS += -L../openssl/lib -ladvapi32 -lshell32 -llibeay32MD  -luser32
+    LIBS += -L../openssl/lib -ladvapi32 -lshell32 -llibeay32MD  -luser32 -ldwmapi
 
     INCLUDEPATH += ../openssl/include
 }

@@ -16,28 +16,26 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IPLUGIN_H
-#define IPLUGIN_H
+#ifndef THUMBNAILWIDGET_H
+#define THUMBNAILWIDGET_H
 
-#include <QWidget>
+#include "libedah.h"
 
-class IPlugin
+#include <QLabel>
+
+class LIBEDAHSHARED_EXPORT ThumbnailWidget : public QLabel
 {
+    Q_OBJECT
 public:
-    virtual QWidget *bigPanel() = 0;
-    virtual QWidget *smallPanel() = 0;
-    virtual bool hasPanel() const = 0;
-    virtual QWidget *getSettingsTab() = 0;
-    virtual QString getPluginName() const = 0;
-    virtual QString getPluginId() const = 0;
+    ThumbnailWidget(QWidget *parent);
 
-    virtual void loadSettings() = 0;
-    virtual void writeSettings() = 0;
-    virtual void settingsChanged() = 0;
+protected:
+    void showEvent(QShowEvent *e);
+    void moveEvent(QMoveEvent *e);
+    void resizeEvent(QResizeEvent *e);
 
-    virtual void setPanelOpacity(int opacity) = 0;
+signals:
+    void positionChanged();
 };
 
-Q_DECLARE_INTERFACE(IPlugin, "edah.iplugin")
-
-#endif // IPLUGIN_H
+#endif // THUMBNAILWIDGET_H

@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QThreadPool::globalInstance()->setMaxThreadCount(QThread::idealThreadCount()/2);
 
-    utils = new Utils;
+    utils = new Utils(this);
     logger = new Logger;
     settings = new QSettings;
 
@@ -438,6 +438,8 @@ void MainWindow::reloadPlugins()
         plugins[i].panel->show();
     }
 
+    plugins[activePlugin].panel->setFocus();
+
     this->recalcSizes(this->size());
 }
 
@@ -457,7 +459,11 @@ void MainWindow::changeActivePlugin(int pluginIdx)
     {
         utils->fadeInOut(plugins[activePlugin].panel,
                          plugins[pluginIdx].panel,
-                         250, 255, 0);
+                         250, 255, 0,
+                         [this, pluginIdx](int opacity) {
+            plugins[activePlugin].plugin->setPanelOpacity(opacity);
+            plugins[pluginIdx].plugin->setPanelOpacity(opacity);
+        });
 
         int smallWidth = plugins[pluginIdx].container->width();
         int bigWidth = plugins[activePlugin].container->width();
@@ -497,10 +503,14 @@ void MainWindow::changeActivePlugin(int pluginIdx)
 
         utils->fadeInOut(plugins[activePlugin].panel,
                          plugins[pluginIdx].panel,
-                         250, 0, 255);
+                         250, 0, 255,
+                         [this, pluginIdx](int opacity) {
+            plugins[activePlugin].plugin->setPanelOpacity(opacity);
+            plugins[pluginIdx].plugin->setPanelOpacity(opacity);
+        });
     }
 
-    plugins[pluginIdx].container->setFocus();
+    plugins[pluginIdx].panel->setFocus();
 
     activePlugin = pluginIdx;
 

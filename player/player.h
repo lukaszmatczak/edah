@@ -28,6 +28,7 @@
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
+#include <libedah/thumbnailwidget.h>
 
 #include <bass.h>
 
@@ -89,6 +90,10 @@ public:
     void writeSettings();
     void settingsChanged();
 
+    void setPanelOpacity(int opacity);
+
+    void updateThumbnailPos();
+
     bool isPlaying();
     QMap<int, Song> songs;
     PlaylistModel playlistModel;
@@ -103,16 +108,17 @@ private:
     SmallPanel *sPanel;
     SettingsTab *settingsTab;
 
+    ThumbnailWidget *thumbnailWidget;
+    int videoThumbnail;
+
     QDir songsDir;
     PeakMeter *peakMeter;
     VideoWindow *videoWindow;
     MPV *mpv;
     ShufflePlaylist *rndPlaylist;
 
-    //bool playing;
     bool paused;
     double currPos;
-    //int currNumber;
     bool autoplay;
 
     QTimer timer;

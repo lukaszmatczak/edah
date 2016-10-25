@@ -23,6 +23,14 @@
 
 #include <QObject>
 #include <QSettings>
+#include <QLabel>
+
+#include <functional>
+
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#include <dwmapi.h>
+#endif
 
 class LIBEDAHSHARED_EXPORT Utils : public QObject
 {
@@ -40,20 +48,45 @@ public:
 
     QString parseFilename(QString fmt, const QString &name, const QDateTime &time);
 
-    void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop);
+    void fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop, std::function<void(int)> callback);
     void addShadowEffect(QWidget *widget, QColor color);
     void updateStyle(QWidget *widget);
 
     QString getFriendlyName(QString dev);
     QString getOutputTechnologyString(int number);
 
+    int createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale, bool onMainwindow);
+    void showThumbnail(int id, bool visible);
+    void moveThumbnail(int id, QSize srcSize);
+    void setThumbnailOpacity(int id, int opacity);
+    void destroyThumbnail(int id);
+
+#ifdef Q_OS_WIN
+    struct ThumbInfo
+    {
+        WId srcID;
+        QLabel *dest;
+        HTHUMBNAIL thumb;
+        HWINEVENTHOOK hook;
+        bool withFrame;
+        bool noScale;
+        QSize srcSize;
+        float scale;
+    };
+#endif
+
 private:
-    Utils();
+    Utils(QWidget *mainwindow);
 
     friend class MainWindow;
 
+    QWidget *mainwindow;
+
     QString appVersion;
     int appBuild;
+
+    static QMap<int, ThumbInfo> thumbInfoTable;
+    static int currThumbInfoIdx;
 };
 
 LIBEDAHSHARED_EXPORT extern Utils *utils;

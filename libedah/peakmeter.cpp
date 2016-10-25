@@ -4,6 +4,7 @@
 
 #include <QPainter>
 #include <QtMath>
+#include <QLayout>
 #include <QDebug>
 
 PeakMeter::PeakMeter(QWidget *parent) : QWidget(parent), channels(2)
@@ -26,28 +27,15 @@ PeakMeter::~PeakMeter()
 
 }
 
-bool PeakMeter::hasHeightForWidth() const
-{
-    //return true;
-    return false;
-}
-
-int PeakMeter::heightForWidth(int width) const
-{
-    return width*2;
-}
-
 void PeakMeter::setPeak(float left, float right)
 {
     peaks[0] = qMax(peaks[0], left);
     peaks[1] = qMax(peaks[1], right);
-
-    //this->update();
 }
 
 void PeakMeter::setChannels(int count)
 {
-    this->channels = count;
+    this->channels = qMin(count, 2);
 }
 
 QRgb PeakMeter::blendColors(QRgb color1, QRgb color2, float r)
@@ -65,14 +53,16 @@ void PeakMeter::paintEvent(QPaintEvent *e)
 
     int margin = 0;
 
-    if(this->height()/this->width() < 1580.0/450.0)
+    float width = (250.0*channels-50.0);
+
+    if(this->height()/this->width() < 1580.0/width)
     {
-        int destWidth = this->height()*450.0/1580.0;
+        int destWidth = this->height()*width/1580.0;
         margin = (this->width()-destWidth)/2;
     }
 
     p.setRenderHints(QPainter::Antialiasing);
-    qreal hScale = (this->width()-margin*2)/450.0;
+    qreal hScale = (this->width()-margin*2)/width;
     p.scale(hScale, this->height()/1580.0);
 
     QRadialGradient gradient(0.5, 0.5, 0.5);

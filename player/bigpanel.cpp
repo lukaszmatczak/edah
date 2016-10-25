@@ -214,6 +214,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 
     QFrame *posFrame = new QFrame(this);
     QGridLayout *posLayout = new QGridLayout(posFrame);
+    posLayout->setContentsMargins(0, 0, 0, 0);
     posFrame->setLayout(posLayout);
     layout->addWidget(posFrame, 3, 3, 1, 3);
 
@@ -268,6 +269,17 @@ void BigPanel::removePeakMeter(PeakMeter *peakMeter)
     layout->removeWidget(peakMeter);
 }
 
+void BigPanel::addThumbnail(ThumbnailWidget *thumb)
+{
+    thumb->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    layout->addWidget(thumb, 1, 3, 2, 2);
+}
+
+void BigPanel::removeThumbnail(ThumbnailWidget *thumb)
+{
+    layout->removeWidget(thumb);
+}
+
 void BigPanel::showEvent(QShowEvent *e)
 {
     Q_UNUSED(e);
@@ -284,22 +296,17 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
 {
     e->setAccepted(false);
 
-/*    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9)) // TODO
+    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9)) // TODO
     {
-        this->addDigit(e->key() - Qt::Key_0);
+        this->showKeyboard(e->key() - Qt::Key_0);
         e->setAccepted(true);
     }
-    else if(e->key() == Qt::Key_Backspace)
-    {
-        this->btnBack_clicked();
-        e->setAccepted(true);
-    }
-    else*/ if(((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return)) && !player->isPlaying())
+    else if(((e->key() == Qt::Key_Enter) || (e->key() == Qt::Key_Return)))
     {
         this->playBtn_clicked();
         e->setAccepted(true);
     }
-    else if(e->key() == Qt::Key_Backslash)
+    else if(e->key() == Qt::Key_BracketRight)
     {
         this->btnRnd_clicked();
         e->setAccepted(true);
@@ -407,9 +414,6 @@ void BigPanel::recalcSizes(const QSize &size)
     iconSize = QSize(size.height()/24, size.height()/24);
     nonstopIcon->setIconSize(iconSize);
     nonstopIcon->setFixedSize(iconSize);
-
-    if(keyboardPopup)
-        keyboardPopup->resize();
 }
 
 void BigPanel::addFileBtn_clicked()
@@ -480,17 +484,30 @@ void BigPanel::btnRnd_clicked()
 
 void BigPanel::keyboardBtn_clicked()
 {
-    if(!keyboardPopup)
+    this->showKeyboard(0);
+}
+
+void BigPanel::showKeyboard(int number)
+{
+    Keypad keyboardPopup(number, player, this);
+    connect(&keyboardPopup, &Keypad::songEntered, this, [this](int number) {
+        this->setNonstop(false);
+        emit playSong(number, nonstop);
+    });
+    keyboardPopup.setSize(0.42f, 0.9f); // TODO
+    keyboardPopup.exec();
+}
+
+bool BigPanel::event(QEvent *e)
+{
+    if(e->type() == QEvent::WindowActivate)
     {
-        keyboardPopup = new Keypad(player, this);
-        connect(keyboardPopup, &Keypad::songEntered, this, [this](int number) {
-            this->setNonstop(false);
-            emit playSong(number, nonstop);
-        });
-        keyboardPopup->setSize(0.42f, 0.9f); // TODO
-        keyboardPopup->setAttribute(Qt::WA_DeleteOnClose);
-        keyboardPopup->showAnimated();
+        player->updateThumbnailPos();
     }
+
+    e->ignore();
+
+    return QWidget::event(e);
 }
 
 void BigPanel::setCurrentPlaylistEntry(int n)

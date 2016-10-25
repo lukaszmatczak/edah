@@ -92,9 +92,6 @@ Player::Player() : autoplay(false), currPos(0.0)
 
     this->settingsChanged();
 
-    //connect(this, &Player::stateChanged, bPanel, &BigPanel::playerStateChanged);
-    connect(this, &Player::stateChanged, sPanel, &SmallPanel::playerStateChanged);
-
     timer.setInterval(35);
     connect(&timer, &QTimer::timeout, this, &Player::refreshState);
     timer.start();
@@ -102,7 +99,16 @@ Player::Player() : autoplay(false), currPos(0.0)
     peakMeter = new PeakMeter;
     peakMeter->setColors(qRgb(0, 80, 255), qRgb(255, 255, 0), qRgb(255, 0, 0));
 
-    videoWindow = new VideoWindow((QLabel*)nullptr, this);
+    thumbnailWidget = new ThumbnailWidget(bPanel);
+
+    videoWindow = new VideoWindow(this);
+    videoThumbnail = utils->createThumbnail(videoWindow->winId(), thumbnailWidget, false, false, true);
+
+    connect(thumbnailWidget, &ThumbnailWidget::positionChanged, this, [this]() {
+        this->updateThumbnailPos();
+    });
+
+    videoWindow->setVideoThumbnail(videoThumbnail);
     videoWindow->configurationChanged();
 
     connect(qApp, &QGuiApplication::screenAdded, this, &Player::screenAdded);
@@ -170,6 +176,9 @@ QWidget *Player::bigPanel()
     sPanel->removePeakMeter(peakMeter);
     bPanel->addPeakMeter(peakMeter);
 
+    bPanel->addThumbnail(thumbnailWidget);
+    sPanel->removeThumbnail(thumbnailWidget);
+
     return bPanel;
 }
 
@@ -177,6 +186,9 @@ QWidget *Player::smallPanel()
 {
     bPanel->removePeakMeter(peakMeter);
     sPanel->addPeakMeter(peakMeter);
+
+    sPanel->addThumbnail(thumbnailWidget);
+    bPanel->removeThumbnail(thumbnailWidget);
 
     return sPanel;
 }
@@ -258,6 +270,16 @@ void Player::settingsChanged()
 
     this->loadSongs();
     rndPlaylist->generateNewPlaylist();
+}
+
+void Player::setPanelOpacity(int opacity)
+{
+    utils->setThumbnailOpacity(videoThumbnail, opacity);
+}
+
+void Player::updateThumbnailPos()
+{
+    utils->moveThumbnail(videoThumbnail, QSize());
 }
 
 void Player::loadSongs()
@@ -392,6 +414,7 @@ void Player::setCurrPos(double currPos)
     int totalPos = playlistModel.getCurrentItemInfo().duration;
 
     bPanel->playerPositionChanged(paused, currPos, totalPos);
+    sPanel->playerPositionChanged(currPos, totalPos, autoplay);
 
     static bool done = false;
     if(currPos != 0.0f && !done)

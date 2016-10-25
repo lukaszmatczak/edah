@@ -20,6 +20,7 @@
 #define SMALLPANEL_H
 
 #include <libedah/peakmeter.h>
+#include <libedah/thumbnailwidget.h>
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -32,10 +33,12 @@ class SmallPanel : public QWidget
     Q_OBJECT
 public:
     explicit SmallPanel(Player *player);
-    void playerPositionChanged(int number, double pos, double duration, bool autoplay);
+    void playerPositionChanged(double pos, double duration, bool autoplay);
 
     void addPeakMeter(PeakMeter *peakMeter);
     void removePeakMeter(PeakMeter *peakMeter);
+    void addThumbnail(ThumbnailWidget *thumb);
+    void removeThumbnail(ThumbnailWidget *thumb);
 
     void retranslate();
 
@@ -54,7 +57,6 @@ private:
 
     QVBoxLayout *layout;
     QLabel *nameLbl;
-    QLabel *infoLbl;
 };
 
 #endif // SMALLPANEL_H

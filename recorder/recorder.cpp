@@ -188,6 +188,11 @@ void Recorder::settingsChanged()
     }
 }
 
+void Recorder::setPanelOpacity(int opacity)
+{
+    Q_UNUSED(opacity)
+}
+
 bool Recorder::isRecording()
 {
     return recordingActive;

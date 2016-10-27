@@ -39,6 +39,8 @@
 
 #include <QDebug>
 
+#include <bass.h>
+
 #ifdef Q_OS_WIN
 #include <Windows.h>
 #include <mmdeviceapi.h>
@@ -66,8 +68,6 @@ Player::Player() : autoplay(false), currPos(0.0)
 
     qApp->installTranslator(&translator);
 
-    BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
-    BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
     BASS_SetConfig(BASS_CONFIG_UNICODE, true);
 
     rndPlaylist = new ShufflePlaylist(&songs);
@@ -114,7 +114,7 @@ Player::Player() : autoplay(false), currPos(0.0)
     connect(qApp, &QGuiApplication::screenAdded, this, &Player::screenAdded);
     connect(qApp, &QGuiApplication::screenRemoved, this, &Player::screenRemoved);
 
-    //utils->setExtendScreenTopology(); // TODO
+    utils->setExtendScreenTopology();
 
     settings->beginGroup(this->getPluginId()); // TODO: reload settings
     QString audioDeviceId = settings->value("audioDeviceId").toString();
@@ -154,7 +154,7 @@ Player::~Player()
     QThreadPool::globalInstance()->clear();
     QThreadPool::globalInstance()->waitForDone();
 
-    //utils->setPreviousScreenTopology(); //TODO
+    utils->setPreviousScreenTopology();
 
     videoWindow->canClose = true;
     videoWindow->close();
@@ -235,22 +235,9 @@ void Player::settingsChanged()
 
     static bool initialized = false;
 
-    int playDevNo = -1;
-    BASS_DEVICEINFO info;
-    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
+    if(!initialized)
     {
-        if(playDev == info.name)
-        {
-            playDevNo = i;
-            break;
-        }
-    }
-
-    if((BASS_GetDevice() != playDevNo) || !initialized)
-    {
-        BASS_Free();
-
-        if(!BASS_Init(playDevNo, 44100, 0, nullptr, nullptr))
+        if(!BASS_Init(-1, 44100, 0, nullptr, nullptr))
         {
             int code = BASS_ErrorGetCode();
             QString text = "BASS error: " + QString::number(code);
@@ -381,9 +368,9 @@ void Player::refreshState()
     if(videoWindow->isVisible() &&
             (!paused || videoWindow->isImageVisible() || videoWindow->isWindowVisible()) &&
             videoWindow->isFullScreen())
-        {}//utils->enableCursorClip(true); //TODO
+        utils->enableCursorClip(true);
     else
-        {}//utils->enableCursorClip(false); //TODO
+        utils->enableCursorClip(false);
 
     bool hidden = (currPos == 0.0) && paused && !videoWindow->isImageVisible() && !videoWindow->isWindowVisible();
 

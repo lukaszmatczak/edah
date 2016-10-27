@@ -49,8 +49,6 @@ Recorder::Recorder(QObject *parent) :
 
     qApp->installTranslator(&translator);
 
-    BASS_SetConfig(BASS_CONFIG_UPDATETHREADS, 2); //TODO??
-    BASS_SetConfig(BASS_CONFIG_BUFFER, 1000);
     BASS_SetConfig(BASS_CONFIG_UNICODE, true);
 
     bPanel = new BigPanel(this);

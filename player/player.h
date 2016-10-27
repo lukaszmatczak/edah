@@ -30,8 +30,6 @@
 #include <libedah/peakmeter.h>
 #include <libedah/thumbnailwidget.h>
 
-#include <bass.h>
-
 #include <QObject>
 #include <QDir>
 #include <QRunnable>

@@ -30,7 +30,8 @@
 Popup::Popup(QWidget *parent) :
     QDialog(nullptr), percentHeight(0.5f), percentWidth(0.5f), parent(parent)
 {
-    this->setWindowFlags(Qt::Popup);
+    this->setWindowFlags(Qt::FramelessWindowHint);
+    this->setModal(true);
 
     QFile fstyle(":/style.qss");
     if(!fstyle.open(QIODevice::ReadOnly | QIODevice::Text))

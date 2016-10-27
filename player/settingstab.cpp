@@ -20,8 +20,6 @@
 
 #include <libedah/utils.h>
 
-#include <bass.h>
-
 #include <QFormLayout>
 #include <QPushButton>
 #include <QApplication>
@@ -54,7 +52,7 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     monitorsFrame = new QFrame(this);
     monitorsFrame->setObjectName("monitorsFrame");
-    monitorsFrame->setMinimumHeight(100);
+    //monitorsFrame->setMinimumHeight(100);
     monitorsFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     layout->addRow("", monitorsFrame);
 
@@ -82,6 +80,8 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 void SettingsTab::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e)
+
+    monitorsFrame->setMinimumHeight(this->height()/4); // TODO
 
     this->drawMonitors();
 }
@@ -191,7 +191,6 @@ void SettingsTab::loadSettings()
 
     settings->beginGroup(plugin->getPluginId());
     selectedMonitor = settings->value("displayGeometry").toRect();
-    playDevBox->setCurrentText(settings->value("device", "").toString());
     songsDir->setText(settings->value("songsDir", "").toString());
     settings->endGroup();
 

@@ -25,6 +25,7 @@
 #include <libedah/mypushbutton.h>
 #include <libedah/peakmeter.h>
 #include <libedah/thumbnailwidget.h>
+#include <libedah/flickcharm.h>
 
 #include <QWidget>
 #include <QGridLayout>
@@ -92,11 +93,11 @@ private:
     Player *player;
 
     QGridLayout *layout;
-    //QVector<MyPushButton*> numberBtns;
+
+    FlickCharm flick;
 
     QLabel *titleLbl;
     MyPushButton *rndBtn;
-    //MyPushButton *btnBack;
     MyPushButton *playBtn;
     MyPushButton *stopBtn;
     MyPushButton *keyboardBtn;
@@ -127,6 +128,7 @@ private slots:
     void posBar_released();
     void keyboardBtn_clicked();
 
+    void playlist_dblClicked(const QModelIndex &index);
     void addFileBtn_clicked();
     void removeFileBtn_clicked();
     void UpBtn_clicked();

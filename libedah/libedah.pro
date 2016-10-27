@@ -22,7 +22,8 @@ SOURCES += logger.cpp \
     multilangstring.cpp \
     bluropacityeffect.cpp \
     popup.cpp \
-    thumbnailwidget.cpp
+    thumbnailwidget.cpp \
+    flickcharm.cpp
 
 HEADERS += iplugin.h \
         logger.h \
@@ -33,7 +34,8 @@ HEADERS += iplugin.h \
     multilangstring.h \
     bluropacityeffect.h \
     popup.h \
-    thumbnailwidget.h
+    thumbnailwidget.h \
+    flickcharm.h
 
 win32 {
     SOURCES += updater.cpp

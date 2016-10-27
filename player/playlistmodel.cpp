@@ -173,11 +173,18 @@ void PlaylistModel::addFile(QString filename)
     entry.filename = filename;
     entry.type = EntryInfo::AV;
     entry.thumbnail = QPixmap(64, 64);
-    entry.thumbnail.fill(Qt::red);
+    entry.thumbnail.fill(Qt::black);
 
-    if(filename.endsWith(".mp4")) //TODO
+#ifdef Q_OS_WIN
+    const std::wstring taglibFilename = filename.toStdWString();
+#endif
+#ifdef Q_OS_LINUX
+    const std::string taglibFilename = filename.toStdString();
+#endif
+
+    if(filename.endsWith(".mp4")) // TODO
     {
-        TagLib::MP4::File mp4file(filename.toStdWString().c_str());
+        TagLib::MP4::File mp4file(taglibFilename.c_str());
 
         TagLib::MP4::Tag *tag = mp4file.tag();
         if(tag)
@@ -193,7 +200,7 @@ void PlaylistModel::addFile(QString filename)
     }
     else if(filename.endsWith(".mp3")) // TODO
     {
-        TagLib::MPEG::File mp3file(filename.toStdWString().c_str());
+        TagLib::MPEG::File mp3file(taglibFilename.c_str());
 
         TagLib::ID3v2::Tag *tag = mp3file.ID3v2Tag();
         if(tag)
@@ -208,11 +215,7 @@ void PlaylistModel::addFile(QString filename)
         }
     }
 
-#ifdef Q_OS_WIN
-    TagLib::FileRef filetag(filename.toStdWString().c_str());
-#else
-    TagLib::FileRef filetag(filename.toStdString().c_str());
-#endif
+    TagLib::FileRef filetag(taglibFilename.c_str());
     TagLib::Tag *tag = filetag.tag();
 #ifdef Q_OS_WIN
     if(tag) entry.title = QString::fromUtf16((ushort*)tag->title().toCWString());
@@ -228,13 +231,15 @@ void PlaylistModel::addFile(QString filename)
     foreach (QByteArray ext, QImageReader::supportedImageFormats())
     {
         if(filename.endsWith("."+ext, Qt::CaseInsensitive))
+        {
             entry.type = EntryInfo::Image;
+            entry.thumbnail = QPixmap(filename).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
     }
 
     entries.push_back(entry);
 
     // Waveforms
-    //QString filepath = songsDir.filePath(songs[keys[i]].filename);
     SongInfoWorker *worker = new SongInfoWorker(entries.size()-1, filename);
     connect(worker, &SongInfoWorker::done, this, [this](int id, QByteArray waveform) {
         entries[id].waveform = waveform;
@@ -312,7 +317,7 @@ void PlaylistModel::setCurrentItem(int n)
     int prev = this->currItem;
 
     this->currItem = n;
-    currFile.type = EntryInfo::Empty;
+    currFile = EntryInfo();
 
     emit dataChanged(createIndex(prev, 0), createIndex(prev, 0));
     emit dataChanged(createIndex(n, 0), createIndex(n, 0));

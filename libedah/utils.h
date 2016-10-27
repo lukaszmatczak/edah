@@ -55,6 +55,12 @@ public:
     QString getFriendlyName(QString dev);
     QString getOutputTechnologyString(int number);
 
+    void setCursorClipGeom(QRect screen);
+    void enableCursorClip(bool enabled);
+
+    void setExtendScreenTopology();
+    void setPreviousScreenTopology();
+
     int createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale, bool onMainwindow);
     void showThumbnail(int id, bool visible);
     void moveThumbnail(int id, QSize srcSize);
@@ -87,6 +93,12 @@ private:
 
     static QMap<int, ThumbInfo> thumbInfoTable;
     static int currThumbInfoIdx;
+
+#ifdef Q_OS_WIN
+    RECT area;
+
+    DISPLAYCONFIG_TOPOLOGY_ID topologyId;
+#endif
 };
 
 LIBEDAHSHARED_EXPORT extern Utils *utils;

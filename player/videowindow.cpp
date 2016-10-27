@@ -301,7 +301,7 @@ void VideoWindow::setFullscreenMode(QScreen *destScreen)
     friendlyName += " [" + QString::number(destScreen->size().width()) + "x" + QString::number(destScreen->size().height()) + "] ";
     emit screenNameChanged(friendlyName);
 
-    //utils->setCursorClipGeom(destScreen->geometry()); //TODO
+    utils->setCursorClipGeom(destScreen->geometry());
 }
 
 void VideoWindow::setWindowMode(QScreen *destScreen)

@@ -131,7 +131,10 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     playlistView->horizontalHeader()->setStretchLastSection(true);
     playlistView->verticalHeader()->setVisible(false);
     playlistView->verticalHeader()->setMinimumSectionSize(68);
+    connect(playlistView, &QTableView::doubleClicked, this, &BigPanel::playlist_dblClicked);
     playlistLayout->addWidget(playlistView);
+
+    flick.activateOn(playlistView);
 
     playlistBtnArea = new QWidget;
     playlistBtnArea->setLayout(new QHBoxLayout);
@@ -296,7 +299,7 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
 {
     e->setAccepted(false);
 
-    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9)) // TODO
+    if((e->key() >= Qt::Key_0) && (e->key() <= Qt::Key_9))
     {
         this->showKeyboard(e->key() - Qt::Key_0);
         e->setAccepted(true);
@@ -416,6 +419,17 @@ void BigPanel::recalcSizes(const QSize &size)
     nonstopIcon->setFixedSize(iconSize);
 }
 
+void BigPanel::playlist_dblClicked(const QModelIndex &index)
+{
+    if(!player->isPlaying())
+    {
+        player->playlistModel.setCurrentItem(index.row());
+        this->setCurrentPlaylistEntry(player->playlistModel.getCurrentItem());
+    }
+
+    //mpv->setPause(true);
+}
+
 void BigPanel::addFileBtn_clicked()
 {
     settings->beginGroup(player->getPluginId());
@@ -449,7 +463,13 @@ void BigPanel::addFileBtn_clicked()
 
 void BigPanel::removeFileBtn_clicked()
 {
-    player->playlistModel.removeEntry(playlistView->currentIndex().row());
+    int curr = playlistView->currentIndex().row();
+
+    if(player->playlistModel.getCurrentItem() != curr || !player->isPlaying())
+    {
+        player->playlistModel.removeEntry(curr);
+        this->setCurrentPlaylistEntry(-1);
+    }
 }
 
 void BigPanel::UpBtn_clicked()
@@ -528,8 +548,11 @@ void BigPanel::setCurrentPlaylistEntry(int n)
 void BigPanel::playBtn_clicked()
 {
     int currItem = playlistView->currentIndex().row();
-    if(currItem < 0) currItem = player->playlistModel.getCurrentItem();
-    if(currItem >= player->playlistModel.rowCount(QModelIndex())) currItem = 0;
+    if(currItem < 0)
+        currItem = player->playlistModel.getCurrentItem();
+
+    if(currItem >= player->playlistModel.rowCount(QModelIndex()))
+        currItem = 0;
 
     emit play(currItem);
 }

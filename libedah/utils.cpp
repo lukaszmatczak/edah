@@ -31,6 +31,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QDateTime>
+#include <QScreen>
 
 #include <QDebug>
 
@@ -295,6 +296,59 @@ QString Utils::getOutputTechnologyString(int number)
     default: return "";
     }
 #endif
+}
+
+void Utils::setCursorClipGeom(QRect screen)
+{
+    QList<QScreen*> monitors = QGuiApplication::screens();
+    QRect qarea = monitors[0]->geometry();
+
+    foreach (QScreen *monitor, monitors)
+    {
+        if(monitor->geometry() != screen)
+        {
+            qarea |= monitor->geometry();
+        }
+    }
+
+    area.left = qarea.left();
+    area.top = qarea.top();
+    area.right = qarea.right();
+    area.bottom = qarea.bottom();
+}
+
+void Utils::enableCursorClip(bool enabled)
+{
+    if(enabled) ClipCursor(&area);
+    else ClipCursor(NULL);
+}
+
+void Utils::setExtendScreenTopology()
+{
+    UINT32 PathCount, ModeCount;
+    int error = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &PathCount, &ModeCount);
+    if (error != ERROR_SUCCESS)
+    {
+        return;
+    }
+
+    DISPLAYCONFIG_PATH_INFO *DisplayPaths = new DISPLAYCONFIG_PATH_INFO[PathCount];
+    DISPLAYCONFIG_MODE_INFO *DisplayModes = new DISPLAYCONFIG_MODE_INFO[ModeCount];
+
+    error = QueryDisplayConfig(QDC_DATABASE_CURRENT, &PathCount, DisplayPaths, &ModeCount, DisplayModes, &topologyId);
+
+    SetDisplayConfig(0, NULL, 0, NULL, SDC_APPLY | SDC_TOPOLOGY_EXTEND);
+
+    delete [] DisplayPaths;
+    delete [] DisplayModes;
+}
+
+void Utils::setPreviousScreenTopology()
+{
+    if(topologyId == 0)
+        return;
+
+    SetDisplayConfig(0, NULL, 0, NULL, SDC_APPLY | topologyId);
 }
 
 int Utils::createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale, bool onMainwindow)

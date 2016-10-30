@@ -438,7 +438,8 @@ void MainWindow::reloadPlugins()
         plugins[i].panel->show();
     }
 
-    plugins[activePlugin].panel->setFocus();
+    if(activePlugin >= 0)
+        plugins[activePlugin].panel->setFocus();
 
     this->recalcSizes(this->size());
 }

@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), canClose(true), lastProgress(0), isDialogVisible(false)
 {
     logger = new Logger;
-    utils = new Utils;
+    utils = new Utils(this);
 
     settings = new QSettings("Lukasz Matczak", "Edah", this);
 

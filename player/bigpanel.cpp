@@ -318,6 +318,15 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
 
 void BigPanel::retranslate()
 {
+    addFileBtn->setToolTip(tr("Add file to playlist"));
+    addWindowBtn->setToolTip(tr("Add window to playlist"));
+    removeFileBtn->setToolTip(tr("Remove selected entry from playlist"));
+    UpBtn->setToolTip(tr("Move entry up"));
+    DownBtn->setToolTip(tr("Move entry down"));
+    rndBtn->setToolTip(tr("Play random songs continuously (<i>]</i>)"));
+    playBtn->setToolTip(tr("Play (<i>Enter</i>)"));
+    stopBtn->setToolTip(tr("Stop"));
+    keyboardBtn->setToolTip(tr("Open keyboard and play manually selected song (<i>0-9</i>)"));
     nonstopLbl->setText(tr("Autoplay"));
 }
 
@@ -570,37 +579,7 @@ void BigPanel::setNonstop(bool isSet)
     nonstopIcon->setIcon(QIcon(isSet ? ":/player-img/nonstop-on.svg" : ":/player-img/nonstop-off.svg"));
     nonstopLbl->setStyleSheet(isSet ? "color: rgb(0, 80, 255);" : "color: rgb(30, 40, 45);");
 }
-/*
-void BigPanel::playerStateChanged(bool isPlaying)
-{
-    if(isPlaying)
-    {
-        playBtn->setIcon(QIcon(":/player-img/stop.svg"));
-    }
-    else
-    {
-        if(nonstop)
-        {
-            int random = rndPlaylist->getNext();
-            numberLbl->setText(QString::number(random));
-            this->updateTitle(random);
-            emit play(random, nonstop);
-            isPlaying = true;
-        }
-        else
-        {
-            numberLbl->setText("");
-            this->updateTitle(0);
-            this->playerPositionChanged(-1, -1);
 
-            playBtn->setIcon(QIcon(":/player-img/play.svg"));
-        }
-
-    }
-
-    posBar->setEnabled(isPlaying);
-}
-*/
 void BigPanel::playerPositionChanged(bool paused, double pos, double duration)
 {
     static bool prevPaused = true;
@@ -608,6 +587,7 @@ void BigPanel::playerPositionChanged(bool paused, double pos, double duration)
     if(prevPaused != paused)
     {
         playBtn->setIcon(QIcon(paused ? ":/player-img/play.svg" : ":/player-img/pause.svg"));
+        playBtn->setToolTip(paused ? tr("Play (<i>Enter</i>)") : tr("Pause (<i>Enter</i>)"));
         prevPaused = paused;
     }
 

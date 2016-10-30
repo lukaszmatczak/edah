@@ -427,7 +427,7 @@ void Player::mpvEOF()
 
 void Player::play(int entry)
 {
-    if(playlistModel.getCurrentItemInfo().type == EntryInfo::Empty)
+    if(playlistModel.getItemInfo(entry).type == EntryInfo::Empty)
         return;
 
     this->autoplay = false;

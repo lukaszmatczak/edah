@@ -50,11 +50,11 @@ TRANSLATIONS = lang/lang.pl.ts
 CONFIG(debug) {
 MY_DESTDIR_TARGET = "$$OUT_PWD/debug"
 }
-CONFIG(release) {
+CONFIG(release, release|debug) {
 MY_DESTDIR_TARGET = "$$OUT_PWD/release"
 }
 
-win32:CONFIG(release, debug|release) {
+win32 {
     WINSDK_DIR = "C:/Program Files (x86)/Windows Kits/8.1/bin/x86"
     WIN_PWD = $$replace(PWD, /, \\)
     DESTDIR_TARGET_WIN = $$replace(MY_DESTDIR_TARGET, /, \\)

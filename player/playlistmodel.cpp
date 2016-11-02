@@ -130,6 +130,8 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
 
 void PlaylistModel::setCurrentFile(QString filename)
 {
+    QFileInfo finfo(filename);
+
     currFile.filename = filename;
     currFile.type = EntryInfo::AV;
     currFile.thumbnail = QPixmap(64, 64);
@@ -146,15 +148,16 @@ void PlaylistModel::setCurrentFile(QString filename)
 #else
     if(tag) currFile.title = QString::fromUtf8(tag->title().toCString(true));
 #endif
-    if(currFile.title.isEmpty()) currFile.title = QFileInfo(filename).fileName();
+    if(currFile.title.isEmpty()) currFile.title = finfo.fileName();
 
     TagLib::AudioProperties *audioProperties = filetag.audioProperties();
     if(audioProperties) currFile.duration = audioProperties->length();
-    currFile.exists = QFileInfo(filename).exists();
+    currFile.exists = finfo.exists();
 
     // Waveforms
-    SongInfoWorker *worker = new SongInfoWorker(-1, filename);
-    connect(worker, &SongInfoWorker::done, this, [this](int id, QByteArray waveform) {
+    SongInfoWorker *worker = new SongInfoWorker(filename);
+    connect(worker, &SongInfoWorker::done, this, [this](QString filepath, QByteArray waveform) {
+        Q_UNUSED(filepath)
         if(currFile.type == EntryInfo::AV)
         {
             currFile.waveform = waveform;
@@ -165,9 +168,50 @@ void PlaylistModel::setCurrentFile(QString filename)
     QThreadPool::globalInstance()->start(worker);
 }
 
+template<typename T>
+QPixmap PlaylistModel::getCover(const QFileInfo &finfo, const T &filename)
+{
+    if(!finfo.suffix().compare("mp4", Qt::CaseInsensitive)) // TODO
+    {
+        TagLib::MP4::File mp4file(filename.c_str());
+
+        TagLib::MP4::Tag *tag = mp4file.tag();
+        if(tag)
+        {
+            TagLib::MP4::CoverArtList covers = tag->itemListMap()["covr"].toCoverArtList();
+            if(covers.size() > 0)
+            {
+                TagLib::ByteVector cover = covers.front().data();
+                QImage img = QImage::fromData((uchar*)cover.data(), cover.size());
+                return QPixmap::fromImage(img.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+        }
+    }
+    else if(!finfo.suffix().compare("mp3", Qt::CaseInsensitive)) // TODO
+    {
+        TagLib::MPEG::File mp3file(filename.c_str());
+
+        TagLib::ID3v2::Tag *tag = mp3file.ID3v2Tag();
+        if(tag)
+        {
+            TagLib::ID3v2::FrameList frames = tag->frameListMap()["APIC"];
+            if(frames.size() > 0)
+            {
+                TagLib::ID3v2::AttachedPictureFrame *frame = (TagLib::ID3v2::AttachedPictureFrame*)frames.front();
+                QImage img = QImage::fromData((uchar*)frame->picture().data(), frame->picture().size());
+                return QPixmap::fromImage(img.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+        }
+    }
+
+    return QPixmap();
+}
+
 void PlaylistModel::addFile(QString filename)
 {
     emit layoutAboutToBeChanged();
+
+    QFileInfo finfo(filename);
 
     EntryInfo entry;
     entry.filename = filename;
@@ -182,38 +226,7 @@ void PlaylistModel::addFile(QString filename)
     const std::string taglibFilename = filename.toStdString();
 #endif
 
-    if(filename.endsWith(".mp4")) // TODO
-    {
-        TagLib::MP4::File mp4file(taglibFilename.c_str());
-
-        TagLib::MP4::Tag *tag = mp4file.tag();
-        if(tag)
-        {
-            TagLib::MP4::CoverArtList covers = tag->itemListMap()["covr"].toCoverArtList();
-            if(covers.size() > 0)
-            {
-                TagLib::ByteVector cover = covers.front().data();
-                QImage img = QImage::fromData((uchar*)cover.data(), cover.size());
-                entry.thumbnail = QPixmap::fromImage(img.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            }
-        }
-    }
-    else if(filename.endsWith(".mp3")) // TODO
-    {
-        TagLib::MPEG::File mp3file(taglibFilename.c_str());
-
-        TagLib::ID3v2::Tag *tag = mp3file.ID3v2Tag();
-        if(tag)
-        {
-            TagLib::ID3v2::FrameList frames = tag->frameListMap()["APIC"];
-            if(frames.size() > 0)
-            {
-                TagLib::ID3v2::AttachedPictureFrame *frame = (TagLib::ID3v2::AttachedPictureFrame*)frames.front();
-                QImage img = QImage::fromData((uchar*)frame->picture().data(), frame->picture().size());
-                entry.thumbnail = QPixmap::fromImage(img.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            }
-        }
-    }
+    entry.thumbnail = this->getCover(finfo, taglibFilename);
 
     TagLib::FileRef filetag(taglibFilename.c_str());
     TagLib::Tag *tag = filetag.tag();
@@ -222,11 +235,11 @@ void PlaylistModel::addFile(QString filename)
 #else
     if(tag) entry.title = QString::fromUtf8(tag->title().toCString(true));
 #endif
-    if(entry.title.isEmpty()) entry.title = QFileInfo(filename).fileName();
+    if(entry.title.isEmpty()) entry.title = finfo.fileName();
 
     TagLib::AudioProperties *audioProperties = filetag.audioProperties();
     if(audioProperties) entry.duration = audioProperties->length();
-    entry.exists = QFileInfo(filename).exists();
+    entry.exists = finfo.exists();
 
     foreach (QByteArray ext, QImageReader::supportedImageFormats())
     {
@@ -239,16 +252,25 @@ void PlaylistModel::addFile(QString filename)
 
     entries.push_back(entry);
 
-    // Waveforms
-    SongInfoWorker *worker = new SongInfoWorker(entries.size()-1, filename);
-    connect(worker, &SongInfoWorker::done, this, [this](int id, QByteArray waveform) {
-        entries[id].waveform = waveform;
+    if(entry.type == EntryInfo::AV)
+    {
+        // Waveforms
+        SongInfoWorker *worker = new SongInfoWorker(filename);
+        connect(worker, &SongInfoWorker::done, this, [this](QString filepath, QByteArray waveform) {
+            for(int i=0; i<entries.size(); i++)
+            {
+                if(entries[i].filename == filepath)
+                {
+                    entries[i].waveform = waveform;
 
-        if(id == this->currItem)
-            emit waveformChanged();
-    });
+                    if(i == this->currItem)
+                        emit waveformChanged();
+                }
+            }
+        });
 
-    QThreadPool::globalInstance()->start(worker);
+        QThreadPool::globalInstance()->start(worker);
+    }
 
     emit layoutChanged();
     emit dataChanged(createIndex(entries.size()-1, 0), createIndex(entries.size()-1, 0)); // TODO: ???
@@ -365,7 +387,7 @@ void PlaylistModel::updateEntries()
 /// SongInfoWorker ///
 //////////////////////
 
-SongInfoWorker::SongInfoWorker(int id, QString filepath) : number(id), filepath(filepath)
+SongInfoWorker::SongInfoWorker(QString filepath) : filepath(filepath)
 {
 
 }
@@ -414,7 +436,7 @@ void SongInfoWorker::run()
     BASS_StreamFree(stream);
     delete [] buf;
 
-    emit done(number, form);
+    emit done(filepath, form);
 }
 
 bool SongInfoWorker::autoDelete()

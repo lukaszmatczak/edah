@@ -24,6 +24,7 @@
 #include <QTimer>
 #include <QRunnable>
 #include <QMutex>
+#include <QFileInfo>
 
 #define EF_WIN_SCALE      (1 << 0)
 #define EF_WIN_WITHCURSOR (1 << 1)
@@ -59,18 +60,17 @@ class SongInfoWorker : public QObject, public QRunnable
 {
     Q_OBJECT
 public:
-    SongInfoWorker(int id, QString filepath);
+    SongInfoWorker(QString filepath);
 
     void run();
     bool autoDelete();
 
 private:
-    int number;
     QString filepath;
     QMutex mutex;
 
 signals:
-    void done(int id, QByteArray waveform);
+    void done(QString filepath, QByteArray waveform);
 };
 
 class PlaylistModel : public QAbstractItemModel
@@ -86,6 +86,7 @@ public:
     int columnCount(const QModelIndex &parent) const;
     QVariant data(const QModelIndex &index, int role) const;
 
+    template<typename T> QPixmap getCover(const QFileInfo &finfo, const T &filename);
     void addFile(QString filename);
     void setCurrentFile(QString filename);
     void addWindow(WId winID, int flags);

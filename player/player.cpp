@@ -131,6 +131,17 @@ Player::Player() : autoplay(false), currPos(0.0)
 #else
     //connect(utils, &Utils::peakLevelChanged, this, &Player::setPeakLevel);
 #endif
+
+    downloadManager = nullptr;
+    if(settings->value("download", false).toBool())
+    {
+        downloadManager = new DownloadManager(settings->value("downloadDir", "").toString());
+        connect(this, &Player::downloaderStart, downloadManager, &DownloadManager::start);
+        downloadManager->moveToThread(&downloadThread);
+        downloadThread.start();
+        emit downloaderStart();
+    }
+
     settings->endGroup();
 
     // TODO
@@ -158,6 +169,9 @@ Player::~Player()
 
     videoWindow->canClose = true;
     videoWindow->close();
+
+    downloadThread.quit();
+    downloadThread.wait();
 
     delete mpv;
     delete videoWindow;

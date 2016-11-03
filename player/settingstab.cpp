@@ -75,6 +75,21 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
     songsLayout->addWidget(songsDirBtn);
 
     layout->addRow(tr("Songs directory: "), songsLayout);
+
+    downloadChk = new QCheckBox("Automatically download videos from jw.org", this);
+    layout->addRow(downloadChk);
+
+    QHBoxLayout *downloadLayout = new QHBoxLayout;
+
+    downloadDir = new QLineEdit(this);
+    downloadLayout->addWidget(downloadDir);
+
+    QPushButton *downloadDirBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_DirIcon), "", this);
+    downloadDirBtn->setToolTip(tr("Select directory"));
+    connect(downloadDirBtn, &QPushButton::clicked, this, &SettingsTab::downloadDirBtn_clicked);
+    downloadLayout->addWidget(downloadDirBtn);
+
+    layout->addRow(tr("Downloads directory: "), downloadLayout);
 }
 
 void SettingsTab::resizeEvent(QResizeEvent *e)
@@ -164,6 +179,15 @@ void SettingsTab::songsDirBtn_clicked()
     }
 }
 
+void SettingsTab::downloadDirBtn_clicked()
+{
+    QString path = QFileDialog::getExistingDirectory(this, QString(), downloadDir->text());
+    if(!path.isEmpty())
+    {
+        downloadDir->setText(QDir::toNativeSeparators(path));
+    }
+}
+
 void SettingsTab::loadSettings()
 {
     //AudioInfo
@@ -192,6 +216,8 @@ void SettingsTab::loadSettings()
     settings->beginGroup(plugin->getPluginId());
     selectedMonitor = settings->value("displayGeometry").toRect();
     songsDir->setText(settings->value("songsDir", "").toString());
+    downloadChk->setChecked(settings->value("download", false).toBool());
+    downloadDir->setText(settings->value("downloadDir", "").toString());
     settings->endGroup();
 
     this->setScreenLbl();
@@ -206,5 +232,7 @@ void SettingsTab::writeSettings()
     settings->beginGroup(plugin->getPluginId());
     settings->setValue("displayGeometry", selectedMonitor);
     settings->setValue("songsDir", songsDir->text());
+    settings->setValue("download", downloadChk->isChecked());
+    settings->setValue("downloadDir", downloadDir->text());
     settings->endGroup();
 }

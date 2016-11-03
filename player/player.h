@@ -25,6 +25,7 @@
 #include "playlistmodel.h"
 #include "mpv.h"
 #include "videowindow.h"
+#include "downloadmanager.h"
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
@@ -34,6 +35,7 @@
 #include <QDir>
 #include <QRunnable>
 #include <QTranslator>
+#include <QThread>
 
 #ifdef Q_OS_WIN
 #include <endpointvolume.h>
@@ -101,6 +103,8 @@ private:
     bool initPeakMeter(qint64 pid);
 
     QTranslator translator;
+    DownloadManager *downloadManager;
+    QThread downloadThread;
 
     BigPanel *bPanel;
     SmallPanel *sPanel;
@@ -145,6 +149,7 @@ private slots:
 
 signals:
     void stateChanged(bool isPlaying);
+    void downloaderStart();
 };
 
 #endif // PLAYER_H

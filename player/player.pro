@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT       += core gui widgets network sql
 win32: QT += winextras
 
 TARGET = player
@@ -15,7 +15,9 @@ gcc:QMAKE_CXXFLAGS += -Wall -Wextra -pedantic
 
 DESTDIR = ../plugins/player
 
-win32:INCLUDEPATH += .. C:/Users/lukas/Desktop/taglib/include C:/Users/lukas/Desktop/bass
+win32:INCLUDEPATH += .. C:/Users/lukas/Desktop/taglib/include C:/Users/lukas/Desktop/bass ../quazip
+
+DEFINES += "QUAZIP_STATIC"
 
 SOURCES += player.cpp \
     bigpanel.cpp \
@@ -25,7 +27,14 @@ SOURCES += player.cpp \
     playlistmodel.cpp \
     mpv.cpp \
     videowindow.cpp \
-    keypad.cpp
+    keypad.cpp \
+    downloadmanager.cpp \
+    ../quazip/quazip/qioapi.cpp \
+    ../quazip/quazip/quazip.cpp \
+    ../quazip/quazip/quazipfile.cpp \
+    ../quazip/quazip/quazipfileinfo.cpp \
+    ../quazip/quazip/zip.c \
+    ../quazip/quazip/unzip.c
 
 HEADERS += player.h \
     bigpanel.h \
@@ -35,12 +44,22 @@ HEADERS += player.h \
     playlistmodel.h \
     mpv.h \
     videowindow.h \
-    keypad.h
+    keypad.h \
+    downloadmanager.h \
+    ../quazip/quazip/qioapi.h \
+    ../quazip/quazip/quazip.h \
+    ../quazip/quazip/quazipfile.h \
+    ../quazip/quazip/quazipfileinfo.h \
+    ../quazip/quazip/zip.h \
+    ../quazip/quazip/unzip.h
 
 TRANSLATIONS = player-lang/lang.pl.ts
 
 LIBS += -ltag -lbass
-win32: LIBS += -LC:/Users/lukas/Desktop/bass -ledah -lole32
+
+win32 {
+    LIBS += -LC:/Users/lukas/Desktop/bass -LC:/Users/lukas/Desktop/zlib/lib -ledah -lole32 -lzdll
+}
 
 CONFIG(debug) {
     #win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Debug/debug -LC:/Users/lukas/Desktop/taglib/debug/lib

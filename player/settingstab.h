@@ -27,6 +27,7 @@
 #include <QComboBox>
 #include <QSettings>
 #include <QLabel>
+#include <QCheckBox>
 
 struct AudioInfo
 {
@@ -89,11 +90,14 @@ private:
     QFrame *monitorsFrame;
     QComboBox *playDevBox;
     QLineEdit *songsDir;
+    QCheckBox *downloadChk;
+    QLineEdit *downloadDir;
 
     QRect selectedMonitor;
 
 private slots:
     void songsDirBtn_clicked();
+    void downloadDirBtn_clicked();
 };
 
 #endif // SETTINGSTAB_H

@@ -23,6 +23,8 @@
 #include <QBuffer>
 #include <QDataStream>
 #include <QDir>
+#include <QMimeType>
+#include <QMimeDatabase>
 
 #include <QEventLoop>
 #include <QNetworkReply>
@@ -35,17 +37,20 @@
 #include <quazip/quazip.h>
 #include <quazip/quazipfile.h>
 
-const QString dbGetUrl = "https://www.jw.org/apps/GETPUBMEDIALINKS?output=json&fileformat=JWPUB&alllangs=0";
-// &issue=201611&langwritten=P&txtCMSLang=P&pub=mwb
+const QString dbGetUrl = "https://www.jw.org/apps/GETPUBMEDIALINKS?output=json&alllangs=0";
+// &issue=201611&langwritten=P&txtCMSLang=P&pub=mwb&fileformat=JWPUB
 
-DownloadManager::DownloadManager(QString path) :
-    path(path), QObject(nullptr), manager(nullptr)
+DownloadManager::DownloadManager(QString path, QString videoQuality) :
+    path(path), videoQuality(videoQuality), QObject(nullptr), manager(nullptr),
+    downloadQueueBytes(0)
 {
     lang = tr("E");
 }
 
 void DownloadManager::start()
 {
+    emit setTrayText(tr("Downloading"));
+
     this->db = QSqlDatabase::addDatabase("QSQLITE");
 
     QDir().mkpath(this->path);
@@ -61,12 +66,85 @@ void DownloadManager::start()
 
     this->downloadAndParseProgram("mwb", monDate.addMonths(1).toString(issueFmt));
     this->downloadAndParseProgram("w", monDate.addMonths(-1).toString(issueFmt));
+
+    QMap<QString, QList<MultimediaInfo> > map = this->loadMultimediaInfo();
+
+    QStringList songs;
+    songs << "iasn" << "iasnm" << "snnw" << "sjjm";
+
+    for(auto it=map.begin(); it!=map.end(); ++it)
+    {
+        for(int i=0; i<it->size(); i++)
+        {
+            if(!songs.contains(it->at(i).KeySymbol) && it->at(i).url.isEmpty()) // TODO: video quality change
+            {
+                RemoteInfo info = this->getRemoteInfo(it->at(i));
+
+                if(info.url.isEmpty())
+                {
+                    // TODO: err
+                }
+                else
+                {
+                    (*it)[i].url = info.url;
+                    (*it)[i].size = info.size;
+                    (*it)[i].checksum = info.checksum;
+                }
+            }
+        }
+    }
+
+    this->saveMultimediaInfo(map, false);
+
+    int toDownload = 0;
+    for(auto it=map.begin(); it!=map.end(); ++it)
+    {
+        for(int i=0; i<it->size(); i++)
+        {
+            if(!it->at(i).downloaded && !it->at(i).url.isEmpty())
+            {
+                toDownload++;
+                downloadQueueBytes += it->at(i).size;
+            }
+        }
+    }
+
+    emit setTrayText(tr("Downloading") + tr("\n%n file(s)", "", toDownload) + QString(" (%1 MB) left").arg(downloadQueueBytes/(1024*1024)));
+
+    for(auto it=map.keyBegin(); it!=map.keyEnd(); ++it)
+    {
+        for(int i=0; i<map[*it].size(); i++)
+        {
+            if(!map[*it][i].downloaded && !map[*it][i].url.isEmpty())
+            {
+                if(this->downloadFile(map[*it][i], this->path + "/" + *it + "/" + QUrl(map[*it][i].url).fileName()))
+                {
+                    toDownload--;
+                    downloadQueueBytes -= map[*it][i].size;
+                    map[*it][i].downloaded = true;
+
+                    this->saveMultimediaInfo(map, false);
+
+                    emit setTrayText(tr("Downloading") + tr("\n%n file(s)", "", toDownload) + QString(" (%1 MB) left").arg(downloadQueueBytes/(1024*1024)));
+                }
+                else
+                {
+                    // TODO: err
+                }
+            }
+        }
+    }
+
+    emit setTrayText("");
 }
 
 RemoteInfo DownloadManager::getRemoteInfo(const QString &pub, const QString &issue)
 {
     if(!manager) manager = new QNetworkAccessManager;
-    QNetworkRequest url(QUrl(dbGetUrl + QString("&langwritten=%1&txtCMSLang=%1&issue=%2&pub=%3").arg(lang).arg(issue).arg(pub)));
+    QNetworkRequest url(QUrl(dbGetUrl + QString("&langwritten=%1&txtCMSLang=%1&issue=%2&pub=%3&fileformat=JWPUB")
+                             .arg(lang)
+                             .arg(issue)
+                             .arg(pub)));
     reply = manager->get(url);
 
     QEventLoop loop;
@@ -95,6 +173,61 @@ RemoteInfo DownloadManager::getRemoteInfo(const QString &pub, const QString &iss
     return info;
 }
 
+RemoteInfo DownloadManager::getRemoteInfo(const MultimediaInfo &minfo)
+{
+    if(!manager) manager = new QNetworkAccessManager;
+    QNetworkRequest url(QUrl(dbGetUrl + QString("&langwritten=%1&txtCMSLang=%1&issue=%2&pub=%3&docid=%4")
+                             .arg(lang)
+                             .arg(minfo.IssueTagNumber)
+                             .arg(minfo.KeySymbol)
+                             .arg(minfo.MepsDocumentId)));
+    reply = manager->get(url);
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    reply->deleteLater();
+
+    RemoteInfo info;
+
+    if(reply->error() == QNetworkReply::NoError)
+    {
+        QJsonObject fileTypes = QJsonDocument::fromJson(reply->readAll()).object()
+                .value("files").toObject()
+                .value(lang).toObject();
+
+        for(auto it=fileTypes.begin(); it!=fileTypes.end(); ++it)
+        {
+            QJsonArray files = it->toArray();
+
+            for(int i=0; i<files.size(); i++)
+            {
+                QJsonObject file = files[i].toObject();
+
+                if(!minfo.Track.isEmpty() && minfo.Track.toInt() != file["track"].toInt())
+                    continue;
+
+                QMimeDatabase mimeDb;
+                if(!minfo.MimeType.isEmpty() && mimeDb.mimeTypeForName(minfo.MimeType) != mimeDb.mimeTypeForName(file["mimetype"].toString()))
+                    continue;
+
+                QString label = file["label"].toString();
+                if(label != "0p" && label != this->videoQuality)
+                    continue;
+
+                info.url = file["file"].toObject()["url"].toString();
+                info.checksum = file["file"].toObject()["checksum"].toString();
+                info.size = file["filesize"].toInt();
+
+                return info;
+            }
+        }
+    }
+
+    return info;
+}
+
 bool DownloadManager::downloadRemote(const RemoteInfo &info, QByteArray *dest)
 {
     if(!manager) manager = new QNetworkAccessManager;
@@ -118,7 +251,7 @@ bool DownloadManager::downloadRemote(const RemoteInfo &info, QByteArray *dest)
     hash.addData(*dest);
     QString localChecksum = hash.result().toHex();
 
-    if(info.checksum.compare(localChecksum))
+    if(info.checksum.compare(localChecksum, Qt::CaseInsensitive))
     {
         return false;
     }
@@ -176,7 +309,7 @@ void DownloadManager::downloadAndParseProgram(const QString &pub, const QString 
         }
 
         QSqlQuery q(db);
-        q.prepare("SELECT `Multimedia`.`KeySymbol`, `Multimedia`.`Track`,`Multimedia`.`IssueTagNumber`, `Multimedia`.`MepsDocumentId`, `DatedText`.`FirstDateOffset` "
+        q.prepare("SELECT `Multimedia`.`KeySymbol`, `Multimedia`.`Track`,`Multimedia`.`IssueTagNumber`, `Multimedia`.`MepsDocumentId`, `DatedText`.`FirstDateOffset`, `Multimedia`.`MimeType` "
                   "FROM `DocumentMultimedia`, `DatedText`, `Multimedia` "
                   "WHERE `DatedText`.`DocumentId`=`DocumentMultimedia`.`DocumentId`"
                   " AND `Multimedia`.`MultimediaId`=`DocumentMultimedia`.`MultimediaId`"
@@ -198,9 +331,10 @@ void DownloadManager::downloadAndParseProgram(const QString &pub, const QString 
 
             info.weekend = (pub == "w");
             info.KeySymbol = q.value("KeySymbol").toString();
-            info.Track = q.value("Track").toInt();
-            info.IssueTagNumber = q.value("IssueTagNumber").toInt();
-            info.MepsDocumentId = q.value("MepsDocumentId").toInt();
+            info.Track = q.value("Track").toString();
+            info.IssueTagNumber = q.value("IssueTagNumber").toString();
+            info.MepsDocumentId = q.value("MepsDocumentId").toString();
+            info.MimeType = q.value("MimeType").toString();
 
             map[FirstDateOffset].append(info);
         } while(q.next());
@@ -209,11 +343,47 @@ void DownloadManager::downloadAndParseProgram(const QString &pub, const QString 
 
         QFile(this->path + "/" + dbName).remove();
 
-        this->saveMultimediaInfo(map);
+        this->saveMultimediaInfo(map, true);
 
         programInfo.append(info);
         this->saveProgramInfo();
     }
+}
+
+bool DownloadManager::downloadFile(const MultimediaInfo &info, const QString &local)
+{
+    if(!manager) manager = new QNetworkAccessManager;
+    QNetworkRequest request(QUrl{info.url});
+    reply = manager->get(request);
+
+    QFile file(local);
+    file.open(QIODevice::WriteOnly);
+
+    QCryptographicHash hash(QCryptographicHash::Md5);
+
+    connect(reply, &QNetworkReply::readyRead, this, [this, &file, &hash]() {
+        QByteArray data = reply->readAll();
+        file.write(data);
+        hash.addData(data);
+    });
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    reply->deleteLater();
+
+    if(reply->error() != QNetworkReply::NoError)
+    {
+        return false;
+    }
+
+    if(info.checksum.compare(hash.result().toHex(), Qt::CaseInsensitive))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool DownloadManager::extractFile(QString zipFile, QString srcName, QString destName)
@@ -264,7 +434,32 @@ void DownloadManager::saveProgramInfo()
     }
 }
 
-void DownloadManager::saveMultimediaInfo(const QMap<QString, QList<MultimediaInfo> > &map)
+QMap<QString, QList<MultimediaInfo> > DownloadManager::loadMultimediaInfo()
+{
+    QMap<QString, QList<MultimediaInfo> > map;
+
+    QDir dir(this->path);
+    QStringList dirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+
+    for(int i=0; i<dirs.size(); i++)
+    {
+        QFile file(QString("%1/%2/playlist_%3.db").arg(this->path).arg(dirs[i]).arg(this->lang));
+        file.open(QIODevice::ReadOnly);
+
+        QList<MultimediaInfo> list;
+
+        QDataStream stream(&file);
+        stream >> list;
+
+        map[dirs[i]] = list;
+
+        file.close();
+    }
+
+    return map;
+}
+
+void DownloadManager::saveMultimediaInfo(const QMap<QString, QList<MultimediaInfo> > &map, bool append)
 {
     for(auto it=map.keyBegin(); it!=map.keyEnd(); ++it)
     {
@@ -273,6 +468,7 @@ void DownloadManager::saveMultimediaInfo(const QMap<QString, QList<MultimediaInf
         file.open(QIODevice::ReadWrite);
         QList<MultimediaInfo> list;
 
+        if(append)
         {
             QDataStream stream(&file);
             stream >> list;
@@ -307,7 +503,10 @@ QDataStream &operator>>(QDataStream &stream, ProgramInfo &info)
 QDataStream &operator<<(QDataStream &stream, const MultimediaInfo &info)
 {
     stream << info.KeySymbol << info.Track
-           << info.IssueTagNumber << info.MepsDocumentId << info.weekend;
+           << info.IssueTagNumber << info.MepsDocumentId
+           << info.MimeType << info.weekend
+           << info.url << info.size << info.checksum
+           << info.downloaded;
 
     return stream;
 }
@@ -315,7 +514,10 @@ QDataStream &operator<<(QDataStream &stream, const MultimediaInfo &info)
 QDataStream &operator>>(QDataStream &stream, MultimediaInfo &info)
 {
     stream >> info.KeySymbol >> info.Track
-           >> info.IssueTagNumber >> info.MepsDocumentId >> info.weekend;
+           >> info.IssueTagNumber >> info.MepsDocumentId
+           >> info.MimeType >> info.weekend
+           >> info.url >> info.size >> info.checksum
+           >> info.downloaded;
 
     return stream;
 }

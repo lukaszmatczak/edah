@@ -92,6 +92,7 @@ private:
     QLineEdit *songsDir;
     QCheckBox *downloadChk;
     QLineEdit *downloadDir;
+    QComboBox *downloadQuality;
 
     QRect selectedMonitor;
 

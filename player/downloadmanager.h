@@ -41,50 +41,67 @@ struct ProgramInfo
 struct MultimediaInfo
 {
     QString KeySymbol;
-    int Track;
-    int IssueTagNumber;
-    int MepsDocumentId;
+    QString Track;
+    QString IssueTagNumber;
+    QString MepsDocumentId;
+    QString MimeType;
 
     bool weekend;
-    //QString FirstDateOffset;
+
+    QString url;
+    int size;
+    QString checksum;
+    bool downloaded;
+
+    MultimediaInfo() : downloaded(false) {}
 };
 
 struct RemoteInfo
 {
     QString url;
     int size;
-    QString checksum; // md5sum
+    QString checksum;
 };
 
 class DownloadManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit DownloadManager(QString path);
+    explicit DownloadManager(QString path, QString videoQuality);
 
 public slots:
     void start();
 
 private:
     RemoteInfo getRemoteInfo(const QString &pub, const QString &issue);
+    RemoteInfo getRemoteInfo(const MultimediaInfo &minfo);
     bool downloadRemote(const RemoteInfo &info, QByteArray *dest);
     void downloadAndParseProgram(const QString &pub, const QString &issue);
+    bool downloadFile(const MultimediaInfo &info, const QString &local);
     bool extractFile(QString zipFile, QString srcName, QString destName);
 
     void loadProgramInfo();
     void saveProgramInfo();
 
-    void saveMultimediaInfo(const QMap<QString, QList<MultimediaInfo> > &map);
+    QMap<QString, QList<MultimediaInfo> > loadMultimediaInfo();
+    void saveMultimediaInfo(const QMap<QString, QList<MultimediaInfo> > &map, bool append);
 
     QString path;
     QString lang;
+    QString videoQuality;
 
     QVector<ProgramInfo> programInfo;
+
+    QStringList downloadQueue;
+    int downloadQueueBytes;
 
     QNetworkAccessManager *manager;
     QNetworkReply *reply;
 
     QSqlDatabase db;
+
+signals:
+    void setTrayText(QString text);
 };
 
 #endif // DOWNLOADMANAGER_H

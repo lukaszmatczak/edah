@@ -36,6 +36,7 @@
 #include <QRunnable>
 #include <QTranslator>
 #include <QThread>
+#include <QSystemTrayIcon>
 
 #ifdef Q_OS_WIN
 #include <endpointvolume.h>
@@ -105,6 +106,7 @@ private:
     QTranslator translator;
     DownloadManager *downloadManager;
     QThread downloadThread;
+    QSystemTrayIcon *trayIcon;
 
     BigPanel *bPanel;
     SmallPanel *sPanel;

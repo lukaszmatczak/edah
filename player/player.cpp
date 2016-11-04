@@ -132,13 +132,21 @@ Player::Player() : autoplay(false), currPos(0.0)
     //connect(utils, &Utils::peakLevelChanged, this, &Player::setPeakLevel);
 #endif
 
+    trayIcon = new QSystemTrayIcon(QIcon(":/img/icon.svg"), this);
+
     downloadManager = nullptr;
     if(settings->value("download", false).toBool())
     {
-        downloadManager = new DownloadManager(settings->value("downloadDir", "").toString());
+        downloadManager = new DownloadManager(settings->value("downloadDir", "").toString(),
+                                              settings->value("downloadQuality", "720p").toString());
         connect(this, &Player::downloaderStart, downloadManager, &DownloadManager::start);
+        connect(downloadManager, &DownloadManager::setTrayText, this, [this](QString text) {
+            trayIcon->setVisible(!text.isEmpty());
+            trayIcon->setToolTip(text);
+        });
         downloadManager->moveToThread(&downloadThread);
         downloadThread.start();
+        downloadThread.setPriority(QThread::LowestPriority);
         emit downloaderStart();
     }
 

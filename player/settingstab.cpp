@@ -90,6 +90,10 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
     downloadLayout->addWidget(downloadDirBtn);
 
     layout->addRow(tr("Downloads directory: "), downloadLayout);
+
+    downloadQuality = new QComboBox(this);
+    downloadQuality->addItems({"240p", "360p", "480p", "720p"});
+    layout->addRow(tr("Video quality: "), downloadQuality);
 }
 
 void SettingsTab::resizeEvent(QResizeEvent *e)
@@ -218,6 +222,7 @@ void SettingsTab::loadSettings()
     songsDir->setText(settings->value("songsDir", "").toString());
     downloadChk->setChecked(settings->value("download", false).toBool());
     downloadDir->setText(settings->value("downloadDir", "").toString());
+    downloadQuality->setCurrentText(settings->value("downloadQualoty", "720p").toString());
     settings->endGroup();
 
     this->setScreenLbl();
@@ -234,5 +239,6 @@ void SettingsTab::writeSettings()
     settings->setValue("songsDir", songsDir->text());
     settings->setValue("download", downloadChk->isChecked());
     settings->setValue("downloadDir", downloadDir->text());
+    settings->setValue("downloadQuality", downloadQuality->currentText());
     settings->endGroup();
 }

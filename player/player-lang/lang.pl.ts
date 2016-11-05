@@ -91,6 +91,33 @@
     </message>
 </context>
 <context>
+    <name>DownloadManager</name>
+    <message>
+        <location filename="../downloadmanager.cpp" line="47"/>
+        <source>E</source>
+        <translation>P</translation>
+    </message>
+    <message>
+        <location filename="../downloadmanager.cpp" line="54"/>
+        <location filename="../downloadmanager.cpp" line="259"/>
+        <source>Downloading</source>
+        <translation>Pobieranie</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../downloadmanager.cpp" line="260"/>
+        <source>
+%n file(s) (%1 MB) left</source>
+        <translation>
+            <numerusform>
+Pozostał %n plik (%1 MB)</numerusform>
+            <numerusform>
+Pozostały %n pliki (%1 MB)</numerusform>
+            <numerusform>
+Pozostało %n plików (%1 MB)</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>Keypad</name>
     <message>
         <location filename="../keypad.cpp" line="58"/>
@@ -116,14 +143,30 @@
 <context>
     <name>Player</name>
     <message>
-        <location filename="../player.cpp" line="247"/>
+        <location filename="../player.cpp" line="259"/>
         <source>Invalid device &quot;%1&quot;!</source>
         <translation>Problem z urządzeniem &quot;%1&quot;!</translation>
     </message>
     <message>
-        <location filename="../player.cpp" line="208"/>
+        <location filename="../player.cpp" line="220"/>
         <source>Player</source>
         <translation>Odtwarzanie</translation>
+    </message>
+</context>
+<context>
+    <name>PlaylistModel</name>
+    <message>
+        <location filename="../playlistmodel.cpp" line="304"/>
+        <source>Song ???</source>
+        <translation>Pieśń ???</translation>
+    </message>
+</context>
+<context>
+    <name>QuaZipFile</name>
+    <message>
+        <location filename="../../quazip/quazip/quazipfile.cpp" line="247"/>
+        <source>ZIP/UNZIP API error %1</source>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -140,6 +183,7 @@
     </message>
     <message>
         <location filename="../settingstab.cpp" line="73"/>
+        <location filename="../settingstab.cpp" line="88"/>
         <source>Select directory</source>
         <translation>Wybierz katalog</translation>
     </message>
@@ -149,14 +193,24 @@
         <translation>Katalog z pieśniami: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="122"/>
+        <location filename="../settingstab.cpp" line="92"/>
+        <source>Downloads directory: </source>
+        <translation>Katalog pobieranych plików: </translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="96"/>
+        <source>Video quality: </source>
+        <translation>Jakość filmów: </translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="141"/>
         <source>
 Main</source>
         <translation>
 Główny</translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="144"/>
+        <location filename="../settingstab.cpp" line="163"/>
         <source>You couldn&apos;t choose main display!</source>
         <translation>Nie można wybrać głównego ekranu!</translation>
     </message>

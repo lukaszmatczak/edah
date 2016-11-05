@@ -31,7 +31,7 @@
 
 struct EntryInfo
 {
-    enum Type {Empty, AV, Image, Window};
+    enum Type {Empty, AV, Image, Window, Keypad};
     Type type;
     QString title;
     int duration;
@@ -90,6 +90,7 @@ public:
     void addFile(QString filename);
     void setCurrentFile(QString filename);
     void addWindow(WId winID, int flags);
+    void addKeypad();
     void removeEntry(int pos);
     void swapEntries(int pos1, int pos2);
 

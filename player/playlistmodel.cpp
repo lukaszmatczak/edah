@@ -27,6 +27,7 @@
 #include <QDebug>
 #include <QImageReader>
 #include <QThreadPool>
+#include <QIcon>
 
 #include <bass.h>
 
@@ -293,6 +294,22 @@ void PlaylistModel::addWindow(WId winID, int flags)
     emit dataChanged(createIndex(entries.size()-1, 0), createIndex(entries.size()-1, 0)); // TODO: ???
 }
 
+void PlaylistModel::addKeypad()
+{
+    emit layoutAboutToBeChanged();
+
+    EntryInfo entry;
+    entry.type = EntryInfo::Keypad;
+    entry.exists = true;
+    entry.title = tr("Song ???");
+    entry.thumbnail = QIcon(":/player-img/keypad.svg").pixmap(64, 64);
+
+    entries.push_back(entry);
+
+    emit layoutChanged();
+    emit dataChanged(createIndex(entries.size()-1, 0), createIndex(entries.size()-1, 0)); // TODO: ???
+}
+
 void PlaylistModel::removeEntry(int pos)
 {
     emit layoutAboutToBeChanged();
@@ -356,7 +373,7 @@ void PlaylistModel::nextItem()
 {
     int nextItem = this->currItem;
 
-    if(currFile.type == EntryInfo::Empty)
+    if(currFile.type == EntryInfo::Empty || this->getItemInfo(this->currItem).type == EntryInfo::Keypad)
         nextItem++;
 
     this->setCurrentItem(nextItem);

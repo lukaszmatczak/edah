@@ -51,9 +51,6 @@ struct MultimediaInfo
     QString url;
     int size;
     QString checksum;
-    bool downloaded;
-
-    MultimediaInfo() : downloaded(false) {}
 };
 
 struct RemoteInfo
@@ -73,8 +70,12 @@ public slots:
     void start();
 
 private:
+    void removeOldFiles();
     RemoteInfo getRemoteInfo(const QString &pub, const QString &issue);
     RemoteInfo getRemoteInfo(const MultimediaInfo &minfo);
+    void getRemoteMultimediaInfo(QMap<QString, QList<MultimediaInfo> > *map);
+    QStringList checkFilesToDownload(const QMap<QString, QList<MultimediaInfo> > &map, int *downloadQueueBytes);
+    void downloadFiles(const QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes);
     bool downloadRemote(const RemoteInfo &info, QByteArray *dest);
     void downloadAndParseProgram(const QString &pub, const QString &issue);
     bool downloadFile(const MultimediaInfo &info, const QString &local);
@@ -92,9 +93,6 @@ private:
 
     QVector<ProgramInfo> programInfo;
 
-    QStringList downloadQueue;
-    int downloadQueueBytes;
-
     QNetworkAccessManager *manager;
     QNetworkReply *reply;
 
@@ -102,6 +100,7 @@ private:
 
 signals:
     void setTrayText(QString text);
+    void playlistLoaded(QList<MultimediaInfo>);
 };
 
 #endif // DOWNLOADMANAGER_H

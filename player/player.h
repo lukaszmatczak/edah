@@ -95,11 +95,14 @@ public:
 
     void updateThumbnailPos();
 
+    static QStringList getSongSymbols();
+
     bool isPlaying();
     QMap<int, Song> songs;
     PlaylistModel playlistModel;
 
 private:
+    void loadPlaylist(QList<MultimediaInfo> info);
     void loadSongs();
     bool initPeakMeter(qint64 pid);
 
@@ -116,6 +119,7 @@ private:
     int videoThumbnail;
 
     QDir songsDir;
+    QString downloadDir;
     PeakMeter *peakMeter;
     VideoWindow *videoWindow;
     MPV *mpv;

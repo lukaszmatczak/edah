@@ -17,6 +17,7 @@
 */
 
 #include "downloadmanager.h"
+#include "player.h"
 
 #include <libedah/logger.h>
 
@@ -31,6 +32,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QThread>
 
 #include <QSqlQuery>
 
@@ -38,22 +40,24 @@
 #include <quazip/quazipfile.h>
 
 const QString dbGetUrl = "https://www.jw.org/apps/GETPUBMEDIALINKS?output=json&alllangs=0";
-// &issue=201611&langwritten=P&txtCMSLang=P&pub=mwb&fileformat=JWPUB
 
 DownloadManager::DownloadManager(QString path, QString videoQuality) :
-    path(path), videoQuality(videoQuality), QObject(nullptr), manager(nullptr),
-    downloadQueueBytes(0)
+    path(path), videoQuality(videoQuality), QObject(nullptr), manager(nullptr)
 {
     lang = tr("E");
 }
 
 void DownloadManager::start()
 {
+    //QThread::sleep(10); // TODO
+
     emit setTrayText(tr("Downloading"));
 
     this->db = QSqlDatabase::addDatabase("QSQLITE");
 
     QDir().mkpath(this->path);
+
+    this->removeOldFiles();
 
     this->loadProgramInfo();
 
@@ -69,73 +73,32 @@ void DownloadManager::start()
 
     QMap<QString, QList<MultimediaInfo> > map = this->loadMultimediaInfo();
 
-    QStringList songs;
-    songs << "iasn" << "iasnm" << "snnw" << "sjjm";
+    emit playlistLoaded(map[monDate.toString("yyyyMMdd")]);
 
-    for(auto it=map.begin(); it!=map.end(); ++it)
-    {
-        for(int i=0; i<it->size(); i++)
-        {
-            if(!songs.contains(it->at(i).KeySymbol) && it->at(i).url.isEmpty()) // TODO: video quality change
-            {
-                RemoteInfo info = this->getRemoteInfo(it->at(i));
-
-                if(info.url.isEmpty())
-                {
-                    // TODO: err
-                }
-                else
-                {
-                    (*it)[i].url = info.url;
-                    (*it)[i].size = info.size;
-                    (*it)[i].checksum = info.checksum;
-                }
-            }
-        }
-    }
-
+    this->getRemoteMultimediaInfo(&map);
     this->saveMultimediaInfo(map, false);
 
-    int toDownload = 0;
-    for(auto it=map.begin(); it!=map.end(); ++it)
-    {
-        for(int i=0; i<it->size(); i++)
-        {
-            if(!it->at(i).downloaded && !it->at(i).url.isEmpty())
-            {
-                toDownload++;
-                downloadQueueBytes += it->at(i).size;
-            }
-        }
-    }
-
-    emit setTrayText(tr("Downloading") + tr("\n%n file(s)", "", toDownload) + QString(" (%1 MB) left").arg(downloadQueueBytes/(1024*1024)));
-
-    for(auto it=map.keyBegin(); it!=map.keyEnd(); ++it)
-    {
-        for(int i=0; i<map[*it].size(); i++)
-        {
-            if(!map[*it][i].downloaded && !map[*it][i].url.isEmpty())
-            {
-                if(this->downloadFile(map[*it][i], this->path + "/" + *it + "/" + QUrl(map[*it][i].url).fileName()))
-                {
-                    toDownload--;
-                    downloadQueueBytes -= map[*it][i].size;
-                    map[*it][i].downloaded = true;
-
-                    this->saveMultimediaInfo(map, false);
-
-                    emit setTrayText(tr("Downloading") + tr("\n%n file(s)", "", toDownload) + QString(" (%1 MB) left").arg(downloadQueueBytes/(1024*1024)));
-                }
-                else
-                {
-                    // TODO: err
-                }
-            }
-        }
-    }
+    int downloadQueueBytes = 0;
+    QStringList urlsToDownload = this->checkFilesToDownload(map, &downloadQueueBytes);
+    this->downloadFiles(map, &urlsToDownload, &downloadQueueBytes);
 
     emit setTrayText("");
+}
+
+void DownloadManager::removeOldFiles()
+{
+    QDir dir(this->path);
+    QStringList dirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+
+    for(int i=0; i<dirs.size(); i++)
+    {
+        QDate dirDate = QDate::fromString(dirs[i], "yyyyMMdd");
+
+        if(dirDate < QDate::currentDate().addDays(-QDate::currentDate().dayOfWeek()+1))
+        {
+            QDir(this->path + "/" + dirs[i]).removeRecursively();
+        }
+    }
 }
 
 RemoteInfo DownloadManager::getRemoteInfo(const QString &pub, const QString &issue)
@@ -226,6 +189,90 @@ RemoteInfo DownloadManager::getRemoteInfo(const MultimediaInfo &minfo)
     }
 
     return info;
+}
+
+void DownloadManager::getRemoteMultimediaInfo(QMap<QString, QList<MultimediaInfo> > *map)
+{
+    QStringList songs = Player::getSongSymbols();
+
+    for(auto it=map->begin(); it!=map->end(); ++it)
+    {
+        for(int i=0; i<it->size(); i++)
+        {
+            if(!songs.contains(it->at(i).KeySymbol) && it->at(i).url.isEmpty()) // TODO: video quality change
+            {
+                RemoteInfo info = this->getRemoteInfo(it->at(i));
+
+                if(info.url.isEmpty())
+                {
+                    // TODO: err
+                }
+                else
+                {
+                    (*it)[i].url = info.url;
+                    (*it)[i].size = info.size;
+                    (*it)[i].checksum = info.checksum;
+                }
+            }
+        }
+    }
+}
+
+QStringList DownloadManager::checkFilesToDownload(const QMap<QString, QList<MultimediaInfo> > &map, int *downloadQueueBytes)
+{
+    QStringList urlsToDownload;
+    for(auto it=map.keyBegin(); it!=map.keyEnd(); ++it)
+    {
+        for(int i=0; i<map[*it].size(); i++)
+        {
+            if(!map[*it][i].url.isEmpty())
+            {
+                QFile file(this->path + "/" + *it + "/" + QUrl(map[*it][i].url).fileName());
+                QCryptographicHash hash(QCryptographicHash::Md5);
+
+                if(file.open(QIODevice::ReadOnly))
+                {
+                    while(!file.atEnd())
+                    {
+                        hash.addData(file.read(1024*1024)); // 1MB chunks
+                    }
+                }
+
+                if(map[*it][i].checksum.compare(hash.result().toHex(), Qt::CaseInsensitive))
+                {
+                    urlsToDownload << map[*it][i].url;
+                    *downloadQueueBytes += map[*it][i].size;
+                }
+            }
+        }
+    }
+
+    return urlsToDownload;
+}
+
+void DownloadManager::downloadFiles(const QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes)
+{
+    for(auto it=map.keyBegin(); it!=map.keyEnd(); ++it)
+    {
+        for(int i=0; i<map[*it].size(); i++)
+        {
+            emit setTrayText(tr("Downloading") +
+                             tr("\n%n file(s) (%1 MB) left", "", urlsToDownload->size()).arg(*downloadQueueBytes/(1024*1024)));
+
+            if(!map[*it][i].url.isEmpty() && urlsToDownload->contains(map[*it][i].url))
+            {
+                if(this->downloadFile(map[*it][i], this->path + "/" + *it + "/" + QUrl(map[*it][i].url).fileName()))
+                {
+                    urlsToDownload->removeAll(map[*it][i].url);
+                    *downloadQueueBytes -= map[*it][i].size;
+                }
+                else
+                {
+                    // TODO: err
+                }
+            }
+        }
+    }
 }
 
 bool DownloadManager::downloadRemote(const RemoteInfo &info, QByteArray *dest)
@@ -505,8 +552,7 @@ QDataStream &operator<<(QDataStream &stream, const MultimediaInfo &info)
     stream << info.KeySymbol << info.Track
            << info.IssueTagNumber << info.MepsDocumentId
            << info.MimeType << info.weekend
-           << info.url << info.size << info.checksum
-           << info.downloaded;
+           << info.url << info.size << info.checksum;
 
     return stream;
 }
@@ -516,8 +562,7 @@ QDataStream &operator>>(QDataStream &stream, MultimediaInfo &info)
     stream >> info.KeySymbol >> info.Track
            >> info.IssueTagNumber >> info.MepsDocumentId
            >> info.MimeType >> info.weekend
-           >> info.url >> info.size >> info.checksum
-           >> info.downloaded;
+           >> info.url >> info.size >> info.checksum;
 
     return stream;
 }

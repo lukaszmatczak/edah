@@ -137,13 +137,16 @@ Player::Player() : autoplay(false), currPos(0.0)
     downloadManager = nullptr;
     if(settings->value("download", false).toBool())
     {
-        downloadManager = new DownloadManager(settings->value("downloadDir", "").toString(),
+        downloadDir = settings->value("downloadDir", "").toString();
+        downloadManager = new DownloadManager(downloadDir,
                                               settings->value("downloadQuality", "720p").toString());
         connect(this, &Player::downloaderStart, downloadManager, &DownloadManager::start);
         connect(downloadManager, &DownloadManager::setTrayText, this, [this](QString text) {
             trayIcon->setVisible(!text.isEmpty());
             trayIcon->setToolTip(text);
         });
+        qRegisterMetaType<QList<MultimediaInfo> >("QList<MultimediaInfo>");
+        connect(downloadManager, &DownloadManager::playlistLoaded, this, &Player::loadPlaylist);
         downloadManager->moveToThread(&downloadThread);
         downloadThread.start();
         downloadThread.setPriority(QThread::LowestPriority);
@@ -151,19 +154,6 @@ Player::Player() : autoplay(false), currPos(0.0)
     }
 
     settings->endGroup();
-
-    // TODO
-    /*
-    QStringList args = QApplication::arguments();
-    if(args.count() <=1 && settings->value("autoPlaylist", false).toBool())
-    {
-        loadPlaylist();
-    }
-
-    if(args.count() > 1)
-    {
-        playlistModel.addFile(args.at(1));
-    }*/
 }
 
 Player::~Player()
@@ -289,6 +279,39 @@ void Player::setPanelOpacity(int opacity)
 void Player::updateThumbnailPos()
 {
     utils->moveThumbnail(videoThumbnail, QSize());
+}
+
+QStringList Player::getSongSymbols()
+{
+    return QStringList() << "iasn" << "iasnm" << "snnw" << "sjjm";
+}
+
+void Player::loadPlaylist(QList<MultimediaInfo> info)
+{
+    const QStringList songSym = this->getSongSymbols();
+    const QDate currDate = QDate::currentDate();
+    const QString dateDir = currDate.addDays(-currDate.dayOfWeek()+1).toString("yyyyMMdd");
+    const bool weekend = (currDate.dayOfWeek() == 6) || (currDate.dayOfWeek() == 7);
+
+    if(weekend)
+    {
+        playlistModel.addKeypad();
+    }
+
+    for(int i=0; i<info.size(); i++)
+    {
+        if(info[i].weekend == weekend)
+        {
+            if(songSym.contains(info[i].KeySymbol))
+            {
+                playlistModel.addFile(songsDir.absolutePath() + "/" + songs[info[i].Track.toInt()].filename);
+            }
+            else
+            {
+                playlistModel.addFile(downloadDir + "/" + dateDir + "/" + QUrl(info[i].url).fileName());
+            }
+        }
+    }
 }
 
 void Player::loadSongs()
@@ -471,6 +494,11 @@ void Player::play(int entry)
             mpv->stop();
             videoWindow->showWindow(playlistModel.getItemInfo(entry).winID, playlistModel.getItemInfo(entry).flags);
         }
+        else if(playlistModel.getCurrentItemInfo().type == EntryInfo::Keypad)
+        {
+            mpv->stop();
+            bPanel->showKeyboard(0);
+        }
         else
         {
             mpv->playFile(playlistModel.getItemInfo(entry).filename);
@@ -520,8 +548,11 @@ void Player::stop()
         mpv->stop();
     }
 
-    if(playlistModel.currFile.type == EntryInfo::AV)
+    if(playlistModel.currFile.type == EntryInfo::AV &&
+            playlistModel.getItemInfo(playlistModel.getCurrentItem()).type != EntryInfo::Keypad)
+    {
         this->mpvEOF();
+    }
 }
 
 void Player::seek(int ms)

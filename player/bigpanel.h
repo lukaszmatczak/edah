@@ -68,6 +68,8 @@ public:
     void addThumbnail(ThumbnailWidget *thumb);
     void removeThumbnail(ThumbnailWidget *thumb);
 
+    void showKeyboard(int number);
+
     void playerPositionChanged(bool paused, double pos, double duration);
     void setCurrentPlaylistEntry(int n);
 
@@ -88,7 +90,7 @@ private:
     void recalcSizes(const QSize &size);
     void updateTitle(int number);
     void setNonstop(bool isSet);
-    void showKeyboard(int number);
+
 
     Player *player;
 

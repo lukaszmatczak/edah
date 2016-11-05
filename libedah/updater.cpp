@@ -379,7 +379,7 @@ void Updater::prepareUpdate()
     }
 
     QStringList files;
-    files << "Qt5Core.dll" << "Qt5Gui.dll" << "Qt5Widgets.dll" << "Qt5Network.dll" << "platforms/qwindows.dll" << "updater.exe" << "edah.dll" << "libeay32MD.dll";
+    files << "Qt5Core.dll" << "Qt5Gui.dll" << "Qt5Widgets.dll" << "Qt5Network.dll" << "platforms/qwindows.dll" << "updater.exe" << "edah.dll" << "libeay32MD.dll" << "msvcp140.dll" << "vcruntime140.dll";
     //files << "Qt5Cored.dll" << "Qt5Guid.dll" << "Qt5Widgetsd.dll" << "Qt5Networkd.dll" << "platforms/qwindows.dll" << "updater.exe" << "edah.dll" << "libeay32MD.dll";; // debug
     for(int i=0; i<files.size(); i++)
     {

@@ -87,7 +87,6 @@ private:
     void checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> *depedencies, UpdateInfoArray *updates);
     void checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> depedencies, UpdateInfoArray *updates);
     QJsonObject JsonFindModule(const QJsonArray &arr, const QJsonValue &name);
-    QString getDeviceId();
 
     // stage 2
     QByteArray download_get();

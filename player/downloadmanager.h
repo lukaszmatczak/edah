@@ -49,13 +49,21 @@ struct MultimediaInfo
     bool weekend;
 
     QString url;
+    QString title;
     int size;
     QString checksum;
+};
+
+struct Playlist
+{
+    QVector<ProgramInfo> programInfo;
+    QMap<QString, QList<MultimediaInfo> > multimediaInfo;
 };
 
 struct RemoteInfo
 {
     QString url;
+    QString title;
     int size;
     QString checksum;
 };
@@ -77,21 +85,18 @@ private:
     QStringList checkFilesToDownload(const QMap<QString, QList<MultimediaInfo> > &map, int *downloadQueueBytes);
     void downloadFiles(const QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes);
     bool downloadRemote(const RemoteInfo &info, QByteArray *dest);
-    void downloadAndParseProgram(const QString &pub, const QString &issue);
+    void downloadAndParseProgram(Playlist *playlist, const QString &pub, const QString &issue);
     bool downloadFile(const MultimediaInfo &info, const QString &local);
     bool extractFile(QString zipFile, QString srcName, QString destName);
 
-    void loadProgramInfo();
-    void saveProgramInfo();
+    void loadPlaylist(Playlist *playlist);
+    void savePlaylist(const Playlist &playlist);
 
-    QMap<QString, QList<MultimediaInfo> > loadMultimediaInfo();
-    void saveMultimediaInfo(const QMap<QString, QList<MultimediaInfo> > &map, bool append);
+    void sendStatus(const QString &date, const MultimediaInfo &info, bool ok);
 
     QString path;
     QString lang;
     QString videoQuality;
-
-    QVector<ProgramInfo> programInfo;
 
     QNetworkAccessManager *manager;
     QNetworkReply *reply;

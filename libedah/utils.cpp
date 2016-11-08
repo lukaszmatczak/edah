@@ -33,6 +33,8 @@
 #include <QDateTime>
 #include <QScreen>
 
+#include <QCryptographicHash>
+
 #include <QDebug>
 
 #ifdef Q_OS_WIN
@@ -202,6 +204,27 @@ void Utils::updateStyle(QWidget *widget)
     widget->style()->unpolish(widget);
     widget->style()->polish(widget);
     widget->update();
+}
+
+QString Utils::getDeviceId()
+{
+    BYTE machineID[255];
+    DWORD machineIDsize = 255;
+    HKEY hKey;
+    RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Cryptography", 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
+    RegQueryValueEx(hKey, L"MachineGuid", NULL, NULL, machineID, &machineIDsize);
+    RegCloseKey(hKey);
+
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(QByteArray((char*)machineID, machineIDsize));
+    return hash.result().toHex().left(8);
+}
+
+QString Utils::getUserId()
+{
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(this->getUsername().toUtf8());
+    return hash.result().toHex().left(8);
 }
 
 QString Utils::getFriendlyName(QString dev)

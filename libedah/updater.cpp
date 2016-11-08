@@ -105,7 +105,7 @@ QJsonArray Updater::download_getBuild()
                      .arg(winver.dwMajorVersion)
                      .arg(winver.dwMinorVersion)
                      .arg(winver.dwBuildNumber).toUtf8());
-    reply = manager->post(url, ("i="+this->getDeviceId()).toUtf8());
+    reply = manager->post(url, ("i="+utils->getDeviceId()).toUtf8());
 
     QEventLoop loop;
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
@@ -204,20 +204,6 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
             updates->push_back(info);
         }
     }
-}
-
-QString Updater::getDeviceId()
-{
-    BYTE machineID[255];
-    DWORD machineIDsize = 255;
-    HKEY hKey;
-    RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Cryptography", 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
-    RegQueryValueEx(hKey, L"MachineGuid", NULL, NULL, machineID, &machineIDsize);
-    RegCloseKey(hKey);
-
-    QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(QByteArray((char*)machineID, machineIDsize));
-    return hash.result().toHex().left(8);
 }
 
 QJsonObject Updater::JsonFindModule(const QJsonArray &arr, const QJsonValue &name)

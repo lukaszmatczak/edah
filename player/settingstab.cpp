@@ -29,6 +29,10 @@
 #include <QScreen>
 #include <QMessageBox>
 
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+
 #include <QDebug>
 
 QVector<AudioInfo> SettingsTab::ainfo;
@@ -76,24 +80,34 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     layout->addRow(tr("Songs directory: "), songsLayout);
 
-    downloadChk = new QCheckBox("Automatically download videos from jw.org", this);
+    downloadChk = new QGroupBox(tr("Automatically download videos from jw.org"), this);
+    downloadChk->setCheckable(true);
+    QFormLayout *downloadChkLayout = new QFormLayout;
+    downloadChk->setLayout(downloadChkLayout);
     layout->addRow(downloadChk);
 
     QHBoxLayout *downloadLayout = new QHBoxLayout;
 
-    downloadDir = new QLineEdit(this);
+    downloadDir = new QLineEdit(downloadChk);
     downloadLayout->addWidget(downloadDir);
 
-    QPushButton *downloadDirBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_DirIcon), "", this);
+    QPushButton *downloadDirBtn = new QPushButton(QApplication::style()->standardIcon(QStyle::SP_DirIcon), "", downloadChk);
     downloadDirBtn->setToolTip(tr("Select directory"));
     connect(downloadDirBtn, &QPushButton::clicked, this, &SettingsTab::downloadDirBtn_clicked);
     downloadLayout->addWidget(downloadDirBtn);
 
-    layout->addRow(tr("Downloads directory: "), downloadLayout);
+    downloadChkLayout->addRow(tr("Downloads directory: "), downloadLayout);
 
-    downloadQuality = new QComboBox(this);
+    downloadQuality = new QComboBox(downloadChk);
     downloadQuality->addItems({"240p", "360p", "480p", "720p"});
-    layout->addRow(tr("Video quality: "), downloadQuality);
+    downloadChkLayout->addRow(tr("Video quality: "), downloadQuality);
+
+    downloadEmail = new QLineEdit(downloadChk);
+    downloadChkLayout->addRow(tr("Email address: "), downloadEmail);
+
+    QLabel *emailLbl = new QLabel(tr("Valid email address is required. You will receive report about downloaded files every Sunday."), downloadChk);
+    emailLbl->setWordWrap(true);
+    downloadChkLayout->addRow("", emailLbl);
 }
 
 void SettingsTab::resizeEvent(QResizeEvent *e)
@@ -223,6 +237,7 @@ void SettingsTab::loadSettings()
     downloadChk->setChecked(settings->value("download", false).toBool());
     downloadDir->setText(settings->value("downloadDir", "").toString());
     downloadQuality->setCurrentText(settings->value("downloadQualoty", "720p").toString());
+    downloadEmail->setText(settings->value("downloadEmail").toString());
     settings->endGroup();
 
     this->setScreenLbl();
@@ -231,6 +246,18 @@ void SettingsTab::loadSettings()
 
 void SettingsTab::writeSettings()
 {
+    QRegExp rx("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}\\b", Qt::CaseInsensitive);
+    if(!rx.exactMatch(downloadEmail->text()))
+    {
+        downloadChk->setChecked(false);
+        QMessageBox msg(QMessageBox::Warning,
+                        tr("Warning!"),
+                        tr("You haven't entered valid email address! Auto-download will be disabled."),
+                        QMessageBox::Ok,
+                        this);
+        msg.exec();
+    }
+
     AudioInfo ainfo = playDevBox->itemData(playDevBox->currentIndex()).value<AudioInfo>();
     ainfo.save(plugin->getPluginId());
 
@@ -240,5 +267,22 @@ void SettingsTab::writeSettings()
     settings->setValue("download", downloadChk->isChecked());
     settings->setValue("downloadDir", downloadDir->text());
     settings->setValue("downloadQuality", downloadQuality->currentText());
+    settings->setValue("downloadEmail", downloadEmail->text());
     settings->endGroup();
+
+
+    QNetworkAccessManager manager;
+    QNetworkRequest url(QUrl(utils->getServerUrl() + "/api/set_mail.php"));
+    url.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    QNetworkReply *reply = manager.post(url, QString("device=%1&user=%2&mail=%3&lang=%4")
+                                       .arg(utils->getDeviceId())
+                                       .arg(utils->getUserId())
+                                       .arg(downloadChk->isChecked() ? downloadEmail->text() : "")
+                                       .arg(tr("en")).toUtf8());
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    reply->deleteLater();
 }

@@ -52,6 +52,9 @@ public:
     void addShadowEffect(QWidget *widget, QColor color);
     void updateStyle(QWidget *widget);
 
+    QString getDeviceId();
+    QString getUserId();
+
     QString getFriendlyName(QString dev);
     QString getOutputTechnologyString(int number);
 

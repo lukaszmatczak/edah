@@ -28,6 +28,7 @@
 #include <QSettings>
 #include <QLabel>
 #include <QCheckBox>
+#include <QGroupBox>
 
 struct AudioInfo
 {
@@ -90,9 +91,10 @@ private:
     QFrame *monitorsFrame;
     QComboBox *playDevBox;
     QLineEdit *songsDir;
-    QCheckBox *downloadChk;
+    QGroupBox *downloadChk;
     QLineEdit *downloadDir;
     QComboBox *downloadQuality;
+    QLineEdit *downloadEmail;
 
     QRect selectedMonitor;
 

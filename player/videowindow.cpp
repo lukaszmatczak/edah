@@ -229,7 +229,10 @@ bool VideoWindow::isWindowVisible()
 
 void VideoWindow::closeEvent(QCloseEvent *e)
 {
-    e->setAccepted(canClose);
+    if(!canClose)
+        e->ignore();
+    else
+        QMainWindow::closeEvent(e);
 }
 
 void VideoWindow::mouseDoubleClickEvent(QMouseEvent *e)

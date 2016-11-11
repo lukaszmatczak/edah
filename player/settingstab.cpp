@@ -277,7 +277,7 @@ void SettingsTab::writeSettings()
     QNetworkReply *reply = manager.post(url, QString("device=%1&user=%2&mail=%3&lang=%4")
                                        .arg(utils->getDeviceId())
                                        .arg(utils->getUserId())
-                                       .arg(downloadChk->isChecked() ? downloadEmail->text() : "")
+                                       .arg(QString((downloadChk->isChecked() ? downloadEmail->text() : "").toUtf8().toBase64()))
                                        .arg(tr("en")).toUtf8());
 
     QEventLoop loop;

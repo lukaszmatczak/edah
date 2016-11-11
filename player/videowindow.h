@@ -46,19 +46,20 @@ public:
     QWidget *videoWidget;
     bool canClose;
 
-public slots:
-    void configurationChanged();
-
-private:
-    void fadeInOut(QWidget *widget, int duration, int start, int stop);
-    void fadeInOutThumbnail(int thumb, int duration, int start, int stop);
-
+protected:
     void resizeEvent(QResizeEvent *event);
     void moveEvent(QMoveEvent *event);
     void closeEvent(QCloseEvent *e);
     void mouseDoubleClickEvent(QMouseEvent *e);
     void showEvent(QShowEvent *e);
     void hideEvent(QHideEvent *e);
+
+public slots:
+    void configurationChanged();
+
+private:
+    void fadeInOut(QWidget *widget, int duration, int start, int stop);
+    void fadeInOutThumbnail(int thumb, int duration, int start, int stop);
 
     void setFullscreenMode(QScreen *destScreen);
     void setWindowMode(QScreen *destScreen);

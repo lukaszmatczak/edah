@@ -49,7 +49,9 @@ DownloadManager::DownloadManager(QString path, QString videoQuality) :
 
 void DownloadManager::start()
 {
-    //QThread::sleep(10); // TODO
+    const QString issueFmt = "yyyyMM";
+    const QDate currDate = QDate::currentDate();
+    const QDate monDate = currDate.addDays(-currDate.dayOfWeek()+1);
 
     emit setTrayText(tr("Downloading"));
 
@@ -63,9 +65,9 @@ void DownloadManager::start()
 
     this->loadPlaylist(&playlist);
 
-    const QString issueFmt = "yyyyMM";
-    const QDate currDate = QDate::currentDate();
-    const QDate monDate = currDate.addDays(-currDate.dayOfWeek()+1);
+    emit playlistLoaded(playlist.multimediaInfo[monDate.toString("yyyyMMdd")]);
+
+    QThread::sleep(3);
 
     this->downloadAndParseProgram(&playlist, "mwb", monDate.toString(issueFmt));
     this->downloadAndParseProgram(&playlist, "w", monDate.addMonths(-2).toString(issueFmt));
@@ -75,19 +77,6 @@ void DownloadManager::start()
 
     this->getRemoteMultimediaInfo(&playlist.multimediaInfo);
     this->savePlaylist(playlist);
-
-    for(auto it=playlist.multimediaInfo.keyBegin(); it!=playlist.multimediaInfo.keyEnd(); ++it)
-    {
-        for(int i=0; i<playlist.multimediaInfo[*it].size(); i++)
-        {
-            if(!Player::getSongSymbols().contains(playlist.multimediaInfo[*it][i].KeySymbol))
-            {
-                this->sendStatus(*it, playlist.multimediaInfo[*it][i], false);
-            }
-        }
-    }
-
-    emit playlistLoaded(playlist.multimediaInfo[monDate.toString("yyyyMMdd")]);
 
     int downloadQueueBytes = 0;
     QStringList urlsToDownload = this->checkFilesToDownload(playlist.multimediaInfo, &downloadQueueBytes);
@@ -255,11 +244,17 @@ QStringList DownloadManager::checkFilesToDownload(const QMap<QString, QList<Mult
                 {
                     urlsToDownload << map[*it][i].url;
                     *downloadQueueBytes += map[*it][i].size;
+
+                    this->sendStatus(*it, map[*it][i], false);
                 }
                 else
                 {
                     this->sendStatus(*it, map[*it][i], true);
                 }
+            }
+            else if(!Player::getSongSymbols().contains(map[*it][i].KeySymbol))
+            {
+                this->sendStatus(*it, map[*it][i], false);
             }
         }
     }

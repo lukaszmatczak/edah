@@ -165,13 +165,14 @@ Player::~Player()
 
     utils->setPreviousScreenTopology();
 
+    delete mpv;
+
     videoWindow->canClose = true;
     videoWindow->close();
 
     downloadThread.quit();
     downloadThread.wait();
 
-    delete mpv;
     delete videoWindow;
 
     delete bPanel;

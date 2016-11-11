@@ -70,6 +70,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *e);
     void mouseDoubleClickEvent(QMouseEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
+    void closeEvent(QCloseEvent *e);
 
 private:
     bool loadPlugin(const QString &id, Plugin *plugin);

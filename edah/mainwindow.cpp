@@ -296,6 +296,13 @@ void MainWindow::keyReleaseEvent(QKeyEvent *e)
     }
 }
 
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    e->accept();
+
+    qApp->quit();
+}
+
 bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
 {
     plugin->id = id;

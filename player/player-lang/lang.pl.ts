@@ -98,13 +98,13 @@
         <translation>P</translation>
     </message>
     <message>
-        <location filename="../downloadmanager.cpp" line="54"/>
-        <location filename="../downloadmanager.cpp" line="259"/>
+        <location filename="../downloadmanager.cpp" line="56"/>
+        <location filename="../downloadmanager.cpp" line="271"/>
         <source>Downloading</source>
         <translation>Pobieranie</translation>
     </message>
     <message numerus="yes">
-        <location filename="../downloadmanager.cpp" line="260"/>
+        <location filename="../downloadmanager.cpp" line="272"/>
         <source>
 %n file(s) (%1 MB) left</source>
         <translation>
@@ -172,47 +172,77 @@ Pozostało %n plików (%1 MB)</numerusform>
 <context>
     <name>SettingsTab</name>
     <message>
-        <location filename="../settingstab.cpp" line="51"/>
+        <location filename="../settingstab.cpp" line="55"/>
         <source>Output video device: </source>
         <translation>Urządzenie wideo: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="65"/>
+        <location filename="../settingstab.cpp" line="69"/>
         <source>Audio device: </source>
         <translation>Urządzenie audio: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="73"/>
-        <location filename="../settingstab.cpp" line="88"/>
+        <location filename="../settingstab.cpp" line="77"/>
+        <location filename="../settingstab.cpp" line="95"/>
         <source>Select directory</source>
         <translation>Wybierz katalog</translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="77"/>
+        <location filename="../settingstab.cpp" line="81"/>
         <source>Songs directory: </source>
         <translation>Katalog z pieśniami: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="92"/>
+        <location filename="../settingstab.cpp" line="83"/>
+        <source>Automatically download videos from jw.org</source>
+        <translation>Automatycznie pobieraj filmy z jw.org</translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="99"/>
         <source>Downloads directory: </source>
         <translation>Katalog pobieranych plików: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="96"/>
+        <location filename="../settingstab.cpp" line="103"/>
         <source>Video quality: </source>
         <translation>Jakość filmów: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="141"/>
+        <location filename="../settingstab.cpp" line="106"/>
+        <source>Email address: </source>
+        <translation>Adres email:</translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="108"/>
+        <source>Valid email address is required. You will receive report about downloaded files every Sunday.</source>
+        <translation>Podanie adresu email jest wymagane. Co niedzielę będziesz otrzymywał raporty o pobranych plikach.</translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="155"/>
         <source>
 Main</source>
         <translation>
 Główny</translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="163"/>
+        <location filename="../settingstab.cpp" line="177"/>
         <source>You couldn&apos;t choose main display!</source>
         <translation>Nie można wybrać głównego ekranu!</translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="254"/>
+        <source>Warning!</source>
+        <translation>Uwaga!</translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="255"/>
+        <source>You haven&apos;t entered valid email address! Auto-download will be disabled.</source>
+        <translation>Nie podałeś adresu email! Automatyczne pobieranie będzie wyłączone.</translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="281"/>
+        <source>en</source>
+        <translation>pl</translation>
     </message>
 </context>
 <context>

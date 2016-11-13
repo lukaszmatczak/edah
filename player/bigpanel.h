@@ -85,6 +85,10 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void keyReleaseEvent(QKeyEvent *e);
     void changeEvent(QEvent *e);
+    void dragEnterEvent(QDragEnterEvent *e);
+    void dragLeaveEvent(QDragLeaveEvent *e);
+    void dragMoveEvent(QDragMoveEvent *e);
+    void dropEvent(QDropEvent *e);
 
 private:
     void recalcSizes(const QSize &size);

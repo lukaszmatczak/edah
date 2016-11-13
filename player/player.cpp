@@ -92,6 +92,13 @@ Player::Player() : autoplay(false), currPos(0.0)
 
     this->settingsChanged();
 
+    if(!BASS_Init(-1, 44100, 0, nullptr, nullptr))
+    {
+        int code = BASS_ErrorGetCode();
+        QString text = "BASS error: " + QString::number(code);
+        LOG(text);
+    }
+
     timer.setInterval(35);
     connect(&timer, &QTimer::timeout, this, &Player::refreshState);
     timer.start();
@@ -243,30 +250,8 @@ void Player::settingsChanged()
 
     settings->beginGroup(this->getPluginId());
     songsDir = QDir(settings->value("songsDir").toString());
-    QString playDev = settings->value("device", "").toString();
+    QString playDev = settings->value("device", "").toString(); // TODO
     settings->endGroup();
-
-    static bool initialized = false;
-
-    if(!initialized)
-    {
-        if(!BASS_Init(-1, 44100, 0, nullptr, nullptr))
-        {
-            int code = BASS_ErrorGetCode();
-            QString text = "BASS error: " + QString::number(code);
-            LOG(text);
-
-            if(code == 23)
-                text += tr("Invalid device \"%1\"!").arg(playDev);
-
-            QMessageBox msg(QMessageBox::Critical, "Error!", text);
-            msg.exec();
-        }
-        else
-        {
-            initialized = true;
-        }
-    }
 
     this->loadSongs();
     rndPlaylist->generateNewPlaylist();

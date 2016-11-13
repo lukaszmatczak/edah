@@ -29,6 +29,7 @@
 #include <QImageReader>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QMimeData>
 
 #include <QDebug>
 
@@ -115,6 +116,8 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 {
     layout = new QGridLayout(this);
     this->setLayout(layout);
+
+    this->setAcceptDrops(true);
 
     QVBoxLayout *playlistLayout = new QVBoxLayout;
     layout->addLayout(playlistLayout, 1, 0, 3, 3);
@@ -314,6 +317,44 @@ void BigPanel::keyReleaseEvent(QKeyEvent *e)
         this->btnRnd_clicked();
         e->setAccepted(true);
     }
+}
+
+void BigPanel::dragEnterEvent(QDragEnterEvent *e)
+{
+    if(e->mimeData()->hasUrls())
+    {
+        e->setDropAction(Qt::MoveAction);
+        e->accept();
+    }
+    else
+        e->ignore();
+}
+
+void BigPanel::dragLeaveEvent(QDragLeaveEvent *e)
+{
+    e->accept();
+}
+
+void BigPanel::dragMoveEvent(QDragMoveEvent *e)
+{
+    if(playlistView->geometry().contains(e->pos()))
+    {
+        e->setDropAction(Qt::MoveAction);
+        e->accept();
+    }
+    else
+    {
+        e->ignore();
+    }
+
+}
+
+void BigPanel::dropEvent(QDropEvent *e)
+{
+    auto urls = e->mimeData()->urls();
+
+    for(int i=0; i<urls.size(); i++)
+        player->playlistModel.addFile(urls[i].toLocalFile());
 }
 
 void BigPanel::retranslate()

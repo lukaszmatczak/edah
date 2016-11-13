@@ -80,6 +80,9 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     layout->addRow(tr("Songs directory: "), songsLayout);
 
+    hwdecChk = new QCheckBox(tr("Enable hardware decoding"));
+    layout->addRow(hwdecChk);
+
     downloadChk = new QGroupBox(tr("Automatically download videos from jw.org"), this);
     downloadChk->setCheckable(true);
     QFormLayout *downloadChkLayout = new QFormLayout;
@@ -234,6 +237,7 @@ void SettingsTab::loadSettings()
     settings->beginGroup(plugin->getPluginId());
     selectedMonitor = settings->value("displayGeometry").toRect();
     songsDir->setText(settings->value("songsDir", "").toString());
+    hwdecChk->setChecked(settings->value("hwdec", false).toBool());
     downloadChk->setChecked(settings->value("download", false).toBool());
     downloadDir->setText(settings->value("downloadDir", "").toString());
     downloadQuality->setCurrentText(settings->value("downloadQualoty", "720p").toString());
@@ -264,6 +268,7 @@ void SettingsTab::writeSettings()
     settings->beginGroup(plugin->getPluginId());
     settings->setValue("displayGeometry", selectedMonitor);
     settings->setValue("songsDir", songsDir->text());
+    settings->setValue("hwdec", hwdecChk->isChecked());
     settings->setValue("download", downloadChk->isChecked());
     settings->setValue("downloadDir", downloadDir->text());
     settings->setValue("downloadQuality", downloadQuality->currentText());

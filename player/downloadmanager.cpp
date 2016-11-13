@@ -94,7 +94,7 @@ void DownloadManager::removeOldFiles()
     {
         QDate dirDate = QDate::fromString(dirs[i], "yyyyMMdd");
 
-        if(dirDate < QDate::currentDate().addDays(-QDate::currentDate().dayOfWeek()+1))
+        if(dirDate.isValid() && dirDate < QDate::currentDate().addDays(-QDate::currentDate().dayOfWeek()+1))
         {
             QDir(this->path + "/" + dirs[i]).removeRecursively();
         }
@@ -516,7 +516,7 @@ void DownloadManager::sendStatus(const QString &date, const MultimediaInfo &info
                                         .arg(info.Track)
                                         .arg(info.IssueTagNumber)
                                         .arg(info.MepsDocumentId)
-                                        .arg(info.title)
+                                        .arg(info.title) // TODO: url encode
                                         .arg(QUrl(info.url).fileName()).toUtf8());
 
     QEventLoop loop;

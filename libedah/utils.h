@@ -32,6 +32,12 @@
 #include <dwmapi.h>
 #endif
 
+struct WindowInfo
+{
+    WId windowID;
+    QRect geometry;
+};
+
 class LIBEDAHSHARED_EXPORT Utils : public QObject
 {
     Q_OBJECT
@@ -68,9 +74,23 @@ public:
     void showThumbnail(int id, bool visible);
     void moveThumbnail(int id, QSize srcSize);
     void setThumbnailOpacity(int id, int opacity);
+    void setThumbnailScale(int id, float scale);
+    QPoint Utils::mapPointToThumbnail(int id, QPoint point);
+    QPixmap Utils::getCursorForThumbnail(int id, QPoint *hotspot, bool forcePixmap);
     void destroyThumbnail(int id);
 
+    QMargins windows10IsTerrible(HWND hwnd);
+    WindowInfo getWindowAt(QPoint pos, WId skipWindow);
+    QString getWindowTitle(WId winID);
+    QPixmap getWindowIcon(WId winID);
+    QRect getWindowRect(WId winID);
+    void setWindowSize(WId winID, QSize size);
+
+    void watchMouseMove(bool watch);
+
 #ifdef Q_OS_WIN
+    friend void CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
+
     struct ThumbInfo
     {
         WId srcID;
@@ -101,7 +121,12 @@ private:
     RECT area;
 
     DISPLAYCONFIG_TOPOLOGY_ID topologyId;
+
+    bool isWin10orGreater;
 #endif
+
+signals:
+    void mouseMoved(QPoint pos);
 };
 
 LIBEDAHSHARED_EXPORT extern Utils *utils;

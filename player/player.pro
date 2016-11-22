@@ -34,7 +34,8 @@ SOURCES += player.cpp \
     ../quazip/quazip/quazipfile.cpp \
     ../quazip/quazip/quazipfileinfo.cpp \
     ../quazip/quazip/zip.c \
-    ../quazip/quazip/unzip.c
+    ../quazip/quazip/unzip.c \
+    windowselector.cpp
 
 HEADERS += player.h \
     bigpanel.h \
@@ -51,7 +52,8 @@ HEADERS += player.h \
     ../quazip/quazip/quazipfile.h \
     ../quazip/quazip/quazipfileinfo.h \
     ../quazip/quazip/zip.h \
-    ../quazip/quazip/unzip.h
+    ../quazip/quazip/unzip.h \
+    windowselector.h
 
 TRANSLATIONS = player-lang/lang.pl.ts
 

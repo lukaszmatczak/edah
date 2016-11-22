@@ -101,7 +101,7 @@ void VideoWindow::fadeInOut(QWidget *widget, int duration, int start, int stop)
 
 void VideoWindow::fadeInOutThumbnail(int thumb, int duration, int start, int stop)
 {
-/*    QTimeLine *timeLine = new QTimeLine(duration, this);
+    QTimeLine *timeLine = new QTimeLine(duration, this);
 
     timeLine->setFrameRange(start, stop);
     connect(timeLine, &QTimeLine::frameChanged, this, [thumb](int frame){
@@ -111,7 +111,7 @@ void VideoWindow::fadeInOutThumbnail(int thumb, int duration, int start, int sto
 
     QEventLoop loop;
     QObject::connect(timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
-    loop.exec();*/
+    loop.exec();
 }
 
 void VideoWindow::showImage(QString filename)
@@ -142,12 +142,12 @@ bool VideoWindow::isImageVisible()
 
 void VideoWindow::showWindow(WId winID, int flags)
 {
-/*    if(windowThumbnail != -1)
+    if(windowThumbnail != -1)
         hideWindow();
 
     this->setVisible(true);
 
-    windowThumbnail = utils->createThumbnail(winID, this->winLbl, true, !(flags & EF_WIN_SCALE));
+    windowThumbnail = utils->createThumbnail(winID, this->winLbl, true, !(flags & EF_WIN_SCALE), false);
     utils->setThumbnailOpacity(windowThumbnail, 0);
     utils->moveThumbnail(windowThumbnail, QSize());
 
@@ -170,7 +170,7 @@ void VideoWindow::showWindow(WId winID, int flags)
         cursor->setAttribute(Qt::WA_TranslucentBackground);
         cursor->show();
 
-        connect(utils, &OSUtils::mouseMoved, this, [this, winID](QPoint pos) {
+        connect(utils, &Utils::mouseMoved, this, [this, winID](QPoint pos) {
             QRect winRect = utils->getWindowRect(winID);
             QPoint hotspot;
             QPixmap pix = utils->getCursorForThumbnail(windowThumbnail, &hotspot, false);
@@ -200,16 +200,16 @@ void VideoWindow::showWindow(WId winID, int flags)
         utils->watchMouseMove(true);
     }
 
-    fadeInOutThumbnail(windowThumbnail, 250, 0, 255);*/
+    fadeInOutThumbnail(windowThumbnail, 250, 0, 255);
 }
 
 void VideoWindow::hideWindow()
 {
-/*    fadeInOutThumbnail(windowThumbnail, 250, 255, 0);
+    fadeInOutThumbnail(windowThumbnail, 250, 255, 0);
 
     if(cursor)
     {
-        disconnect(utils, &OSUtils::mouseMoved, this, 0);
+        disconnect(utils, &Utils::mouseMoved, this, 0);
         utils->watchMouseMove(false);
 
         delete cursor;
@@ -219,7 +219,7 @@ void VideoWindow::hideWindow()
     winLbl->setVisible(false);
 
     utils->destroyThumbnail(windowThumbnail);
-    windowThumbnail = -1;*/
+    windowThumbnail = -1;
 }
 
 bool VideoWindow::isWindowVisible()

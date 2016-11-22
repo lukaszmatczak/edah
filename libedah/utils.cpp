@@ -39,6 +39,9 @@
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
+#include <Psapi.h>
+#include <Shlobj.h>
+#include <QtWin>
 #endif
 
 Utils *utils;
@@ -46,6 +49,10 @@ LIBEDAHSHARED_EXPORT QSettings *settings;
 
 QMap<int, Utils::ThumbInfo> Utils::thumbInfoTable;
 int Utils::currThumbInfoIdx;
+
+HHOOK mouseMoveHook;
+HWINEVENTHOOK mouseChangeHook;
+bool cursorChanged;
 
 Utils::Utils(QWidget *mainwindow) : mainwindow(mainwindow)
 {
@@ -69,6 +76,8 @@ Utils::Utils(QWidget *mainwindow) : mainwindow(mainwindow)
             }
         }
     }
+
+    isWin10orGreater = (QSysInfo::windowsVersion() >= QSysInfo::WV_WINDOWS10); // TODO: wrong offset
 }
 
 QString Utils::getLogDir()
@@ -374,6 +383,24 @@ void Utils::setPreviousScreenTopology()
     SetDisplayConfig(0, NULL, 0, NULL, SDC_APPLY | topologyId);
 }
 
+void CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime)
+{
+    Q_UNUSED(hWinEventHook);
+    Q_UNUSED(event);
+    Q_UNUSED(idObject);
+    Q_UNUSED(idChild);
+    Q_UNUSED(dwEventThread);
+    Q_UNUSED(dwmsEventTime);
+
+    for(auto it=Utils::thumbInfoTable.begin(); it!=Utils::thumbInfoTable.end(); ++it)
+    {
+        if((HWND)it.value().srcID == hwnd)
+        {
+            utils->moveThumbnail(it.key(), QSize());
+        }
+    }
+}
+
 int Utils::createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale, bool onMainwindow)
 {
     ThumbInfo ti;
@@ -418,7 +445,7 @@ int Utils::createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale
 
     DWORD pid;
     DWORD tid = GetWindowThreadProcessId((HWND)srcID, &pid);
-/*
+
     ti.hook = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE,
                               EVENT_OBJECT_LOCATIONCHANGE,
                               NULL,
@@ -426,7 +453,7 @@ int Utils::createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale
                               pid,
                               tid,
                               WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
-*/ // TODO
+
     int id = currThumbInfoIdx++;
     thumbInfoTable.insert(id, ti);
 
@@ -465,7 +492,7 @@ void Utils::moveThumbnail(int id, QSize srcSize)
     DWM_THUMBNAIL_PROPERTIES props;
     props.dwFlags = 0;
 
-    QMargins offset = QMargins(0, 0, 0, 0); //windows10IsTerrible((HWND)ti->srcID); // TODO
+    QMargins offset = windows10IsTerrible((HWND)ti->srcID);
 
     if(ti->scale > 0) // if scale is set
     {
@@ -530,6 +557,145 @@ void Utils::setThumbnailOpacity(int id, int opacity)
     DwmUpdateThumbnailProperties(ti->thumb, &props);
 }
 
+void Utils::setThumbnailScale(int id, float scale)
+{
+    if(!thumbInfoTable.contains(id))
+        return;
+
+    ThumbInfo *ti = &thumbInfoTable[id];
+
+    if(!ti->thumb) return;
+
+    ti->scale = scale;
+    this->moveThumbnail(id, QSize());
+}
+
+QPoint Utils::mapPointToThumbnail(int id, QPoint point)
+{
+    if(!thumbInfoTable.contains(id))
+        return QPoint();
+
+    ThumbInfo *ti = &thumbInfoTable[id];
+
+    if(!ti->thumb) return QPoint();
+
+    if(ti->scale > 0)
+    {
+        // TODO: unimplemented
+    }
+    else if(ti->noScale)
+    {
+        return point - QPoint((ti->srcSize.width()-ti->dest->size().width())/2,
+                              (ti->srcSize.height()-ti->dest->size().height())/2);
+    }
+    else
+    {
+        float scale = qMin((float)ti->dest->size().width()/ti->srcSize.width(),
+                           (float)ti->dest->size().height()/ti->srcSize.height());
+
+        return (point * scale) - QPoint((ti->srcSize.width()*scale-ti->dest->size().width())/2,
+                                        (ti->srcSize.height()*scale-ti->dest->size().height())/2);
+    }
+
+    return QPoint();
+}
+
+QPixmap Utils::getCursorForThumbnail(int id, QPoint *hotspot, bool forcePixmap)
+{
+    static QImage oldCursor;
+    static QPoint oldHotspot;
+
+    if(!thumbInfoTable.contains(id))
+        return QPixmap();
+
+    ThumbInfo *ti = &thumbInfoTable[id];
+
+    if(!ti->thumb) return QPixmap();
+
+    if(cursorChanged)
+    {
+        CURSORINFO ci;
+        ci.cbSize = sizeof(ci);
+        GetCursorInfo(&ci);
+
+        ICONINFO ii;
+        GetIconInfo(ci.hCursor, &ii);
+
+        QImage bmColor = QtWin::fromHBITMAP(ii.hbmColor, QtWin::HBitmapAlpha).toImage();
+        QImage bmMask = QtWin::fromHBITMAP(ii.hbmMask).toImage();
+
+        if(bmColor.isNull()) // black and white cursor
+        {
+            bmColor = QImage(bmMask.width(), bmMask.height()/2, QImage::Format_RGBA8888);
+
+            for(int y=0; y<bmMask.height()/2; y++)
+            {
+                QRgb *color = (QRgb*)bmColor.scanLine(y);
+                const QRgb *andMask = (QRgb*)bmMask.constScanLine(y);
+                const QRgb *xorMask = (QRgb*)bmMask.constScanLine(y+bmMask.height()/2);
+                for(int x=0; x<bmColor.width(); x++)
+                {
+                    ((unsigned char*)&color[x])[0] = (xorMask[x] & 0x1) ? 0xff : 0x00;
+                    ((unsigned char*)&color[x])[1] = (xorMask[x] & 0x1) ? 0xff : 0x00;
+                    ((unsigned char*)&color[x])[2] = (xorMask[x] & 0x1) ? 0xff : 0x00;
+                    ((unsigned char*)&color[x])[3] = ((andMask[x] & 0x1) && !(xorMask[x] & 0x1)) ? 0x00 : 0xff;
+                }
+            }
+        }
+        else
+        {
+            for(int y=0; y<bmColor.height(); y++)
+            {
+                QRgb *color = (QRgb*)bmColor.scanLine(y);
+                const QRgb *mask = (QRgb*)bmMask.constScanLine(y);
+                for(int x=0; x<bmColor.width(); x++)
+                {
+                    ((unsigned char*)&color[x])[3] = ~((unsigned char*)&mask[x])[0];
+                }
+            }
+        }
+
+        DeleteObject(ii.hbmColor);
+        DeleteObject(ii.hbmMask);
+
+        oldHotspot.setX(ii.xHotspot);
+        oldHotspot.setY(ii.yHotspot);
+
+        oldCursor = bmColor;
+    }
+
+    float scale = qMin((float)ti->dest->size().width()/ti->srcSize.width(),
+                       (float)ti->dest->size().height()/ti->srcSize.height());
+
+    hotspot->setX(oldHotspot.x()*scale);
+    hotspot->setY(oldHotspot.y()*scale);
+
+    if(!ti->noScale)
+    {
+        static float oldScale;
+
+        if(oldScale != scale)
+        {
+            cursorChanged = true;
+            oldScale = scale;
+        }
+
+        if(cursorChanged || forcePixmap)
+        {
+            cursorChanged = false;
+            return QPixmap::fromImage(oldCursor.scaled(oldCursor.size() * scale, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        }
+    }
+    else if(cursorChanged || forcePixmap)
+    {
+        cursorChanged = false;
+        return QPixmap::fromImage(oldCursor);
+    }
+
+    cursorChanged = false;
+    return QPixmap();
+}
+
 void Utils::destroyThumbnail(int id)
 {
     if(!thumbInfoTable.contains(id))
@@ -540,4 +706,169 @@ void Utils::destroyThumbnail(int id)
     UnhookWinEvent(thumbInfoTable[id].hook);
 
     thumbInfoTable.remove(id);
+}
+
+QMargins Utils::windows10IsTerrible(HWND hwnd)
+{
+    if(!isWin10orGreater)
+        return QMargins(0, 0, 0, 0);
+
+    RECT rect, frame;
+    GetWindowRect(hwnd, &rect);
+    DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &frame, sizeof(RECT));
+
+    return QMargins(frame.left-rect.left, frame.top-rect.top, rect.right-frame.right, rect.bottom-frame.bottom);
+}
+
+WindowInfo Utils::getWindowAt(QPoint pos, WId skipWindow)
+{
+    WindowInfo wi;
+
+    HWND hwnd = GetTopWindow(NULL);
+    do
+    {
+        if(hwnd == (HWND)skipWindow)
+            continue;
+
+        WINDOWINFO winInfo;
+        GetWindowInfo(hwnd, &winInfo);
+
+        if(!(winInfo.dwStyle & WS_VISIBLE))
+            continue;
+
+        RECT *rect = &winInfo.rcWindow;
+        wi.geometry = QRect(QPoint(rect->left, rect->top), QPoint(rect->right, rect->bottom));
+
+        if(wi.geometry.contains(pos, true))
+        {
+            wi.geometry -= windows10IsTerrible(hwnd);
+            wi.geometry -= QMargins(0, 0, 1, 1);
+            wi.windowID = (WId)hwnd;
+            return wi;
+        }
+    } while(hwnd = GetNextWindow(hwnd, GW_HWNDNEXT));
+
+    wi.windowID = 0;
+    wi.geometry = QRect(0,0,0,0);
+    return wi;
+}
+
+QString Utils::getWindowTitle(WId winID)
+{
+    WCHAR text[256];
+    GetWindowTextW((HWND)winID, text, 256);
+    if(GetLastError() == ERROR_SUCCESS)
+    {
+        return QString::fromUtf16((const ushort*)text);
+    }
+    else
+    {
+        return QString();
+    }
+}
+
+QPixmap Utils::getWindowIcon(WId winID)
+{
+    QPixmap ret;
+    HWND hwnd = (HWND)winID;
+    DWORD pid;
+    GetWindowThreadProcessId(hwnd, &pid);
+
+    HANDLE Handle = OpenProcess(
+                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                FALSE,
+                pid);
+    if(Handle)
+    {
+        TCHAR Buffer[MAX_PATH];
+        if (GetModuleFileNameExW(Handle, 0, Buffer, MAX_PATH))
+        {
+            HICON iLarge;
+            SHDefExtractIconW(Buffer, 0, 0, &iLarge, NULL, MAKELONG(64, 16)); // TODO: destroy icon
+            ret = QtWin::fromHICON(iLarge);
+        }
+
+        CloseHandle(Handle);
+    }
+
+    if(!ret.isNull())
+        return ret;
+
+    LRESULT iconHandle = SendMessage(hwnd, WM_GETICON, ICON_BIG, 0);
+    if(!iconHandle)
+        iconHandle = SendMessage(hwnd, WM_GETICON, ICON_SMALL, 0);
+    if(!iconHandle)
+        iconHandle = SendMessage(hwnd, WM_GETICON, ICON_SMALL2, 0);
+    if(!iconHandle)
+        iconHandle = GetClassLongPtr(hwnd, GCL_HICON);
+    if(!iconHandle)
+        iconHandle = GetClassLongPtr(hwnd, GCL_HICONSM);
+
+    return QtWin::fromHICON((HICON)iconHandle);
+}
+
+QRect Utils::getWindowRect(WId winID)
+{
+    RECT rect;
+    bool ok = GetWindowRect((HWND)winID, &rect);
+
+    if(ok && !IsIconic((HWND)winID))
+        return QRect(rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top)
+                .marginsRemoved(windows10IsTerrible((HWND)winID));
+    else
+        return QRect();
+}
+
+void Utils::setWindowSize(WId winID, QSize size)
+{
+    RECT rcWind;
+    GetWindowRect((HWND)winID, &rcWind);
+    QMargins border = windows10IsTerrible((HWND)winID);
+    MoveWindow((HWND)winID, rcWind.left, rcWind.top, size.width()+border.left()+border.right(), size.height()+border.top()+border.bottom(), TRUE);
+}
+
+LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if(wParam == WM_MOUSEMOVE)
+    {
+        MSLLHOOKSTRUCT *info = (MSLLHOOKSTRUCT*)lParam;
+        emit utils->mouseMoved(QPoint(info->pt.x, info->pt.y));
+    }
+
+    return CallNextHookEx(mouseMoveHook, nCode, wParam, lParam);
+}
+
+void CALLBACK WinEventMouseProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime)
+{
+    Q_UNUSED(hWinEventHook);
+    Q_UNUSED(event);
+    Q_UNUSED(dwEventThread);
+    Q_UNUSED(dwmsEventTime);
+
+    if (hwnd == nullptr && idObject == OBJID_CURSOR && idChild == CHILDID_SELF)
+    {
+        cursorChanged = true;
+    }
+}
+
+void Utils::watchMouseMove(bool watch)
+{
+    if(watch)
+    {
+        mouseMoveHook = SetWindowsHookExW(WH_MOUSE_LL, MouseProc, NULL, 0);
+
+        cursorChanged = true;
+        mouseChangeHook = SetWinEventHook(EVENT_OBJECT_NAMECHANGE,
+                                          EVENT_OBJECT_NAMECHANGE,
+                                          NULL,
+                                          WinEventMouseProc,
+                                          0,
+                                          0,
+                                          WINEVENT_OUTOFCONTEXT);
+    }
+    else
+    {
+        UnhookWindowsHookEx(mouseMoveHook);
+        UnhookWinEvent(mouseChangeHook);
+    }
 }

@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += gui widgets network
+win32: QT += winextras
 
 TARGET = edah
 TEMPLATE = lib
@@ -41,7 +42,7 @@ win32 {
     SOURCES += updater.cpp
     HEADERS += updater.h
 
-    LIBS += -L../openssl/lib -ladvapi32 -lshell32 -llibeay32MD  -luser32 -ldwmapi
+    LIBS += -L../openssl/lib -ladvapi32 -lshell32 -llibeay32MD  -luser32 -lgdi32 -ldwmapi
 
     INCLUDEPATH += ../openssl/include
 }

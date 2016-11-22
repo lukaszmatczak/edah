@@ -136,6 +136,7 @@ private slots:
 
     void playlist_dblClicked(const QModelIndex &index);
     void addFileBtn_clicked();
+    void addWindowBtn_clicked();
     void removeFileBtn_clicked();
     void UpBtn_clicked();
     void DownBtn_clicked();

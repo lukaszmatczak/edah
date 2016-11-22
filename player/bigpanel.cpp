@@ -18,6 +18,7 @@
 
 #include "bigpanel.h"
 #include "player.h"
+#include "windowselector.h"
 
 #include <libedah/utils.h>
 
@@ -154,7 +155,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     addWindowBtn = new MyPushButton("", playlistBtnArea);
     addWindowBtn->setObjectName("addWindowBtn");
     //addWindowBtn->setIcon(QIcon(":/player-img/plus.svg"));
-    addWindowBtn->setEnabled(false);
+    connect(addWindowBtn, &MyPushButton::pressed, this, &BigPanel::addWindowBtn_clicked);
     playlistBtnArea->layout()->addWidget(addWindowBtn);
 
     removeFileBtn = new MyPushButton("", playlistBtnArea);
@@ -509,6 +510,18 @@ void BigPanel::addFileBtn_clicked()
     }
 
     settings->endGroup();
+}
+
+void BigPanel::addWindowBtn_clicked()
+{
+    WindowSelector *selector = new WindowSelector(this->window(), player->videoWindow);
+    selector->setAttribute(Qt::WA_DeleteOnClose);
+    connect(selector, &WindowSelector::windowSelected, this, [this, selector](WId windowID, int flags) {
+        player->playlistModel.addWindow(windowID, flags);
+        selector->close();
+    });
+
+    selector->show();
 }
 
 void BigPanel::removeFileBtn_clicked()

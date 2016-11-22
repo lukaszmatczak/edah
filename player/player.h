@@ -100,6 +100,7 @@ public:
     bool isPlaying();
     QMap<int, Song> songs;
     PlaylistModel playlistModel;
+    VideoWindow *videoWindow;
 
 private:
     void loadPlaylist(QList<MultimediaInfo> info);
@@ -121,7 +122,6 @@ private:
     QDir songsDir;
     QString downloadDir;
     PeakMeter *peakMeter;
-    VideoWindow *videoWindow;
     MPV *mpv;
     ShufflePlaylist *rndPlaylist;
 

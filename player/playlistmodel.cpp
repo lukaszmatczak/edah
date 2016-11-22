@@ -19,6 +19,7 @@
 #include "playlistmodel.h"
 
 #include <libedah/logger.h>
+#include <libedah/utils.h>
 
 #include <QFileInfo>
 #include <QDir>
@@ -286,7 +287,8 @@ void PlaylistModel::addWindow(WId winID, int flags)
     entry.exists = true;
     entry.winID = winID;
     entry.flags = flags;
-    entry.title = QString("Okno \"") + /*utils->getWindowTitle(winID) +*/ "\""; // TODO
+    entry.title = tr("Window \"") + utils->getWindowTitle(winID) + "\"";
+    entry.thumbnail = utils->getWindowIcon(winID).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     entries.push_back(entry);
 
@@ -381,7 +383,7 @@ void PlaylistModel::nextItem()
 
 void PlaylistModel::updateEntries()
 {
-/*    for(int i=0; i<entries.size(); i++)
+    for(int i=0; i<entries.size(); i++)
     {
         if(entries[i].type == EntryInfo::Window)
         {
@@ -397,7 +399,7 @@ void PlaylistModel::updateEntries()
 
             emit dataChanged(createIndex(i, 0), createIndex(i, 0));
         }
-    }*/ // TODO
+    }
 }
 
 //////////////////////

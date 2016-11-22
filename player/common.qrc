@@ -15,5 +15,10 @@
         <file>player-img/keypad-cancel.svg</file>
         <file>player-img/keypad-play.svg</file>
         <file>player-img/pause.svg</file>
+        <file>player-img/checkbox_unchecked.svg</file>
+        <file>player-img/checkbox_checked.svg</file>
+        <file>player-img/checkbox_checked_hover.svg</file>
+        <file>player-img/checkbox_disabled.svg</file>
+        <file>player-img/checkbox_unchecked_hover.svg</file>
     </qresource>
 </RCC>

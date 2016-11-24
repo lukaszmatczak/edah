@@ -47,6 +47,7 @@
 #include <audiopolicy.h>
 #endif
 
+bool Player::isWin10orGreater;
 
 Player::Player() : autoplay(false), currPos(0.0)
   #ifdef Q_OS_WIN
@@ -109,7 +110,7 @@ Player::Player() : autoplay(false), currPos(0.0)
     thumbnailWidget = new ThumbnailWidget(bPanel);
 
     videoWindow = new VideoWindow(this);
-    videoThumbnail = utils->createThumbnail(videoWindow->winId(), thumbnailWidget, false, false, true);
+    videoThumbnail = new WindowThumbnail(videoWindow->winId(), thumbnailWidget, false, false, true, this);
 
     connect(thumbnailWidget, &ThumbnailWidget::positionChanged, this, [this]() {
         this->updateThumbnailPos();
@@ -161,6 +162,8 @@ Player::Player() : autoplay(false), currPos(0.0)
     }
 
     settings->endGroup();
+
+    isWin10orGreater = (QSysInfo::windowsVersion() >= QSysInfo::WV_WINDOWS10); // TODO: wrong offset
 }
 
 Player::~Player()
@@ -259,12 +262,12 @@ void Player::settingsChanged()
 
 void Player::setPanelOpacity(int opacity)
 {
-    utils->setThumbnailOpacity(videoThumbnail, opacity);
+    videoThumbnail->setOpacity(opacity);
 }
 
 void Player::updateThumbnailPos()
 {
-    utils->moveThumbnail(videoThumbnail, QSize());
+    videoThumbnail->move(QSize());
 }
 
 QStringList Player::getSongSymbols()
@@ -740,6 +743,71 @@ void Player::getPeak()
 
     i++;
 #endif
+}
+
+QMargins Player::windows10IsTerrible(HWND hwnd)
+{
+    if(!isWin10orGreater)
+        return QMargins(0, 0, 0, 0);
+
+    RECT rect, frame;
+    GetWindowRect(hwnd, &rect);
+    DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, &frame, sizeof(RECT));
+
+    return QMargins(frame.left-rect.left, frame.top-rect.top, rect.right-frame.right, rect.bottom-frame.bottom);
+}
+
+WindowInfo Player::getWindowAt(QPoint pos, WId skipWindow)
+{
+    WindowInfo wi;
+
+    HWND hwnd = GetTopWindow(NULL);
+    do
+    {
+        if(hwnd == (HWND)skipWindow)
+            continue;
+
+        WINDOWINFO winInfo;
+        GetWindowInfo(hwnd, &winInfo);
+
+        if(!(winInfo.dwStyle & WS_VISIBLE))
+            continue;
+
+        RECT *rect = &winInfo.rcWindow;
+        wi.geometry = QRect(QPoint(rect->left, rect->top), QPoint(rect->right, rect->bottom));
+
+        if(wi.geometry.contains(pos, true))
+        {
+            wi.geometry -= windows10IsTerrible(hwnd);
+            wi.geometry -= QMargins(0, 0, 1, 1);
+            wi.windowID = (WId)hwnd;
+            return wi;
+        }
+    } while(hwnd = GetNextWindow(hwnd, GW_HWNDNEXT));
+
+    wi.windowID = 0;
+    wi.geometry = QRect(0,0,0,0);
+    return wi;
+}
+
+QRect Player::getWindowRect(WId winID)
+{
+    RECT rect;
+    bool ok = GetWindowRect((HWND)winID, &rect);
+
+    if(ok && !IsIconic((HWND)winID))
+        return QRect(rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top)
+                .marginsRemoved(windows10IsTerrible((HWND)winID));
+    else
+        return QRect();
+}
+
+void Player::setWindowSize(WId winID, QSize size)
+{
+    RECT rcWind;
+    GetWindowRect((HWND)winID, &rcWind);
+    QMargins border = windows10IsTerrible((HWND)winID);
+    MoveWindow((HWND)winID, rcWind.left, rcWind.top, size.width()+border.left()+border.right(), size.height()+border.top()+border.bottom(), TRUE);
 }
 
 ShufflePlaylist::ShufflePlaylist(QMap<int, Song> *songs) : songs(songs)

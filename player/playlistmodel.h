@@ -103,6 +103,9 @@ public:
     EntryInfo currFile;
 
 private:
+    static QString PlaylistModel::getWindowTitle(WId winID);
+    static QPixmap PlaylistModel::getWindowIcon(WId winID);
+
     QVector<EntryInfo> entries;
     int currItem;
     QTimer timer;

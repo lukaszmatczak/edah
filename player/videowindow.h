@@ -23,6 +23,9 @@
 #include <QLabel>
 #include <QCloseEvent>
 #include <QTimer>
+#include <QPointer>
+
+#include "windowthumbnail.h"
 
 class Player;
 
@@ -33,7 +36,7 @@ public:
     explicit VideoWindow(Player *player, QWidget *parent = 0);
     ~VideoWindow();
 
-    void setVideoThumbnail(int id);
+    void setVideoThumbnail(WindowThumbnail *thumb);
 
     void showImage(QString filename);
     void hideImage();
@@ -59,13 +62,13 @@ public slots:
 
 private:
     void fadeInOut(QWidget *widget, int duration, int start, int stop);
-    void fadeInOutThumbnail(int thumb, int duration, int start, int stop);
+    void fadeInOutThumbnail(WindowThumbnail *thumb, int duration, int start, int stop);
 
     void setFullscreenMode(QScreen *destScreen);
     void setWindowMode(QScreen *destScreen);
 
-    int videoThumbnail;
-    int windowThumbnail;
+    QPointer<WindowThumbnail> videoThumbnail;
+    QPointer<WindowThumbnail> windowThumbnail;
 
     Player *player;
 

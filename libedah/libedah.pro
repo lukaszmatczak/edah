@@ -5,7 +5,6 @@
 #-------------------------------------------------
 
 QT       += gui widgets network
-win32: QT += winextras
 
 TARGET = edah
 TEMPLATE = lib

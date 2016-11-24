@@ -20,5 +20,6 @@
         <file>player-img/checkbox_checked_hover.svg</file>
         <file>player-img/checkbox_disabled.svg</file>
         <file>player-img/checkbox_unchecked_hover.svg</file>
+        <file>player-img/add-window.svg</file>
     </qresource>
 </RCC>

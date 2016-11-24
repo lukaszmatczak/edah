@@ -26,6 +26,7 @@
 #include "mpv.h"
 #include "videowindow.h"
 #include "downloadmanager.h"
+#include "windowthumbnail.h"
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
@@ -96,6 +97,10 @@ public:
     void updateThumbnailPos();
 
     static QStringList getSongSymbols();
+    static QMargins windows10IsTerrible(HWND hwnd);
+    static WindowInfo getWindowAt(QPoint pos, WId skipWindow);
+    static QRect getWindowRect(WId winID);
+    static void setWindowSize(WId winID, QSize size);
 
     bool isPlaying();
     QMap<int, Song> songs;
@@ -117,7 +122,7 @@ private:
     SettingsTab *settingsTab;
 
     ThumbnailWidget *thumbnailWidget;
-    int videoThumbnail;
+    WindowThumbnail *videoThumbnail;
 
     QDir songsDir;
     QString downloadDir;
@@ -131,6 +136,8 @@ private:
 
     QTimer timer;
     QTimer peakTimer;
+
+    static bool isWin10orGreater;
 
 #ifdef Q_OS_WIN
     IAudioMeterInformation *pAudioMeterInformation;

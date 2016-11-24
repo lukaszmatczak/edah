@@ -63,8 +63,6 @@ VideoWindow::VideoWindow(Player *player, QWidget *parent)
     winLbl->setStyleSheet("background: rgb(0,0,0);");
     winLbl->setVisible(false);
 
-    windowThumbnail = -1;
-
     QList<QScreen*> screens = QGuiApplication::screens();
     foreach (QScreen *screen, screens)
         connect(screen, &QScreen::geometryChanged, this, &VideoWindow::configurationChanged);
@@ -75,9 +73,9 @@ VideoWindow::~VideoWindow()
 
 }
 
-void VideoWindow::setVideoThumbnail(int id)
+void VideoWindow::setVideoThumbnail(WindowThumbnail *thumb)
 {
-    this->videoThumbnail = id;
+    this->videoThumbnail = thumb;
 }
 
 void VideoWindow::fadeInOut(QWidget *widget, int duration, int start, int stop)
@@ -99,13 +97,16 @@ void VideoWindow::fadeInOut(QWidget *widget, int duration, int start, int stop)
     loop.exec();
 }
 
-void VideoWindow::fadeInOutThumbnail(int thumb, int duration, int start, int stop)
+void VideoWindow::fadeInOutThumbnail(WindowThumbnail *thumb, int duration, int start, int stop)
 {
+    if(!thumb)
+        return;
+
     QTimeLine *timeLine = new QTimeLine(duration, this);
 
     timeLine->setFrameRange(start, stop);
     connect(timeLine, &QTimeLine::frameChanged, this, [thumb](int frame){
-        utils->setThumbnailOpacity(thumb, frame);
+        thumb->setOpacity(frame);
     });
     timeLine->start();
 
@@ -142,14 +143,14 @@ bool VideoWindow::isImageVisible()
 
 void VideoWindow::showWindow(WId winID, int flags)
 {
-    if(windowThumbnail != -1)
+    if(windowThumbnail)
         hideWindow();
 
     this->setVisible(true);
 
-    windowThumbnail = utils->createThumbnail(winID, this->winLbl, true, !(flags & EF_WIN_SCALE), false);
-    utils->setThumbnailOpacity(windowThumbnail, 0);
-    utils->moveThumbnail(windowThumbnail, QSize());
+    windowThumbnail = new WindowThumbnail(winID, this->winLbl, true, !(flags & EF_WIN_SCALE), false);
+    windowThumbnail->setOpacity(0);
+    windowThumbnail->move(QSize());
 
     winLbl->setGeometry(0,0, this->width(), this->height());
     winLbl->setVisible(true);
@@ -171,14 +172,14 @@ void VideoWindow::showWindow(WId winID, int flags)
         cursor->show();
 
         connect(utils, &Utils::mouseMoved, this, [this, winID](QPoint pos) {
-            QRect winRect = utils->getWindowRect(winID);
+            QRect winRect = Player::getWindowRect(winID);
             QPoint hotspot;
-            QPixmap pix = utils->getCursorForThumbnail(windowThumbnail, &hotspot, false);
+            QPixmap pix = windowThumbnail->getCursor(&hotspot, false);
             if(!pix.isNull()) cursor->setPixmap(pix);
-            QPoint posOnPreview = this->geometry().topLeft()+utils->mapPointToThumbnail(windowThumbnail, pos-winRect.topLeft())-hotspot;
+            QPoint posOnPreview = this->geometry().topLeft()+windowThumbnail->mapPoint(pos-winRect.topLeft())-hotspot;
             if(winRect.contains(pos) &&
                     this->geometry().intersects(QRect(posOnPreview, cursor->pixmap()->size())) &&
-                    utils->getWindowAt(pos, 0).windowID == winID)
+                    Player::getWindowAt(pos, 0).windowID == winID)
             {
                 cursor->setVisible(true);
                 cursor->setGeometry(QRect(posOnPreview, cursor->pixmap()->size()) & this->geometry());
@@ -195,9 +196,9 @@ void VideoWindow::showWindow(WId winID, int flags)
         });
 
         QPoint unused;
-        QPixmap pix = utils->getCursorForThumbnail(windowThumbnail, &unused, true);
+        QPixmap pix = windowThumbnail->getCursor(&unused, true);
         cursor->setPixmap(pix);
-        utils->watchMouseMove(true);
+        windowThumbnail->watchMouseMove(true);
     }
 
     fadeInOutThumbnail(windowThumbnail, 250, 0, 255);
@@ -205,12 +206,15 @@ void VideoWindow::showWindow(WId winID, int flags)
 
 void VideoWindow::hideWindow()
 {
+    if(!windowThumbnail)
+        return;
+
     fadeInOutThumbnail(windowThumbnail, 250, 255, 0);
 
     if(cursor)
     {
         disconnect(utils, &Utils::mouseMoved, this, 0);
-        utils->watchMouseMove(false);
+        windowThumbnail->watchMouseMove(false);
 
         delete cursor;
         cursor = nullptr;
@@ -218,13 +222,12 @@ void VideoWindow::hideWindow()
 
     winLbl->setVisible(false);
 
-    utils->destroyThumbnail(windowThumbnail);
-    windowThumbnail = -1;
+    delete windowThumbnail;
 }
 
 bool VideoWindow::isWindowVisible()
 {
-    return (windowThumbnail != -1);
+    return (windowThumbnail);
 }
 
 void VideoWindow::closeEvent(QCloseEvent *e)
@@ -260,28 +263,35 @@ void VideoWindow::resizeEvent(QResizeEvent *event)
     }
 
     winLbl->setGeometry(0,0, this->width(), this->height());
-    utils->moveThumbnail(windowThumbnail, QSize());
 
-    utils->moveThumbnail(videoThumbnail, event->size());
+    if(windowThumbnail)
+        windowThumbnail->move(QSize());
+
+    if(videoThumbnail)
+        videoThumbnail->move(event->size());
 }
 
 void VideoWindow::moveEvent(QMoveEvent *event)
 {
-    Q_UNUSED(event);
+    Q_UNUSED(event)
     configurationChanged();
     QThread::msleep(10);
 }
 
 void VideoWindow::showEvent(QShowEvent *e)
 {
-    Q_UNUSED(e);
-    utils->showThumbnail(videoThumbnail, true);
+    Q_UNUSED(e)
+
+    if(videoThumbnail)
+        videoThumbnail->show(true);
 }
 
 void VideoWindow::hideEvent(QHideEvent *e)
 {
-    Q_UNUSED(e);
-    utils->showThumbnail(videoThumbnail, false);
+    Q_UNUSED(e)
+
+    if(videoThumbnail)
+        videoThumbnail->show(false);
 }
 
 void VideoWindow::setFullscreenMode(QScreen *destScreen)

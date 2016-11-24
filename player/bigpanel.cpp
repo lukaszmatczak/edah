@@ -154,7 +154,7 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
 
     addWindowBtn = new MyPushButton("", playlistBtnArea);
     addWindowBtn->setObjectName("addWindowBtn");
-    //addWindowBtn->setIcon(QIcon(":/player-img/plus.svg"));
+    addWindowBtn->setIcon(QIcon(":/player-img/add-window.svg"));
     connect(addWindowBtn, &MyPushButton::pressed, this, &BigPanel::addWindowBtn_clicked);
     playlistBtnArea->layout()->addWidget(addWindowBtn);
 

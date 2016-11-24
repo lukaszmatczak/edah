@@ -18,6 +18,7 @@
 
 #include "windowselector.h"
 #include "playlistmodel.h"
+#include "player.h"
 
 #include <libedah/utils.h>
 #include <libedah/mypushbutton.h>
@@ -39,7 +40,7 @@ bool WindowSelector::scaleChkState = false;
 bool WindowSelector::mouseChkState = false;
 
 WindowSelector::WindowSelector(QWidget *mainWindow, QWidget *videoWindow, QWidget *parent) :
-    QWidget(parent), mainWindow(mainWindow), videoWindow(videoWindow), selected(false), prevThumb(-1)
+    QWidget(parent), mainWindow(mainWindow), videoWindow(videoWindow), selected(false), prevThumb(nullptr)
 {
     this->setStyleSheet(QString("\
 QWidget { \
@@ -122,21 +123,23 @@ QCheckBox:disabled                   { color: rgb(127,127,127); }")
 
 WindowSelector::~WindowSelector()
 {
-    utils->destroyThumbnail(this->prevThumb);
+    if(this->prevThumb)
+        delete prevThumb;
+
     this->releaseKeyboard();
 }
 
 void WindowSelector::update()
 {
     if(hoverWindow)
-        borderFrm->setGeometry(utils->getWindowRect(hoverWindow).marginsAdded(QMargins(2,2,2,2)));
+        borderFrm->setGeometry(Player::getWindowRect(hoverWindow).marginsAdded(QMargins(2,2,2,2)));
 }
 
 void WindowSelector::mouseMoveEvent(QMouseEvent *e)
 {
     if(!selected)
     {
-        WindowInfo wi = utils->getWindowAt(e->pos(), this->winId());
+        WindowInfo wi = Player::getWindowAt(e->pos(), this->winId());
 
         if((wi.windowID == mainWindow->winId()) || (wi.windowID == videoWindow->winId()))
         {
@@ -158,7 +161,7 @@ void WindowSelector::mousePressEvent(QMouseEvent *e)
 {
     if(e->button() == Qt::LeftButton && !this->selected)
     {
-        WindowInfo wi = utils->getWindowAt(e->pos(), this->winId());
+        WindowInfo wi = Player::getWindowAt(e->pos(), this->winId());
 
         if((wi.windowID == mainWindow->winId()) || (wi.windowID == videoWindow->winId()))
             return;
@@ -205,11 +208,14 @@ void WindowSelector::mousePressEvent(QMouseEvent *e)
         previewBg->show();
         layout->addSpacing(previewBg->height()+10);
 
-        prevThumb = utils->createThumbnail(wi.windowID, previewBg, true, false, false);
+        if(prevThumb)
+            delete prevThumb;
+
+        prevThumb = new WindowThumbnail(wi.windowID, previewBg, true, false, false);
         float thumbScale = qMin((float)previewBg->width()/videoWindow->width(),
                                 (float)previewBg->height()/videoWindow->height());
-        utils->setThumbnailScale(prevThumb, thumbScale);
-        utils->moveThumbnail(prevThumb, QSize());
+        prevThumb->setScale(thumbScale);
+        prevThumb->move(QSize());
 
         QCheckBox *scaleChk = new QCheckBox(tr("Scale preview of the window to screen size"), infoLbl);
         connect(scaleChk, &QCheckBox::stateChanged, this, [this, previewBg](int state) {
@@ -220,8 +226,8 @@ void WindowSelector::mousePressEvent(QMouseEvent *e)
                                   (float)previewBg->height()/videoWindow->height());
             }
 
-            utils->setThumbnailScale(prevThumb, thumbScale);
-            utils->moveThumbnail(prevThumb, QSize());
+            prevThumb->setScale(thumbScale);
+            prevThumb->move(QSize());
         });
         scaleChk->setChecked(this->scaleChkState);
         layout->addWidget(scaleChk);
@@ -235,14 +241,14 @@ void WindowSelector::mousePressEvent(QMouseEvent *e)
             adjustChk->setEnabled(false);
 
         connect(adjustChk, &QCheckBox::stateChanged, this, [this, wi](int state) {
-            static QSize oldSize = utils->getWindowRect(wi.windowID).size();
+            static QSize oldSize = Player::getWindowRect(wi.windowID).size();
 
             if(state == Qt::Checked)
-                utils->setWindowSize(wi.windowID, videoWindow->size());
+                Player::setWindowSize(wi.windowID, videoWindow->size());
             else
-                utils->setWindowSize(wi.windowID, oldSize);
+                Player::setWindowSize(wi.windowID, oldSize);
 
-            borderFrm->setGeometry(utils->getWindowRect(wi.windowID).marginsAdded(QMargins(2,2,2,2)));
+            borderFrm->setGeometry(Player::getWindowRect(wi.windowID).marginsAdded(QMargins(2,2,2,2)));
             hoverWindow = wi.windowID;
         });
         layout->addWidget(adjustChk);

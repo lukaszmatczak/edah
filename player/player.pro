@@ -35,7 +35,8 @@ SOURCES += player.cpp \
     ../quazip/quazip/quazipfileinfo.cpp \
     ../quazip/quazip/zip.c \
     ../quazip/quazip/unzip.c \
-    windowselector.cpp
+    windowselector.cpp \
+    windowthumbnail.cpp
 
 HEADERS += player.h \
     bigpanel.h \
@@ -53,14 +54,15 @@ HEADERS += player.h \
     ../quazip/quazip/quazipfileinfo.h \
     ../quazip/quazip/zip.h \
     ../quazip/quazip/unzip.h \
-    windowselector.h
+    windowselector.h \
+    windowthumbnail.h
 
 TRANSLATIONS = player-lang/lang.pl.ts
 
 LIBS += -ltag -lbass
 
 win32 {
-    LIBS += -LC:/Users/lukas/Desktop/bass -LC:/Users/lukas/Desktop/zlib/lib -ledah -lole32 -lzdll
+    LIBS += -LC:/Users/lukas/Desktop/bass -LC:/Users/lukas/Desktop/zlib/lib -ledah -lole32 -lzdll -luser32 -lgdi32 -ldwmapi -lshell32
 }
 
 CONFIG(debug) {

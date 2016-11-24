@@ -50,6 +50,12 @@
 #undef max
 #endif
 
+#ifdef Q_OS_WIN
+#include <QtWin>
+#include <Psapi.h>
+#include <Shlobj.h>
+#endif
+
 PlaylistModel::PlaylistModel() : currItem(0)
 {
     connect(&timer, &QTimer::timeout, this, &PlaylistModel::updateEntries);
@@ -287,8 +293,8 @@ void PlaylistModel::addWindow(WId winID, int flags)
     entry.exists = true;
     entry.winID = winID;
     entry.flags = flags;
-    entry.title = tr("Window \"") + utils->getWindowTitle(winID) + "\"";
-    entry.thumbnail = utils->getWindowIcon(winID).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    entry.title = tr("Window \"") + this->getWindowTitle(winID) + "\"";
+    entry.thumbnail = this->getWindowIcon(winID).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     entries.push_back(entry);
 
@@ -387,19 +393,73 @@ void PlaylistModel::updateEntries()
     {
         if(entries[i].type == EntryInfo::Window)
         {
-            QString newTitle = utils->getWindowTitle(entries[i].winID);
+            QString newTitle = this->getWindowTitle(entries[i].winID);
             if(newTitle.isNull())
             {
                 entries[i].exists = false;
             }
             else
             {
-                entries[i].title = "Okno \"" + newTitle + "\"";
+                entries[i].title = tr("Window") + " \"" + newTitle + "\"";
             }
 
             emit dataChanged(createIndex(i, 0), createIndex(i, 0));
         }
     }
+}
+
+QString PlaylistModel::getWindowTitle(WId winID)
+{
+    WCHAR text[256];
+    GetWindowTextW((HWND)winID, text, 256);
+    if(GetLastError() == ERROR_SUCCESS)
+    {
+        return QString::fromUtf16((const ushort*)text);
+    }
+    else
+    {
+        return QString();
+    }
+}
+
+QPixmap PlaylistModel::getWindowIcon(WId winID)
+{
+    QPixmap ret;
+    HWND hwnd = (HWND)winID;
+    DWORD pid;
+    GetWindowThreadProcessId(hwnd, &pid);
+
+    HANDLE Handle = OpenProcess(
+                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                FALSE,
+                pid);
+    if(Handle)
+    {
+        TCHAR Buffer[MAX_PATH];
+        if (GetModuleFileNameExW(Handle, 0, Buffer, MAX_PATH))
+        {
+            HICON iLarge;
+            SHDefExtractIconW(Buffer, 0, 0, &iLarge, NULL, MAKELONG(64, 16)); // TODO: destroy icon
+            ret = QtWin::fromHICON(iLarge);
+        }
+
+        CloseHandle(Handle);
+    }
+
+    if(!ret.isNull())
+        return ret;
+
+    LRESULT iconHandle = SendMessage(hwnd, WM_GETICON, ICON_BIG, 0);
+    if(!iconHandle)
+        iconHandle = SendMessage(hwnd, WM_GETICON, ICON_SMALL, 0);
+    if(!iconHandle)
+        iconHandle = SendMessage(hwnd, WM_GETICON, ICON_SMALL2, 0);
+    if(!iconHandle)
+        iconHandle = GetClassLongPtr(hwnd, GCL_HICON);
+    if(!iconHandle)
+        iconHandle = GetClassLongPtr(hwnd, GCL_HICONSM);
+
+    return QtWin::fromHICON((HICON)iconHandle);
 }
 
 //////////////////////

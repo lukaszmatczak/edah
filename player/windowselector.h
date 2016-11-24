@@ -24,6 +24,8 @@
 #include <QLabel>
 #include <QTimer>
 
+#include "windowthumbnail.h"
+
 class WindowSelector : public QWidget
 {
     Q_OBJECT
@@ -47,7 +49,7 @@ private:
     bool selected;
     QWidget *mainWindow;
     QWidget *videoWindow;
-    int prevThumb;
+    WindowThumbnail *prevThumb;
 
     static bool scaleChkState;
     static bool mouseChkState;

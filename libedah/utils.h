@@ -29,7 +29,6 @@
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
-#include <dwmapi.h>
 #endif
 
 struct WindowInfo
@@ -51,6 +50,7 @@ public:
     QString getServerUrl();
     QString getAppVersion();
     int getAppBuild();
+    QWidget *getMainWindow();
 
     QString parseFilename(QString fmt, const QString &name, const QDateTime &time);
 
@@ -70,40 +70,6 @@ public:
     void setExtendScreenTopology();
     void setPreviousScreenTopology();
 
-    int createThumbnail(WId srcID, QLabel *dest, bool withFrame, bool noScale, bool onMainwindow);
-    void showThumbnail(int id, bool visible);
-    void moveThumbnail(int id, QSize srcSize);
-    void setThumbnailOpacity(int id, int opacity);
-    void setThumbnailScale(int id, float scale);
-    QPoint Utils::mapPointToThumbnail(int id, QPoint point);
-    QPixmap Utils::getCursorForThumbnail(int id, QPoint *hotspot, bool forcePixmap);
-    void destroyThumbnail(int id);
-
-    QMargins windows10IsTerrible(HWND hwnd);
-    WindowInfo getWindowAt(QPoint pos, WId skipWindow);
-    QString getWindowTitle(WId winID);
-    QPixmap getWindowIcon(WId winID);
-    QRect getWindowRect(WId winID);
-    void setWindowSize(WId winID, QSize size);
-
-    void watchMouseMove(bool watch);
-
-#ifdef Q_OS_WIN
-    friend void CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
-
-    struct ThumbInfo
-    {
-        WId srcID;
-        QLabel *dest;
-        HTHUMBNAIL thumb;
-        HWINEVENTHOOK hook;
-        bool withFrame;
-        bool noScale;
-        QSize srcSize;
-        float scale;
-    };
-#endif
-
 private:
     Utils(QWidget *mainwindow);
 
@@ -114,9 +80,6 @@ private:
     QString appVersion;
     int appBuild;
 
-    static QMap<int, ThumbInfo> thumbInfoTable;
-    static int currThumbInfoIdx;
-
 #ifdef Q_OS_WIN
     RECT area;
 
@@ -126,7 +89,7 @@ private:
 #endif
 
 signals:
-    void mouseMoved(QPoint pos);
+    void mouseMoved(QPoint pos); // TODO
 };
 
 LIBEDAHSHARED_EXPORT extern Utils *utils;

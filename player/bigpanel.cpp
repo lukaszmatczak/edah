@@ -538,7 +538,14 @@ void BigPanel::removeFileBtn_clicked()
 void BigPanel::UpBtn_clicked()
 {
     int currRow = playlistView->currentIndex().row();
-    if(currRow < 1) return;
+    if(currRow < 1)
+        return;
+
+    if(player->playlistModel.getItemInfo(currRow).type == EntryInfo::Keypad ||
+            player->playlistModel.getItemInfo(currRow-1).type == EntryInfo::Keypad)
+    {
+        return;
+    }
 
     player->playlistModel.swapEntries(currRow, currRow-1);
     QModelIndex idx = player->playlistModel.index(currRow-1, 0, QModelIndex());
@@ -548,7 +555,14 @@ void BigPanel::UpBtn_clicked()
 void BigPanel::DownBtn_clicked()
 {
     int currRow = playlistView->currentIndex().row();
-    if(currRow >= player->playlistModel.rowCount(QModelIndex())-1) return;
+    if(currRow >= player->playlistModel.rowCount(QModelIndex())-1)
+        return;
+
+    if(player->playlistModel.getItemInfo(currRow).type == EntryInfo::Keypad ||
+            player->playlistModel.getItemInfo(currRow+1).type == EntryInfo::Keypad)
+    {
+        return;
+    }
 
     player->playlistModel.swapEntries(currRow, currRow+1);
     QModelIndex idx = player->playlistModel.index(currRow+1, 0, QModelIndex());
@@ -572,7 +586,7 @@ void BigPanel::keyboardBtn_clicked()
 
 void BigPanel::showKeyboard(int number)
 {
-    Keypad keyboardPopup(number, player, this);
+    Keypad keyboardPopup(number, player, true, this);
     connect(&keyboardPopup, &Keypad::songEntered, this, [this](int number) {
         this->setNonstop(false);
         emit playSong(number, nonstop);

@@ -284,7 +284,22 @@ void Player::loadPlaylist(QList<MultimediaInfo> info)
 
     if(weekend)
     {
-        playlistModel.addKeypad();
+        QModelIndex idx = playlistModel.addKeypad();
+        MyPushButton *btn = new MyPushButton("");
+        btn->setIcon(QIcon(":/player-img/keypad.svg"));
+        btn->setIconSize(QSize(56, 56));
+
+        connect(btn, &MyPushButton::clicked, this, [this]() {
+            Keypad keyboardPopup(-1, this, false, bPanel);
+            connect(&keyboardPopup, &Keypad::songEntered, this, [this](int number) {
+                QString filename = songsDir.absolutePath() + "/" + songs[number].filename;
+                playlistModel.setSong(filename);
+            });
+            keyboardPopup.setSize(0.42f, 0.9f); // TODO
+            keyboardPopup.exec();
+        });
+
+        bPanel->playlistView->setIndexWidget(idx, btn);
     }
 
     for(int i=0; i<info.size(); i++)

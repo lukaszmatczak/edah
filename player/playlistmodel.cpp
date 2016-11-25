@@ -97,7 +97,8 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
     {
         if(role == Qt::DecorationRole)
         {
-            return entries[index.row()].thumbnail;
+            if(entries[index.row()].type != EntryInfo::Keypad)
+                return entries[index.row()].thumbnail;
         }
     }
     else if(index.column() == 1)
@@ -215,7 +216,7 @@ QPixmap PlaylistModel::getCover(const QFileInfo &finfo, const T &filename)
     return QPixmap();
 }
 
-void PlaylistModel::addFile(QString filename)
+void PlaylistModel::addFile(QString filename, int position)
 {
     emit layoutAboutToBeChanged();
 
@@ -258,7 +259,10 @@ void PlaylistModel::addFile(QString filename)
         }
     }
 
-    entries.push_back(entry);
+    if(position > -1)
+        entries[position] = entry;
+    else
+        entries.push_back(entry);
 
     if(entry.type == EntryInfo::AV)
     {
@@ -302,7 +306,7 @@ void PlaylistModel::addWindow(WId winID, int flags)
     emit dataChanged(createIndex(entries.size()-1, 0), createIndex(entries.size()-1, 0)); // TODO: ???
 }
 
-void PlaylistModel::addKeypad()
+QModelIndex PlaylistModel::addKeypad()
 {
     emit layoutAboutToBeChanged();
 
@@ -310,12 +314,14 @@ void PlaylistModel::addKeypad()
     entry.type = EntryInfo::Keypad;
     entry.exists = true;
     entry.title = tr("Song ???");
-    entry.thumbnail = QIcon(":/player-img/keypad.svg").pixmap(64, 64);
+    //entry.thumbnail = QIcon(":/player-img/keypad.svg").pixmap(64, 64);
 
     entries.push_back(entry);
 
     emit layoutChanged();
     emit dataChanged(createIndex(entries.size()-1, 0), createIndex(entries.size()-1, 0)); // TODO: ???
+
+    return this->index(entries.size()-1, 0, QModelIndex());
 }
 
 void PlaylistModel::removeEntry(int pos)
@@ -340,6 +346,25 @@ void PlaylistModel::swapEntries(int pos1, int pos2)
         this->setCurrentItem(pos1);
 
     emit layoutChanged();
+}
+
+void PlaylistModel::setSong(const QString &filename)
+{
+    int idx = -1;
+
+    for(int i=0; i<entries.size(); i++)
+    {
+        if(entries[i].type == EntryInfo::Keypad)
+        {
+            idx = i;
+            break;
+        }
+    }
+
+    if(idx == -1)
+        return;
+
+    this->addFile(filename, idx);
 }
 
 EntryInfo PlaylistModel::getItemInfo(int n)

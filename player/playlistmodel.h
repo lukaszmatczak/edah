@@ -87,13 +87,14 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
 
     template<typename T> QPixmap getCover(const QFileInfo &finfo, const T &filename);
-    void addFile(QString filename);
+    void addFile(QString filename, int position = -1);
     void setCurrentFile(QString filename);
     void addWindow(WId winID, int flags);
-    void addKeypad();
+    QModelIndex addKeypad();
     void removeEntry(int pos);
     void swapEntries(int pos1, int pos2);
 
+    void setSong(const QString &filename);
     EntryInfo getItemInfo(int n);
     EntryInfo getCurrentItemInfo();
     void setCurrentItem(int n);

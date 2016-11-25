@@ -4,88 +4,88 @@
 <context>
     <name>BigPanel</name>
     <message>
-        <location filename="../bigpanel.cpp" line="362"/>
+        <location filename="../bigpanel.cpp" line="363"/>
         <source>Add file to playlist</source>
         <translation>Dodaj plik do playlisty</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="363"/>
+        <location filename="../bigpanel.cpp" line="364"/>
         <source>Add window to playlist</source>
         <translation>Dodaj okno do playlisty</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="364"/>
+        <location filename="../bigpanel.cpp" line="365"/>
         <source>Remove selected entry from playlist</source>
         <translation>Usuń zaznaczony wpis z playlisty</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="365"/>
+        <location filename="../bigpanel.cpp" line="366"/>
         <source>Move entry up</source>
         <translation>Przesuń zaznaczony element w górę </translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="366"/>
+        <location filename="../bigpanel.cpp" line="367"/>
         <source>Move entry down</source>
         <translation>Przesuń zaznaczony element w dół</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="367"/>
+        <location filename="../bigpanel.cpp" line="368"/>
         <source>Play random songs continuously (&lt;i&gt;]&lt;/i&gt;)</source>
         <translation>Odtwarzaj losowe pieśni (&lt;i&gt;]&lt;/i&gt;)</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="368"/>
-        <location filename="../bigpanel.cpp" line="631"/>
+        <location filename="../bigpanel.cpp" line="369"/>
+        <location filename="../bigpanel.cpp" line="658"/>
         <source>Play (&lt;i&gt;Enter&lt;/i&gt;)</source>
         <translation>Odtwarzaj (&lt;i&gt;Enter&lt;/i&gt;)</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="369"/>
+        <location filename="../bigpanel.cpp" line="370"/>
         <source>Stop</source>
         <translation>Stop</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="370"/>
+        <location filename="../bigpanel.cpp" line="371"/>
         <source>Open keyboard and play manually selected song (&lt;i&gt;0-9&lt;/i&gt;)</source>
         <translation>Otwórz klawiaturę i odtwórz ręcznie wybraną pieśń (&lt;i&gt;0-9&lt;/i&gt;)</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="371"/>
+        <location filename="../bigpanel.cpp" line="372"/>
         <source>Autoplay</source>
         <translation>Autoodtwarzanie</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="495"/>
+        <location filename="../bigpanel.cpp" line="496"/>
         <source>Choose files</source>
         <translation>Wybierz pliki</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="497"/>
+        <location filename="../bigpanel.cpp" line="498"/>
         <source>All supported files</source>
         <translation>Wszystkie obsługiwane pliki</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="498"/>
+        <location filename="../bigpanel.cpp" line="499"/>
         <source>Video</source>
         <translation>Pliki wideo</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="499"/>
+        <location filename="../bigpanel.cpp" line="500"/>
         <source>Audio</source>
         <translation>Pliki audio</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="500"/>
+        <location filename="../bigpanel.cpp" line="501"/>
         <source>Images</source>
         <translation>Obrazy</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="501"/>
+        <location filename="../bigpanel.cpp" line="502"/>
         <source>All files (*.*)</source>
         <translation>Wszystkie pliki (*.*)</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="631"/>
+        <location filename="../bigpanel.cpp" line="658"/>
         <source>Pause (&lt;i&gt;Enter&lt;/i&gt;)</source>
         <translation>Pauza (&lt;i&gt;Enter&lt;/i&gt;)</translation>
     </message>
@@ -130,12 +130,17 @@ Pozostało %n plików (%1 MB)</numerusform>
         <translation>Anuluj (&lt;i&gt;Esc&lt;/i&gt;)</translation>
     </message>
     <message>
-        <location filename="../keypad.cpp" line="95"/>
+        <location filename="../keypad.cpp" line="97"/>
         <source>Play (&lt;i&gt;Enter&lt;/i&gt;)</source>
         <translation>Odtwarzaj (&lt;i&gt;Enter&lt;/i&gt;)</translation>
     </message>
     <message>
-        <location filename="../keypad.cpp" line="202"/>
+        <location filename="../keypad.cpp" line="102"/>
+        <source>OK (&lt;i&gt;Enter&lt;/i&gt;)</source>
+        <translation>OK (&lt;i&gt;Enter&lt;/i&gt;)</translation>
+    </message>
+    <message>
+        <location filename="../keypad.cpp" line="210"/>
         <source>Enter song number</source>
         <translation>Wprowadź numer pieśni</translation>
     </message>
@@ -147,7 +152,7 @@ Pozostało %n plików (%1 MB)</numerusform>
         <translation type="vanished">Problem z urządzeniem &quot;%1&quot;!</translation>
     </message>
     <message>
-        <location filename="../player.cpp" line="228"/>
+        <location filename="../player.cpp" line="231"/>
         <source>Player</source>
         <translation>Odtwarzanie</translation>
     </message>
@@ -155,9 +160,40 @@ Pozostało %n plików (%1 MB)</numerusform>
 <context>
     <name>PlaylistModel</name>
     <message>
-        <location filename="../playlistmodel.cpp" line="304"/>
+        <location filename="../playlistmodel.cpp" line="119"/>
+        <source>
+Settings:</source>
+        <translation>
+Opcje:</translation>
+    </message>
+    <message>
+        <location filename="../playlistmodel.cpp" line="120"/>
+        <source>
+  Scale</source>
+        <translation>
+  Skalowanie</translation>
+    </message>
+    <message>
+        <location filename="../playlistmodel.cpp" line="121"/>
+        <source>
+  Show mouse cursor</source>
+        <translation>
+  Pokazywanie kursora myszy</translation>
+    </message>
+    <message>
+        <location filename="../playlistmodel.cpp" line="300"/>
+        <source>Window &quot;</source>
+        <translation>Okno &quot;</translation>
+    </message>
+    <message>
+        <location filename="../playlistmodel.cpp" line="316"/>
         <source>Song ???</source>
         <translation>Pieśń ???</translation>
+    </message>
+    <message>
+        <location filename="../playlistmodel.cpp" line="428"/>
+        <source>Window</source>
+        <translation>Okno</translation>
     </message>
 </context>
 <context>
@@ -256,6 +292,45 @@ Główny</translation>
 </source>
         <translation type="vanished">Autoodtwarzanie
 </translation>
+    </message>
+</context>
+<context>
+    <name>WindowSelector</name>
+    <message>
+        <location filename="../windowselector.cpp" line="97"/>
+        <source>Select window to clone
+into secondary screen.
+
+Press ESC to cancel.</source>
+        <translation>Wybierz okno, którego zawartość
+ma być sklonowana na drugi ekran.
+
+Aby anulować naciśnij ESC.</translation>
+    </message>
+    <message>
+        <location filename="../windowselector.cpp" line="220"/>
+        <source>Scale preview of the window to screen size</source>
+        <translation>Skaluj obraz okna do rozmiaru ekranu</translation>
+    </message>
+    <message>
+        <location filename="../windowselector.cpp" line="235"/>
+        <source>Adjust window size to screen resolution (%1x%2)</source>
+        <translation>Dostosuj rozmiar okna do rozdzielczości ekranu (%1x%2)</translation>
+    </message>
+    <message>
+        <location filename="../windowselector.cpp" line="256"/>
+        <source>Show mouse cursor</source>
+        <translation>Pokazuj kursor myszy</translation>
+    </message>
+    <message>
+        <location filename="../windowselector.cpp" line="264"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location filename="../windowselector.cpp" line="277"/>
+        <source>Cancel</source>
+        <translation>Anuluj</translation>
     </message>
 </context>
 </TS>

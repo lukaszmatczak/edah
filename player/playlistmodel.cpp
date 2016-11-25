@@ -116,9 +116,9 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
             }
 
             int flags = entries[index.row()].flags;
-            if(flags) tooltip += "\nOpcje:";
-            if(flags & EF_WIN_SCALE)      tooltip += "\n  Skalowanie";
-            if(flags & EF_WIN_WITHCURSOR) tooltip += "\n  Pokazywanie kursora myszy";
+            if(flags) tooltip += tr("\nSettings:");
+            if(flags & EF_WIN_SCALE)      tooltip += tr("\n  Scale");
+            if(flags & EF_WIN_WITHCURSOR) tooltip += tr("\n  Show mouse cursor");
 
             return tooltip;
         }

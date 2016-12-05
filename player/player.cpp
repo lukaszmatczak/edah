@@ -772,14 +772,14 @@ QMargins Player::windows10IsTerrible(HWND hwnd)
     return QMargins(frame.left-rect.left, frame.top-rect.top, rect.right-frame.right, rect.bottom-frame.bottom);
 }
 
-WindowInfo Player::getWindowAt(QPoint pos, WId skipWindow)
+WindowInfo Player::getWindowAt(QPoint pos, const QList<WId> &skipWindows)
 {
     WindowInfo wi;
 
     HWND hwnd = GetTopWindow(NULL);
     do
     {
-        if(hwnd == (HWND)skipWindow)
+        if(skipWindows.contains((WId)hwnd))
             continue;
 
         WINDOWINFO winInfo;

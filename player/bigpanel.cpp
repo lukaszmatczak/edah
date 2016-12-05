@@ -31,6 +31,7 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QMimeData>
+#include <QTimeLine>
 
 #include <QDebug>
 
@@ -521,7 +522,17 @@ void BigPanel::addWindowBtn_clicked()
         selector->close();
     });
 
+    connect(selector, &WindowSelector::closeSignal, this, [this]() {
+        utils->fadeInOut(nullptr, nullptr, 350, 30, 100, [this](int frame) {
+            this->window()->setWindowOpacity(frame/100.0f);
+        });
+    });
+
     selector->show();
+
+    utils->fadeInOut(nullptr, nullptr, 350, 100, 30, [this](int frame) {
+        this->window()->setWindowOpacity(frame/100.0f);
+    });
 }
 
 void BigPanel::removeFileBtn_clicked()

@@ -56,6 +56,10 @@ private:
 
 signals:
     void windowSelected(WId windowID, int flags);
+    void closeSignal();
+
+public slots:
+    bool close();
 
 private slots:
     void update();

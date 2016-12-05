@@ -172,19 +172,33 @@ QString Utils::parseFilename(QString fmt, const QString &name, const QDateTime &
 void Utils::fadeInOut(QWidget *w1, QWidget *w2, int duration, int start, int stop, std::function<void(int)> callback)
 {
     QTimeLine timeLine(duration);
-    QGraphicsOpacityEffect *effect1 = new QGraphicsOpacityEffect;
-    QGraphicsOpacityEffect *effect2 = new QGraphicsOpacityEffect;
+    QGraphicsOpacityEffect *effect1 = nullptr;
+    QGraphicsOpacityEffect *effect2 = nullptr;
 
-    effect1->setOpacity(start/255.0);
-    effect2->setOpacity(start/255.0);
-    w1->setGraphicsEffect(effect1);
-    w2->setGraphicsEffect(effect2);
+    if(w1)
+    {
+        effect1 = new QGraphicsOpacityEffect;
+        effect1->setOpacity(start/255.0);
+        w1->setGraphicsEffect(effect1);
+    }
+
+    if(w2)
+    {
+        effect2 = new QGraphicsOpacityEffect;
+        effect2->setOpacity(start/255.0);
+        w2->setGraphicsEffect(effect2);
+    }
 
     timeLine.setFrameRange(start, stop);
     connect(&timeLine, &QTimeLine::frameChanged, this, [effect1, effect2, callback](int frame) {
         const float opacity = frame/255.0;
-        effect1->setOpacity(opacity);
-        effect2->setOpacity(opacity);
+
+        if(effect1)
+            effect1->setOpacity(opacity);
+
+        if(effect2)
+            effect2->setOpacity(opacity);
+
         callback(frame);
     });
     timeLine.start();

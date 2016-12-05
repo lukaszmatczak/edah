@@ -98,7 +98,7 @@ public:
 
     static QStringList getSongSymbols();
     static QMargins windows10IsTerrible(HWND hwnd);
-    static WindowInfo getWindowAt(QPoint pos, WId skipWindow);
+    static WindowInfo getWindowAt(QPoint pos, const QList<WId> &skipWindows);
     static QRect getWindowRect(WId winID);
     static void setWindowSize(WId winID, QSize size);
 

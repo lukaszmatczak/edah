@@ -179,7 +179,7 @@ void VideoWindow::showWindow(WId winID, int flags)
             QPoint posOnPreview = this->geometry().topLeft()+windowThumbnail->mapPoint(pos-winRect.topLeft())-hotspot;
             if(winRect.contains(pos) &&
                     this->geometry().intersects(QRect(posOnPreview, cursor->pixmap()->size())) &&
-                    Player::getWindowAt(pos, 0).windowID == winID)
+                    Player::getWindowAt(pos, QList<WId>()).windowID == winID)
             {
                 cursor->setVisible(true);
                 cursor->setGeometry(QRect(posOnPreview, cursor->pixmap()->size()) & this->geometry());

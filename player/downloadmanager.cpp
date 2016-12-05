@@ -41,6 +41,9 @@
 
 const QString dbGetUrl = "https://www.jw.org/apps/GETPUBMEDIALINKS?output=json&alllangs=0";
 
+const quint32 magic = 0xEDA0A0ED;
+const quint32 currVersion = 2;
+
 DownloadManager::DownloadManager(QString path, QString videoQuality) :
     path(path), videoQuality(videoQuality), QObject(nullptr), manager(nullptr)
 {
@@ -316,15 +319,15 @@ bool DownloadManager::downloadRemote(const RemoteInfo &info, QByteArray *dest)
 
 void DownloadManager::downloadAndParseProgram(Playlist *playlist, const QString &pub, const QString &issue)
 {
-    ProgramInfo info(pub, issue);
+    RemoteInfo remoteInfo = this->getRemoteInfo(pub, issue);
+
+    if(remoteInfo.url.isEmpty())
+        return;
+
+    ProgramInfo info(pub, issue, remoteInfo.checksum);
 
     if(!playlist->programInfo.contains(info))
     {
-        RemoteInfo remoteInfo = this->getRemoteInfo(pub, issue);
-
-        if(remoteInfo.url.isEmpty())
-            return;
-
         QByteArray result;
         if(!this->downloadRemote(remoteInfo, &result))
             return;
@@ -395,6 +398,14 @@ void DownloadManager::downloadAndParseProgram(Playlist *playlist, const QString 
 
         QFile(this->path + "/" + dbName).remove();
 
+        for(int i=0; i<playlist->programInfo.size(); i++)
+        {
+            if(playlist->programInfo[i].pub == info.pub && playlist->programInfo[i].issue == info.issue)
+            {
+                playlist->programInfo.remove(i);
+                break;
+            }
+        }
         playlist->programInfo.append(info);
     }
 }
@@ -482,9 +493,49 @@ void DownloadManager::loadPlaylist(Playlist *playlist)
     QFile file(this->path + QString("/playlist_%1.db").arg(this->lang));
     if(file.open(QIODevice::ReadOnly))
     {
+        quint32 readMagic, version;
+
         QDataStream stream(&file);
+        stream.setVersion(QDataStream::Qt_5_4);
+        stream >> readMagic;
+        stream >> version;
+
+        if((readMagic != magic) || (version != currVersion))
+            return;
+
         stream >> *playlist;
     }
+
+    const QString issueFmt = "yyyyMM";
+    const QDate currDate = QDate::currentDate();
+    const QDate monDate = currDate.addDays(-currDate.dayOfWeek()+1);
+
+    // Remove old entries
+    QVector<ProgramInfo> newPI;
+    for(int i=0; i<playlist->programInfo.size(); i++)
+    {
+        if(playlist->programInfo[i].pub == "w" &&
+                QDate::fromString(playlist->programInfo[i].issue, issueFmt) >= monDate.addMonths(-3))
+        {
+            newPI.append(playlist->programInfo[i]);
+        }
+        else if(playlist->programInfo[i].pub == "mwb" &&
+                QDate::fromString(playlist->programInfo[i].issue, issueFmt) >= monDate.addMonths(-1))
+        {
+            newPI.append(playlist->programInfo[i]);
+        }
+    }
+    playlist->programInfo.swap(newPI);
+
+    QMap<QString, QList<MultimediaInfo> > newMI;
+    for(auto it=playlist->multimediaInfo.keyBegin(); it!=playlist->multimediaInfo.keyEnd(); ++it)
+    {
+        if(QDate::fromString(*it, "yyyyMMdd") >= monDate)
+        {
+            newMI[*it] = playlist->multimediaInfo[*it];
+        }
+    }
+    playlist->multimediaInfo.swap(newMI);
 }
 
 void DownloadManager::savePlaylist(const Playlist &playlist)
@@ -498,6 +549,9 @@ void DownloadManager::savePlaylist(const Playlist &playlist)
     if(file.open(QIODevice::WriteOnly))
     {
         QDataStream stream(&file);
+        stream.setVersion(QDataStream::Qt_5_4);
+        stream << magic;
+        stream << currVersion;
         stream << playlist;
     }
 }
@@ -526,14 +580,14 @@ void DownloadManager::sendStatus(const QString &date, const MultimediaInfo &info
 
 QDataStream &operator<<(QDataStream &stream, const ProgramInfo &info)
 {
-    stream << info.pub << info.issue;
+    stream << info.pub << info.issue << info.checksum;
 
     return stream;
 }
 
 QDataStream &operator>>(QDataStream &stream, ProgramInfo &info)
 {
-    stream >> info.pub >> info.issue;
+    stream >> info.pub >> info.issue >> info.checksum;
 
     return stream;
 }

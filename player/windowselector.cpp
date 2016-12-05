@@ -139,9 +139,11 @@ void WindowSelector::mouseMoveEvent(QMouseEvent *e)
 {
     if(!selected)
     {
-        WindowInfo wi = Player::getWindowAt(e->pos(), this->winId());
+        QList<WId> skipWindows;
+        skipWindows << this->winId() << mainWindow->winId();
+        WindowInfo wi = Player::getWindowAt(e->pos(), skipWindows);
 
-        if((wi.windowID == mainWindow->winId()) || (wi.windowID == videoWindow->winId()))
+        if(wi.windowID == videoWindow->winId())
         {
             borderFrm->setStyleSheet("background-color: rgba(127,127,127,64);"
                                      "border: 4px solid #808080;");
@@ -161,7 +163,9 @@ void WindowSelector::mousePressEvent(QMouseEvent *e)
 {
     if(e->button() == Qt::LeftButton && !this->selected)
     {
-        WindowInfo wi = Player::getWindowAt(e->pos(), this->winId());
+        QList<WId> skipWindows;
+        skipWindows << this->winId() << mainWindow->winId();
+        WindowInfo wi = Player::getWindowAt(e->pos(), skipWindows);
 
         if((wi.windowID == mainWindow->winId()) || (wi.windowID == videoWindow->winId()))
             return;
@@ -287,4 +291,10 @@ void WindowSelector::keyReleaseEvent(QKeyEvent *e)
 {
     if(e->key() == Qt::Key_Escape)
         this->close();
+}
+
+bool WindowSelector::close()
+{
+    emit closeSignal();
+    return QWidget::close();
 }

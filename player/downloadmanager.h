@@ -28,13 +28,15 @@ struct ProgramInfo
 {
     QString pub;
     QString issue;
+    QString checksum;
 
     ProgramInfo() {}
-    ProgramInfo(const QString &pub, const QString &issue) : pub(pub), issue(issue) {}
+    ProgramInfo(const QString &pub, const QString &issue, const QString &checksum) :
+        pub(pub), issue(issue), checksum(checksum) {}
 
     bool operator==(const ProgramInfo &other) const
     {
-        return ((this->pub == other.pub) && (this->issue == other.issue));
+        return ((this->pub == other.pub) && (this->issue == other.issue) && (this->checksum == other.checksum));
     }
 };
 

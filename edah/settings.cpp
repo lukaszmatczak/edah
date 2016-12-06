@@ -81,6 +81,10 @@ Settings::Settings(QVector<Plugin> *plugins, Updater *updater) : plugins(plugins
 
     this->layout()->addWidget(dialogBtns);
 
+    QT_TRANSLATE_NOOP("QPlatformTheme", "Cancel");
+    QT_TRANSLATE_NOOP("QPlatformTheme", "Apply");
+    QT_TRANSLATE_NOOP("QPlatformTheme", "OK");
+
     QEvent langEvent(QEvent::LanguageChange);
     this->changeEvent(&langEvent);
 }
@@ -102,10 +106,6 @@ void Settings::changeEvent(QEvent *e)
         this->setWindowTitle(tr("Settings"));
 
         tabs->setTabText(0, tr("General"));
-
-        dialogBtns->button(QDialogButtonBox::Ok)->setText(tr("OK"));
-        dialogBtns->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-        dialogBtns->button(QDialogButtonBox::Apply)->setText(tr("Apply"));
     }
 }
 

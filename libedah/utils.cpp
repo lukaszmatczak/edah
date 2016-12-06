@@ -142,12 +142,17 @@ QWidget *Utils::getMainWindow()
 
 QString Utils::parseFilename(QString fmt, const QString &name, const QDateTime &time)
 {
-    fmt.replace(QString("'"), QString("''"));
     fmt.replace(QString("%n%"), QString(":thisshouldntoccurinfilename:"));
+
+    QString origFmt = fmt;
+
+    fmt.replace(QString("'"), QString("''"));
     fmt.replace(QString("%%"), QString(""));
     fmt.replace(QString("%"), QString("'"));
 
-    if(!fmt.startsWith("'"))
+    if(origFmt.startsWith("%"))
+        fmt = fmt.mid(1);
+    else
         fmt = "'" + fmt;
 
     if(!fmt.endsWith("'"))

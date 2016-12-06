@@ -59,6 +59,8 @@
 PlaylistModel::PlaylistModel() : currItem(0)
 {
     connect(&timer, &QTimer::timeout, this, &PlaylistModel::updateEntries);
+    connect(&fsWatcher, &QFileSystemWatcher::fileChanged, this, &PlaylistModel::updateFile);
+    connect(&fsWatcher, &QFileSystemWatcher::directoryChanged, this, &PlaylistModel::updateDir);
     timer.start(1000);
 }
 
@@ -250,12 +252,16 @@ void PlaylistModel::addFile(QString filename, int position)
     if(audioProperties) entry.duration = audioProperties->length();
     entry.exists = finfo.exists();
 
+    fsWatcher.addPath(filename);
+    fsWatcher.addPath(finfo.absolutePath());
+
     foreach (QByteArray ext, QImageReader::supportedImageFormats())
     {
         if(filename.endsWith("."+ext, Qt::CaseInsensitive))
         {
             entry.type = EntryInfo::Image;
             entry.thumbnail = QPixmap(filename).scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            break;
         }
     }
 
@@ -329,7 +335,10 @@ void PlaylistModel::removeEntry(int pos)
     emit layoutAboutToBeChanged();
 
     if(!(pos < 0 || pos >= entries.size()))
+    {
+        fsWatcher.removePath(entries[pos].filename);
         entries.remove(pos);
+    }
 
     emit layoutChanged();
 }
@@ -429,6 +438,35 @@ void PlaylistModel::updateEntries()
             }
 
             emit dataChanged(createIndex(i, 0), createIndex(i, 0));
+        }
+    }
+}
+
+void PlaylistModel::updateFile(const QString &path)
+{
+    for(int i=0; i<entries.size(); i++)
+    {
+        if(entries[i].filename == path)
+        {
+            this->addFile(path, i);
+            break;
+        }
+    }
+}
+
+void PlaylistModel::updateDir(const QString &path)
+{
+    Q_UNUSED(path)
+
+    for(int i=0; i<entries.size(); i++)
+    {
+        if(!entries[i].exists)
+        {
+            QFileInfo finfo(entries[i].filename);
+            if(finfo.exists())
+            {
+                this->addFile(entries[i].filename, i);
+            }
         }
     }
 }

@@ -25,6 +25,7 @@
 #include <QRunnable>
 #include <QMutex>
 #include <QFileInfo>
+#include <QFileSystemWatcher>
 
 #define EF_WIN_SCALE      (1 << 0)
 #define EF_WIN_WITHCURSOR (1 << 1)
@@ -110,9 +111,12 @@ private:
     QVector<EntryInfo> entries;
     int currItem;
     QTimer timer;
+    QFileSystemWatcher fsWatcher;
 
 private slots:
     void updateEntries();
+    void updateFile(const QString &path);
+    void updateDir(const QString &path);
 
 signals:
     void waveformChanged();

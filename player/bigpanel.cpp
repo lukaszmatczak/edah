@@ -31,7 +31,6 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QMimeData>
-#include <QTimeLine>
 
 #include <QDebug>
 

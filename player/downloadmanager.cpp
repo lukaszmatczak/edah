@@ -68,7 +68,9 @@ void DownloadManager::start()
 
     this->loadPlaylist(&playlist);
 
-    emit playlistLoaded(playlist.multimediaInfo[monDate.toString("yyyyMMdd")]);
+    int prevPlaylistSize = playlist.multimediaInfo[monDate.toString("yyyyMMdd")].size();
+    if(prevPlaylistSize > 0)
+        emit playlistLoaded(playlist.multimediaInfo[monDate.toString("yyyyMMdd")]);
 
     QThread::sleep(3);
 
@@ -79,6 +81,10 @@ void DownloadManager::start()
     this->downloadAndParseProgram(&playlist, "w", monDate.addMonths(-1).toString(issueFmt));
 
     this->getRemoteMultimediaInfo(&playlist.multimediaInfo);
+
+    if(prevPlaylistSize == 0)
+        emit playlistLoaded(playlist.multimediaInfo[monDate.toString("yyyyMMdd")]);
+
     this->savePlaylist(playlist);
 
     int downloadQueueBytes = 0;

@@ -493,13 +493,14 @@ QPixmap PlaylistModel::getWindowIcon(WId winID)
     GetWindowThreadProcessId(hwnd, &pid);
 
     HANDLE Handle = OpenProcess(
-                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                PROCESS_QUERY_LIMITED_INFORMATION,
                 FALSE,
                 pid);
     if(Handle)
     {
         TCHAR Buffer[MAX_PATH];
-        if (GetModuleFileNameExW(Handle, 0, Buffer, MAX_PATH))
+        DWORD bufLen = MAX_PATH;
+        if(QueryFullProcessImageName(Handle, 0, Buffer, &bufLen))
         {
             HICON iLarge;
             SHDefExtractIconW(Buffer, 0, 0, &iLarge, NULL, MAKELONG(64, 16)); // TODO: destroy icon

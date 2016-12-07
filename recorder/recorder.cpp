@@ -28,6 +28,8 @@
 #include <QGridLayout>
 #include <QApplication>
 #include <QMessageBox>
+#include <QFileInfo>
+#include <QDir>
 
 #include <QDebug>
 
@@ -136,6 +138,16 @@ void Recorder::writeSettings()
     settingsTab->writeSettings();
 }
 
+BOOL CALLBACK RecordProc(HRECORD handle, const void *buffer, DWORD length, void *user)
+{
+    Q_UNUSED(handle)
+    Q_UNUSED(buffer)
+    Q_UNUSED(length)
+    Q_UNUSED(user)
+
+    return TRUE;
+}
+
 void Recorder::settingsChanged()
 {
     QLocale locale = QLocale(settings->value("lang", "").toString());
@@ -181,7 +193,7 @@ void Recorder::settingsChanged()
         {
             initialized = true;
 
-            recStream = BASS_RecordStart(sampleRate, channels, 0, nullptr, 0);
+            recStream = BASS_RecordStart(sampleRate, channels, 0, RecordProc, nullptr);
         }
     }
 }
@@ -202,11 +214,11 @@ void Recorder::refreshState()
 
     if(BASS_ChannelGetInfo(recStream, &info))
     {
-        QVector<float> levels(2);
+        float levels[2];
 
         DWORD flags = info.chans == 1 ? BASS_LEVEL_MONO : BASS_LEVEL_STEREO;
 
-        BASS_ChannelGetLevelEx(recStream, levels.data(), 0.035f, flags);
+        BASS_ChannelGetLevelEx(recStream, levels, 0.035f, flags);
         peakMeter->setPeak(levels[0], levels[1]);
         peakMeter->setChannels(info.chans);
     }
@@ -227,7 +239,7 @@ void Recorder::record()
 
     BASS_ChannelStop(recStream);
 
-    if(!(recStream=BASS_RecordStart(sampleRate, channels, 0, nullptr, 0)))
+    if(!(recStream=BASS_RecordStart(sampleRate, channels, 0, RecordProc, nullptr)))
     {
         return;
     }
@@ -273,7 +285,7 @@ void Recorder::stop(QString filename)
     BASS_ChannelStop(recStream);
     BASS_Encode_StopEx(recStream, true);
 
-    recStream = BASS_RecordStart(sampleRate, channels, 0, nullptr, 0);
+    recStream = BASS_RecordStart(sampleRate, channels, 0, RecordProc, nullptr);
 
     if(filename.length() > 0)
     {
@@ -288,12 +300,26 @@ void Recorder::stop(QString filename)
 
 QString Recorder::genNextFilename(const QString &filename, const QString &ext)
 {
-    QString nextFilename = filename + ext;
+    QFileInfo file(filename + ext);
+    QDir dir(file.path());
 
-    for(int i=2; QFile(nextFilename).exists(); i++)
-    {
-        nextFilename = QString(filename + "_%1" + ext).arg(i, 4, 10, QLatin1Char('0'));
-    }
+    if(!file.exists())
+        return QString("%1%2").arg(filename).arg(ext);
 
-    return nextFilename;
+    QRegExp rx = QRegExp(QString("%1(\\d{4})%2")
+                         .arg(QRegExp::escape(file.baseName()+"_"))
+                         .arg(QRegExp::escape(ext)));
+
+    QStringList files = dir.entryList(QDir::Files, QDir::Name | QDir::Reversed);
+    files = files.filter(rx);
+
+    if(files.isEmpty())
+        return QString("%1_0002%2").arg(filename).arg(ext);
+
+    rx.exactMatch(files[0]);
+    int currNumber = rx.cap(1).toInt()+1;
+
+    return QString("%1_%2%3").arg(filename)
+            .arg(currNumber, 4, 10, QLatin1Char('0'))
+            .arg(ext);
 }

@@ -77,8 +77,9 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     QVBoxLayout *filenameFmtLayout = new QVBoxLayout;
 
-    filenameFmt = new QLineEdit(this);
-    connect(filenameFmt, &QLineEdit::textChanged, this, &SettingsTab::filenameFmt_changed);
+    filenameFmt = new QComboBox(this);
+    filenameFmt->setEditable(true);
+    connect(filenameFmt, &QComboBox::currentTextChanged, this, &SettingsTab::filenameFmt_changed);
     filenameFmtLayout->addWidget(filenameFmt);
 
     filenameExample = new QLabel(this);
@@ -123,7 +124,21 @@ void SettingsTab::loadSettings()
     channels->setCurrentIndex(settings->value("channels", 1).toInt()-1);
     bitrate->setCurrentText(QString("%1 kbit/s").arg(settings->value("bitrate", 64).toInt()));
     sampleRate->setCurrentText(QString("%1 Hz").arg(settings->value("sampleRate", 44100).toInt()));
-    filenameFmt->setText(settings->value("filenameFormat", "%n% %yyyy%-%MM%-%dd% %hh%.%mm%").toString());
+
+    QString fmt = settings->value("filenameFormat", "%n% %yyyy%-%MM%-%dd% %hh%.%mm%").toString();
+    QStringList fmts;
+    fmts << "%n% %yyyy%-%MM%-%dd% %hh%.%mm%"
+         << "%yyyy%-%MM%-%dd% %n%"
+         << "%n%";
+
+    if(!fmts.contains(fmt))
+    {
+        fmts.insert(0, fmt);
+    }
+
+    filenameFmt->clear();
+    filenameFmt->addItems(fmts);
+    filenameFmt->setCurrentIndex(fmts.indexOf(fmt));
 
     settings->endGroup();
 }
@@ -137,7 +152,7 @@ void SettingsTab::writeSettings()
     settings->setValue("channels", channels->currentData().toInt());
     settings->setValue("bitrate", bitrate->currentData().toInt());
     settings->setValue("sampleRate", sampleRate->currentData().toInt());
-    settings->setValue("filenameFormat", filenameFmt->text());
+    settings->setValue("filenameFormat", filenameFmt->currentText());
 
     settings->endGroup();
 }

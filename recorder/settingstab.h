@@ -43,7 +43,7 @@ private:
     QComboBox *bitrate;
     QComboBox *channels;
     QComboBox *sampleRate;
-    QLineEdit *filenameFmt;
+    QComboBox *filenameFmt;
     QLabel *filenameExample;
 
 private slots:

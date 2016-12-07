@@ -129,6 +129,7 @@ void BigPanel::recBtn_clicked()
         recBtn->setIcon(QIcon(":/recorder-img/record.svg"));
         qApp->processEvents();
         emit stop(nameEdit->text());
+        nameEdit->clear();
     }
     else
     {

@@ -308,7 +308,7 @@ void Player::loadPlaylist(QList<MultimediaInfo> info)
         {
             if(songSym.contains(info[i].KeySymbol))
             {
-                playlistModel.addFile(songsDir.absolutePath() + "/" + songs[info[i].Track.toInt()].filename);
+                playlistModel.addFile(songsDir.absolutePath() + "/" + songs.value(info[i].Track.toInt()).filename);
             }
             else
             {
@@ -392,7 +392,7 @@ void Player::loadSongs()
             if(tag) s.title = QString::fromUtf8(tag->title().toCString(true));
 #endif
 
-            QRegExp rx("\\d{3}(-. |-|_| )(.*)");
+            QRegExp rx("\\d{1,3}(-. |-|_| |\\. )(.*)");
             int pos = rx.indexIn(s.title);
             if(pos > -1)
             {
@@ -529,7 +529,7 @@ void Player::playSong(int number, bool autoplay)
     playlistModel.setCurrentFile(filename);
     bPanel->setCurrentPlaylistEntry(-1);
 
-    mpv->playFile(filename);
+    mpv->playFile(filename, !autoplay);
     mpv->setPause(false);
 }
 

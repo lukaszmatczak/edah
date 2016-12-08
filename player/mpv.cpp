@@ -134,9 +134,10 @@ void MPV::mpv_readyRead()
     }
 }
 
-void MPV::playFile(QString filename)
+void MPV::playFile(QString filename, bool showVideo)
 {
     filename.replace("\\", "\\\\");
+    process.write(QString("set vid %1\n").arg(showVideo ? "auto" : "no").toUtf8());
     process.write(("loadfile \"" + filename + "\"\nset pause no\n").toUtf8());
 }
 

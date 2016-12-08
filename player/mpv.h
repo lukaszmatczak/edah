@@ -30,7 +30,7 @@ public:
     explicit MPV(QString audioDevId, WId videoWidgetId, bool hwdec, QObject *parent = 0);
     ~MPV();
 
-    void playFile(QString filename);
+    void playFile(QString filename, bool showVideo=true);
     void stop();
     void seek(int seconds);
     void pause();

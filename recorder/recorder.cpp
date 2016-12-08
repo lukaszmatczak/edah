@@ -307,7 +307,7 @@ QString Recorder::genNextFilename(const QString &filename, const QString &ext)
         return QString("%1%2").arg(filename).arg(ext);
 
     QRegExp rx = QRegExp(QString("%1(\\d{4})%2")
-                         .arg(QRegExp::escape(file.baseName()+"_"))
+                         .arg(QRegExp::escape(QFileInfo(filename).fileName()+"_"))
                          .arg(QRegExp::escape(ext)));
 
     QStringList files = dir.entryList(QDir::Files, QDir::Name | QDir::Reversed);

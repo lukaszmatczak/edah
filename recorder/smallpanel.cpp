@@ -77,7 +77,12 @@ void SmallPanel::recorderStateChanged()
 {
     if(!recorder->isRecording())
     {
+        nameLbl->setStyleSheet("");
         infoLbl->setText("-:--:--");
+    }
+    else
+    {
+        nameLbl->setStyleSheet("color: red;");
     }
 }
 

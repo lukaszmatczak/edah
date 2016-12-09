@@ -118,7 +118,7 @@ void BigPanel::recalcSizes(QSize size)
                         .arg(qMax(1, size.height()/32))
                         .arg(qMax(1, size.height()/24)));
 
-    QSize iconSize = QSize(size.height()/6, size.height()/6);
+    QSize iconSize = QSize(size.height()/5, size.height()/5);
     recBtn->setIconSize(iconSize);
 }
 

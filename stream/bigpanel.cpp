@@ -34,6 +34,7 @@ BigPanel::BigPanel(Stream *stream) : QWidget(0), stream(stream)
     layout->setColumnStretch(1, 4);
     layout->setColumnStretch(2, 2);
     layout->setColumnStretch(3, 3);
+    layout->setMargin(0);
     this->setLayout(layout);
 
     timeLbl = new QLabel("-:--:--", this);

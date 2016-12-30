@@ -71,6 +71,20 @@ BigPanel::~BigPanel()
 
 }
 
+bool BigPanel::event(QEvent *event)
+{
+    if(event->type() == QEvent::FocusOut)
+    {
+        nameEdit->releaseKeyboard();
+    }
+    else if(event->type() == QEvent::FocusIn)
+    {
+        nameEdit->grabKeyboard();
+    }
+
+    return QWidget::event(event);
+}
+
 void BigPanel::retranslate()
 {
     nameLbl->setText(tr("Name of file"));

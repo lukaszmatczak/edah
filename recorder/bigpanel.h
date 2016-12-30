@@ -46,6 +46,9 @@ public:
 
     QLineEdit *nameEdit;
 
+protected:
+    bool event(QEvent *event);
+
 private:
     Recorder *recorder;
 

@@ -118,6 +118,8 @@ void SettingsTab::loadSettings()
     sc_bitrate->setCurrentText(QString("%1 kbit/s").arg(settings->value("sc_bitrate", 64).toInt()));
     sc_sampleRate->setCurrentText(QString("%1 Hz").arg(settings->value("sc_sampleRate", 44100).toInt()));
 
+    this->sc_versionChanged(sc_version->currentIndex()); // force interface refresh
+
     settings->endGroup();
 }
 

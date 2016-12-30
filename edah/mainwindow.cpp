@@ -725,6 +725,7 @@ void MainWindow::recalcSizes(QSize size)
         {
             plugins[i].container->setMaximumWidth(32768);
             plugins[i].container->setMinimumWidth(1);
+            plugins[i].container->setFixedWidth(width*0.9f);
             plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
             plugins[i].container->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
         }

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>stream-img/stop.svg</file>
+        <file>stream-img/record.svg</file>
+        <file>stream-lang/lang.pl.qm</file>
+    </qresource>
+</RCC>

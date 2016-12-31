@@ -286,7 +286,8 @@ void Player::loadPlaylist(QList<MultimediaInfo> info)
     {
         QModelIndex idx = playlistModel.addKeypad();
         MyPushButton *btn = new MyPushButton("");
-        btn->setIcon(QIcon(":/player-img/keypad.svg"));
+        btn->setIcon(QIcon(":/player-img/edit.svg"));
+        btn->setToolTip(tr("Enter first song number"));
         btn->setIconSize(QSize(56, 56));
 
         connect(btn, &MyPushButton::clicked, this, [this]() {

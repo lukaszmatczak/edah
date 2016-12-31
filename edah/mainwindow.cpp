@@ -499,6 +499,14 @@ void MainWindow::changeActivePlugin(int pluginIdx)
         connect(&timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
             plugins[activePlugin].container->setFixedWidth(bigWidth-(frame-smallWidth));
             plugins[pluginIdx].container->setFixedWidth(frame);
+
+            for(int i=0; i<plugins.size(); i++)
+            {
+                if(plugins[i].panel)
+                {
+                    plugins[i].panel->repaint();
+                }
+            }
         });
         timeLine.start();
 

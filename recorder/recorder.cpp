@@ -245,7 +245,7 @@ void Recorder::record()
     }
 
 #ifdef Q_OS_WIN
-    QString lameBin = utils->getDataDir() + "/plugins/" + this->getPluginId() + "/lame.exe";
+    QString lameBin = utils->getDataDir() + "/lame.exe";
 #endif
 #ifdef Q_OS_LINUX
     QString lameBin = "lame";

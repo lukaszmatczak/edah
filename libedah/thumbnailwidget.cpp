@@ -20,23 +20,29 @@
 
 ThumbnailWidget::ThumbnailWidget(QWidget *parent) : QLabel(parent)
 {
-
+    timer.setSingleShot(true);
+    connect(&timer, &QTimer::timeout, this, [this]() {
+        emit positionChanged();
+    });
 }
 
 void ThumbnailWidget::showEvent(QShowEvent *e)
 {
     Q_UNUSED(e)
     emit positionChanged();
+    timer.start(10);
 }
 
 void ThumbnailWidget::moveEvent(QMoveEvent *e)
 {
     Q_UNUSED(e)
     emit positionChanged();
+    timer.start(10);
 }
 
 void ThumbnailWidget::resizeEvent(QResizeEvent *e)
 {
     Q_UNUSED(e)
     emit positionChanged();
+    timer.start(10);
 }

@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     recStream = BASS_RecordStart(sampleRate, channels, 0, RecordProc, nullptr);
 
 #ifdef _WIN32
-    std::string lameBin = "plugins/stream/lame.exe";
+    std::string lameBin = "lame.exe";
 #else
     std::string lameBin = "lame";
 #endif
@@ -133,6 +133,11 @@ int main(int argc, char **argv)
 
     while(!shared->end)
     {
+        if(BASS_Encode_IsActive(encoder) != BASS_ACTIVE_PLAYING)
+        {
+            return -3;
+        }
+
         BASS_CHANNELINFO info;
 
         if(BASS_ChannelGetInfo(recStream, &info))

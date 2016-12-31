@@ -123,6 +123,8 @@ private:
     double currDuration;
     bool nonstop;
 
+    QTimer singleTimer;
+
 public slots:
     //void playerStateChanged(bool isPlaying);
 

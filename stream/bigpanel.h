@@ -29,6 +29,7 @@
 #include <QLineEdit>
 #include <QTime>
 #include <QTextEdit>
+#include <QTimer>
 
 class Stream;
 
@@ -57,6 +58,8 @@ private:
     MyPushButton *startBtn;
     QLabel *timeLbl;
     QTextEdit *statusTxt;
+
+    QTimer singleTimer;
 
 public slots:
     void streamStateChanged();

@@ -22,6 +22,7 @@
 #include "libedah.h"
 
 #include <QLabel>
+#include <QTimer>
 
 class LIBEDAHSHARED_EXPORT ThumbnailWidget : public QLabel
 {
@@ -33,6 +34,9 @@ protected:
     void showEvent(QShowEvent *e);
     void moveEvent(QMoveEvent *e);
     void resizeEvent(QResizeEvent *e);
+
+private:
+    QTimer timer;
 
 signals:
     void positionChanged();

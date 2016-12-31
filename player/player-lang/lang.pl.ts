@@ -35,7 +35,7 @@
     </message>
     <message>
         <location filename="../bigpanel.cpp" line="369"/>
-        <location filename="../bigpanel.cpp" line="658"/>
+        <location filename="../bigpanel.cpp" line="668"/>
         <source>Play (&lt;i&gt;Enter&lt;/i&gt;)</source>
         <translation>Odtwarzaj (&lt;i&gt;Enter&lt;/i&gt;)</translation>
     </message>
@@ -85,7 +85,7 @@
         <translation>Wszystkie pliki (*.*)</translation>
     </message>
     <message>
-        <location filename="../bigpanel.cpp" line="658"/>
+        <location filename="../bigpanel.cpp" line="668"/>
         <source>Pause (&lt;i&gt;Enter&lt;/i&gt;)</source>
         <translation>Pauza (&lt;i&gt;Enter&lt;/i&gt;)</translation>
     </message>
@@ -93,18 +93,18 @@
 <context>
     <name>DownloadManager</name>
     <message>
-        <location filename="../downloadmanager.cpp" line="47"/>
+        <location filename="../downloadmanager.cpp" line="50"/>
         <source>E</source>
         <translation>P</translation>
     </message>
     <message>
-        <location filename="../downloadmanager.cpp" line="56"/>
-        <location filename="../downloadmanager.cpp" line="271"/>
+        <location filename="../downloadmanager.cpp" line="59"/>
+        <location filename="../downloadmanager.cpp" line="280"/>
         <source>Downloading</source>
         <translation>Pobieranie</translation>
     </message>
     <message numerus="yes">
-        <location filename="../downloadmanager.cpp" line="272"/>
+        <location filename="../downloadmanager.cpp" line="281"/>
         <source>
 %n file(s) (%1 MB) left</source>
         <translation>
@@ -156,42 +156,47 @@ Pozostało %n plików (%1 MB)</numerusform>
         <source>Player</source>
         <translation>Odtwarzanie</translation>
     </message>
+    <message>
+        <location filename="../player.cpp" line="290"/>
+        <source>Enter first song number</source>
+        <translation>Wprowadź numer pierwszej pieśni</translation>
+    </message>
 </context>
 <context>
     <name>PlaylistModel</name>
     <message>
-        <location filename="../playlistmodel.cpp" line="119"/>
+        <location filename="../playlistmodel.cpp" line="121"/>
         <source>
 Settings:</source>
         <translation>
 Opcje:</translation>
     </message>
     <message>
-        <location filename="../playlistmodel.cpp" line="120"/>
+        <location filename="../playlistmodel.cpp" line="122"/>
         <source>
   Scale</source>
         <translation>
   Skalowanie</translation>
     </message>
     <message>
-        <location filename="../playlistmodel.cpp" line="121"/>
+        <location filename="../playlistmodel.cpp" line="123"/>
         <source>
   Show mouse cursor</source>
         <translation>
   Pokazywanie kursora myszy</translation>
     </message>
     <message>
-        <location filename="../playlistmodel.cpp" line="300"/>
+        <location filename="../playlistmodel.cpp" line="306"/>
         <source>Window &quot;</source>
         <translation>Okno &quot;</translation>
     </message>
     <message>
-        <location filename="../playlistmodel.cpp" line="316"/>
+        <location filename="../playlistmodel.cpp" line="322"/>
         <source>Song ???</source>
         <translation>Pieśń ???</translation>
     </message>
     <message>
-        <location filename="../playlistmodel.cpp" line="428"/>
+        <location filename="../playlistmodel.cpp" line="437"/>
         <source>Window</source>
         <translation>Okno</translation>
     </message>
@@ -308,27 +313,27 @@ ma być sklonowana na drugi ekran.
 Aby anulować naciśnij ESC.</translation>
     </message>
     <message>
-        <location filename="../windowselector.cpp" line="220"/>
+        <location filename="../windowselector.cpp" line="224"/>
         <source>Scale preview of the window to screen size</source>
         <translation>Skaluj obraz okna do rozmiaru ekranu</translation>
     </message>
     <message>
-        <location filename="../windowselector.cpp" line="235"/>
+        <location filename="../windowselector.cpp" line="239"/>
         <source>Adjust window size to screen resolution (%1x%2)</source>
         <translation>Dostosuj rozmiar okna do rozdzielczości ekranu (%1x%2)</translation>
     </message>
     <message>
-        <location filename="../windowselector.cpp" line="256"/>
+        <location filename="../windowselector.cpp" line="260"/>
         <source>Show mouse cursor</source>
         <translation>Pokazuj kursor myszy</translation>
     </message>
     <message>
-        <location filename="../windowselector.cpp" line="264"/>
+        <location filename="../windowselector.cpp" line="268"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../windowselector.cpp" line="277"/>
+        <location filename="../windowselector.cpp" line="281"/>
         <source>Cancel</source>
         <translation>Anuluj</translation>
     </message>

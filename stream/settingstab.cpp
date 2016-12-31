@@ -70,7 +70,7 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     sc_password = new QLineEdit(this);
     sc_password->setEchoMode(QLineEdit::Password);
-    shoutcastBoxLayout->addRow("Password: ", sc_password);
+    shoutcastBoxLayout->addRow(tr("Password: "), sc_password);
 
     sc_channels = new QComboBox(this);
     sc_channels->addItem(tr("1 (Mono)"), 1);

@@ -22,5 +22,6 @@
         <file>player-img/checkbox_unchecked_hover.svg</file>
         <file>player-img/add-window.svg</file>
         <file>player-img/keypad-ok.svg</file>
+        <file>player-img/edit.svg</file>
     </qresource>
 </RCC>

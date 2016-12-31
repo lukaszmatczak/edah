@@ -78,12 +78,10 @@ private:
     SettingsTab *settingsTab;
     PeakMeter *peakMeter;
 
-    bool streamActive;
     QDateTime startTime;
 
     QProcess sc_process;
     int sc_channels;
-
     Shared *sc_shared;
 
 private slots:

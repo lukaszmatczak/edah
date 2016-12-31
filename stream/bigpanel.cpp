@@ -21,6 +21,7 @@
 
 #include <QApplication>
 #include <QResizeEvent>
+#include <QScrollBar>
 
 #include <QDebug>
 
@@ -56,6 +57,11 @@ BigPanel::BigPanel(Stream *stream) : QWidget(0), stream(stream)
     flick.activateOn(statusTxt);
     layout->addWidget(statusTxt, 2, 0, 1, 4);
 
+    singleTimer.setSingleShot(true);
+    connect(&singleTimer, &QTimer::timeout, this, [this]() {
+        statusTxt->verticalScrollBar()->repaint();
+    });
+
     this->retranslate();
 }
 
@@ -85,6 +91,8 @@ void BigPanel::showEvent(QShowEvent *e)
     Q_UNUSED(e);
 
     recalcSizes(this->size());
+
+    singleTimer.start(1);
 }
 
 void BigPanel::resizeEvent(QResizeEvent *e)

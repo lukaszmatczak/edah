@@ -22,47 +22,47 @@
 <context>
     <name>GeneralTab</name>
     <message>
-        <location filename="../settings.cpp" line="230"/>
+        <location filename="../settings.cpp" line="226"/>
         <source>Language:</source>
         <translation>Język:</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="231"/>
+        <location filename="../settings.cpp" line="227"/>
         <source>Show main window on full-screen</source>
         <translation>Wyświetlaj główne okno na pełnym ekranie</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="232"/>
+        <location filename="../settings.cpp" line="228"/>
         <source>Installed plugins:</source>
         <translation>Zainstalowane wtyczki:</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="233"/>
+        <location filename="../settings.cpp" line="229"/>
         <source>Available plugins:</source>
         <translation>Dostępne wtyczki:</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="234"/>
+        <location filename="../settings.cpp" line="230"/>
         <source>Move up</source>
         <translation>Przenieś w górę</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="235"/>
+        <location filename="../settings.cpp" line="231"/>
         <source>Move down</source>
         <translation>Przenieś w dół</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="236"/>
+        <location filename="../settings.cpp" line="232"/>
         <source>Download and install</source>
         <translation>Pobierz i zainstaluj</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="310"/>
+        <location filename="../settings.cpp" line="306"/>
         <source>Uninstall plugin</source>
         <translation>Odinstaluj wtyczkę</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="328"/>
+        <location filename="../settings.cpp" line="324"/>
         <source>Download and install plugin</source>
         <translation>Pobierz i zainstaluj wtyczkę</translation>
     </message>
@@ -111,17 +111,17 @@
         <translation>Nie wybrano żadnych wtyczek!&lt;br/&gt;Przejdź do: &amp;#x2630; &gt; Ustawienia...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="769"/>
+        <location filename="../mainwindow.cpp" line="770"/>
         <source>Settings...</source>
         <translation>Ustawienia...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="773"/>
+        <location filename="../mainwindow.cpp" line="774"/>
         <source>Update is available to download!</source>
         <translation>Dostępna nowa wersja programu!</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="776"/>
+        <location filename="../mainwindow.cpp" line="777"/>
         <source>About...</source>
         <translation>O programie...</translation>
     </message>

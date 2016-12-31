@@ -383,6 +383,14 @@ void DownloadManager::downloadAndParseProgram(Playlist *playlist, const QString 
 
         do
         {
+            QString FirstDateOffset = q.value("FirstDateOffset").toString();
+            playlist->multimediaInfo[FirstDateOffset].clear();
+        } while(q.next());
+
+        q.first();
+
+        do
+        {
             MultimediaInfo info;
 
             QString FirstDateOffset = q.value("FirstDateOffset").toString();

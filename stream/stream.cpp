@@ -32,7 +32,7 @@
 #include <QDebug>
 
 Stream::Stream(QObject *parent) :
-    QObject(parent), streamActive(false), sc_shared(nullptr), sc_channels(1)
+    QObject(parent), sc_shared(nullptr), sc_channels(1)
 {
     QString localeStr = settings->value("lang", "").toString();
     if(localeStr.isEmpty())
@@ -146,15 +146,21 @@ void Stream::setPanelOpacity(int opacity)
 
 bool Stream::isActive()
 {
-    return streamActive;
+    return (sc_process.state() != QProcess::NotRunning);
 }
 
 void Stream::refreshState()
 {
-    if(sc_shared)
+    bool streamActive = this->isActive();
+
+    if(sc_shared && streamActive)
     {
         peakMeter->setPeak(sc_shared->levels[0], sc_shared->levels[1]);
         peakMeter->setChannels(sc_channels);
+    }
+    else
+    {
+        peakMeter->setPeak(0.0f, 0.0f);
     }
 
     if(streamActive)
@@ -217,6 +223,15 @@ void Stream::sc_start(int version, const QString &url, int port, int streamid, c
         }
     });
 
+    connect(&sc_process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this, [this](int exitCode, QProcess::ExitStatus exitStatus) {
+        if(exitCode != 0)
+        {
+            bPanel->addStatus("[SHOUTcast] " + tr("Stopped with error: %1").arg(exitCode));
+        }
+
+        emit stateChanged();
+    });
+
     this->createSharedMemory("sc_shared", sc_shared);
     sc_shared->end = false;
 
@@ -248,8 +263,6 @@ void Stream::start()
 
     settings->endGroup();
 
-    streamActive = true;
-
     startTime = QDateTime::currentDateTime();
 
     emit stateChanged();
@@ -258,8 +271,6 @@ void Stream::start()
 void Stream::stop()
 {
     sc_shared->end = true;
-
-    streamActive = false;
 
     emit stateChanged();
 }

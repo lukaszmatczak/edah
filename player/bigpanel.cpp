@@ -31,6 +31,7 @@
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QMimeData>
+#include <QScrollBar>
 
 #include <QDebug>
 
@@ -258,6 +259,11 @@ BigPanel::BigPanel(Player *player) : QWidget(0), player(player), currDuration(0)
     }
 
     this->setNonstop(false);
+
+    singleTimer.setSingleShot(true);
+    connect(&singleTimer, &QTimer::timeout, this, [this]() {
+        playlistView->verticalScrollBar()->repaint();
+    });
 }
 
 BigPanel::~BigPanel()
@@ -292,6 +298,8 @@ void BigPanel::showEvent(QShowEvent *e)
     Q_UNUSED(e);
 
     recalcSizes(this->size());
+
+    singleTimer.start(1);
 }
 
 void BigPanel::resizeEvent(QResizeEvent *e)

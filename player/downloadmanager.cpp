@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -384,7 +384,16 @@ void DownloadManager::downloadAndParseProgram(Playlist *playlist, const QString 
         do
         {
             QString FirstDateOffset = q.value("FirstDateOffset").toString();
-            playlist->multimediaInfo[FirstDateOffset].clear();
+
+            QMutableListIterator<MultimediaInfo> i(playlist->multimediaInfo[FirstDateOffset]);
+            while(i.hasNext())
+            {
+                MultimediaInfo info = i.next();
+                if(info.weekend == (pub == "w"))
+                {
+                    i.remove();
+                }
+            }
         } while(q.next());
 
         q.first();

@@ -60,7 +60,7 @@ AboutDialog::AboutDialog()
     QLabel *text3 = new QLabel(this);
     text3->setText("This application uploads to update server data such as unique device ID, "
                    "version of your operating system and IP address.<br/><br/>"
-                   "Copyright (C) 2016 Łukasz Matczak &lt;<a href=\"mailto:luk.matczak@gmail.com\">luk.matczak@gmail.com</a>&gt;<br/>"
+                   "Copyright (C) 2016-2017 Łukasz Matczak &lt;<a href=\"mailto:luk.matczak@gmail.com\">luk.matczak@gmail.com</a>&gt;<br/>"
                    "This program comes with ABSOLUTELY NO WARRANTY. This is "
                    "free software, and you are welcome to redistribute it under "
                    "certain conditions; ");

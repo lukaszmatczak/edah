@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,6 +52,13 @@ private:
     QComboBox *sc_bitrate;
     QComboBox *sc_channels;
     QComboBox *sc_sampleRate;
+
+    QGroupBox *voipBox;
+    QLineEdit *voip_username;
+    QLineEdit *voip_password;
+    QLineEdit *voip_number;
+    QLineEdit *voip_pin;
+    QComboBox *voip_playDev;
 };
 
 #endif // SETTINGSTAB_H

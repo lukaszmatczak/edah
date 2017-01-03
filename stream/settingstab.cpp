@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -93,6 +93,46 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
     shoutcastBoxLayout->addRow(tr("Sample rate: "), sc_sampleRate);
 
     layout->addRow(shoutcastBox);
+
+
+    voipBox = new QGroupBox(tr("VoIP (ipfon.pl)"), this);
+    voipBox->setCheckable(true);
+    QFormLayout *voipBoxLayout = new QFormLayout;
+    voipBox->setLayout(voipBoxLayout);
+
+    QHBoxLayout *voip_usernameLayout = new QHBoxLayout;
+    QLabel *voip_usernamePrefix = new QLabel("sip:", this);
+    voip_usernameLayout->addWidget(voip_usernamePrefix);
+    voip_username = new QLineEdit(this);
+    voip_usernameLayout->addWidget(voip_username);
+    QLabel *voip_usernameSuffix = new QLabel("@sip.ipfon.pl", this);
+    voip_usernameLayout->addWidget(voip_usernameSuffix);
+    voipBoxLayout->addRow(tr("Username: "), voip_usernameLayout);
+
+    voip_password = new QLineEdit(this);
+    voip_password->setEchoMode(QLineEdit::Password);
+    voipBoxLayout->addRow(tr("Password: "), voip_password);
+
+    voip_number = new QLineEdit(this);
+    voip_number->setValidator(new QIntValidator(0, 999999999));
+    voipBoxLayout->addRow(tr("Phone number: "), voip_number);
+
+    voip_pin = new QLineEdit(this);
+    voip_pin->setValidator(new QIntValidator(0, 9999));
+    voip_pin->setEchoMode(QLineEdit::Password);
+    voipBoxLayout->addRow(tr("PIN: "), voip_pin);
+
+    voip_playDev = new QComboBox(this);
+    voip_playDev->setEditable(true);
+    voip_playDev->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    voip_playDev->addItem(tr("Mute"));
+
+    for (int i=1; BASS_GetDeviceInfo(i, &info); i++)
+        voip_playDev->addItem(info.name);
+
+    voipBoxLayout->addRow(tr("Play device: "), voip_playDev);
+
+    layout->addRow(voipBox);
 }
 
 void SettingsTab::sc_versionChanged(int index)
@@ -117,8 +157,19 @@ void SettingsTab::loadSettings()
     sc_channels->setCurrentIndex(settings->value("sc_channels", 1).toInt()-1);
     sc_bitrate->setCurrentText(QString("%1 kbit/s").arg(settings->value("sc_bitrate", 64).toInt()));
     sc_sampleRate->setCurrentText(QString("%1 Hz").arg(settings->value("sc_sampleRate", 44100).toInt()));
-
     this->sc_versionChanged(sc_version->currentIndex()); // force interface refresh
+
+    voipBox->setChecked(settings->value("voip", false).toBool());
+    voip_username->setText(settings->value("voip_username").toString());
+    voip_password->setText(QByteArray::fromBase64(settings->value("voip_password").toByteArray()));
+    voip_number->setText(settings->value("voip_number").toString());
+    voip_pin->setText(QByteArray::fromBase64(settings->value("voip_pin").toByteArray()));
+
+    QString playDev = settings->value("voip_playDev", "Mute").toString();
+    if(playDev == "Mute")
+        voip_playDev->setCurrentIndex(0);
+    else
+        voip_playDev->setCurrentText(playDev);
 
     settings->endGroup();
 }
@@ -139,6 +190,17 @@ void SettingsTab::writeSettings()
     settings->setValue("sc_channels", sc_channels->currentData().toInt());
     settings->setValue("sc_bitrate", sc_bitrate->currentData().toInt());
     settings->setValue("sc_sampleRate", sc_sampleRate->currentData().toInt());
+
+    settings->setValue("voip", voipBox->isChecked());
+    settings->setValue("voip_username", voip_username->text());
+    settings->setValue("voip_password", QString::fromUtf8(voip_password->text().toUtf8().toBase64()));
+    settings->setValue("voip_number", voip_number->text());
+    settings->setValue("voip_pin", QString::fromUtf8(voip_pin->text().toUtf8().toBase64()));
+
+    QString playDev = "Mute";
+    if(voip_playDev->currentIndex() > 0)
+        playDev = voip_playDev->currentText();
+    settings->setValue("voip_playDev", playDev);
 
     settings->endGroup();
 }

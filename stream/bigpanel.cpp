@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -63,6 +63,8 @@ BigPanel::BigPanel(Stream *stream) : QWidget(0), stream(stream)
     });
 
     this->retranslate();
+
+    this->streamStateChanged();
 }
 
 BigPanel::~BigPanel()
@@ -146,14 +148,10 @@ void BigPanel::startBtn_clicked()
 {
     if(stream->isActive())
     {
-        startBtn->setIcon(QIcon(":/stream-img/record.svg"));
-        qApp->processEvents();
         emit stop();
     }
     else
     {
-        startBtn->setIcon(QIcon(":/stream-img/stop.svg"));
-        qApp->processEvents();
         emit start();
     }
 
@@ -169,14 +167,42 @@ void BigPanel::streamStateChanged()
     else
     {
         startBtn->setIcon(QIcon(":/stream-img/record.svg"));
-        timeLbl->setText("-:--:--");
+
+        QString text = "-:--:--<br/>";
+
+        Status sc_status = stream->getShoutcastStatus();
+        if(sc_status != DISABLED)
+            text += "<font color=#1e282d>SHOUTcast </font>";
+
+        Status voip_status = stream->getVoipStatus();
+        if(voip_status != DISABLED)
+            text += "<font color=#1e282d>VoIP</font>";
+
+        timeLbl->setText(text);
     }
 }
 
 void BigPanel::streamPositionChanged(QTime position)
 {
+    QString text;
+
     if(position.isValid())
-        timeLbl->setText(position.toString("H:mm:ss"));
+        text = position.toString("H:mm:ss") + "<br/>";
+
+    QMap<Status, QString> colors;
+    colors[STOPPED] = "#1e282d";
+    colors[RUNNING] = "#ffff00";
+    colors[OK] = "#0050ff";
+
+    Status sc_status = stream->getShoutcastStatus();
+    if(sc_status != DISABLED)
+        text += QString("<font color=%1>SHOUTcast </font>").arg(colors[sc_status]);
+
+    Status voip_status = stream->getVoipStatus();
+    if(voip_status != DISABLED)
+        text += QString("<font color=%1>VoIP</font>").arg(colors[voip_status]);
+
+    timeLbl->setText(text);
 }
 
 void BigPanel::addStatus(const QString &text)

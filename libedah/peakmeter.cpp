@@ -1,3 +1,21 @@
+/*
+    Edah
+    Copyright (C) 2016-2017  Lukasz Matczak
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "peakmeter.h"
 
 #include "logger.h"
@@ -72,7 +90,7 @@ void PeakMeter::paintEvent(QPaintEvent *e)
     {
         for(int i=0; i<32; i++)
         {
-            QColor color = QColor::fromRgb(colors[i]);
+            QColor color = QColor::fromRgb(channel ? rightColors[i] : leftColors[i]);
 
             float maxPos = max[channel]*31-i;
             if(i/32.0 > peaks[channel] &&
@@ -94,11 +112,26 @@ void PeakMeter::setColors(QRgb low, QRgb mid, QRgb high)
 {
     for(int i=0; i<23; i++)
     {
-        colors[i] = blendColors(low, mid, qMax(0,i-17)/6.0f);
+        leftColors[i] = rightColors[i] = blendColors(low, mid, qMax(0,i-17)/6.0f);
     }
     for(int i=23; i<32; i++)
     {
-        colors[i] = blendColors(mid, high, qMax(0,i-28)/3.0f);
+        leftColors[i] = rightColors[i] = blendColors(mid, high, qMax(0,i-28)/3.0f);
+    }
+}
+
+void PeakMeter::setColors(QRgb leftLow, QRgb leftMid, QRgb leftHigh,
+                          QRgb rightLow, QRgb rightMid, QRgb rightHigh)
+{
+    for(int i=0; i<23; i++)
+    {
+        leftColors[i] = blendColors(leftLow, leftMid, qMax(0,i-17)/6.0f);
+        rightColors[i] = blendColors(rightLow, rightMid, qMax(0,i-17)/6.0f);
+    }
+    for(int i=23; i<32; i++)
+    {
+        leftColors[i] = blendColors(leftMid, leftHigh, qMax(0,i-28)/3.0f);
+        rightColors[i] = blendColors(rightMid, rightHigh, qMax(0,i-28)/3.0f);
     }
 }
 

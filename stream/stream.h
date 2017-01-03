@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,10 +32,35 @@
 #include <QDateTime>
 #include <QProcess>
 
-struct Shared
+struct SC_Shared
 {
     bool end;
     float levels[2];
+};
+
+struct VOIP_Shared
+{
+    bool end;
+    int recLevel;
+    int playLevel;
+};
+
+enum Peak
+{
+    VOIP_PLAY,
+    VOIP_REC,
+    SC_LEFT,
+    SC_RIGHT,
+    SC_MONO,
+    NONE
+};
+
+enum Status
+{
+    DISABLED,
+    STOPPED,
+    RUNNING,
+    OK
 };
 
 class Stream : public QObject, public IPlugin
@@ -62,13 +87,17 @@ public:
     void setPanelOpacity(int opacity);
 
     bool isActive();
+    Status getShoutcastStatus();
+    Status getVoipStatus();
 
 private:
     void start();
     void stop();
-    void createSharedMemory(QString name, Shared *&shared);
+    template <typename T> void createSharedMemory(QString name, T *&shared);
+    template <typename T> void deleteSharedMemory(T *&shared);
 
     void sc_start(int version, const QString &url, int port, int streamid, const QString &username, const QString &password, int channels, int bitrate, int samplerate, const QString &recDev);
+    void voip_start(const QString &username, const QString &password, const QString &number, const QString &pin, const QString &playDev, const QString &recDev);
 
     BigPanel *bPanel;
     SmallPanel *sPanel;
@@ -78,14 +107,26 @@ private:
     SettingsTab *settingsTab;
     PeakMeter *peakMeter;
 
+    Peak peakLeft;
+    Peak peakRight;
+
     QDateTime startTime;
 
     QProcess sc_process;
     int sc_channels;
-    Shared *sc_shared;
+    SC_Shared *sc_shared;
+    Status sc_status;
+
+    QProcess voip_process;
+    VOIP_Shared *voip_shared;
+    Status voip_status;
 
 private slots:
     void refreshState();
+    void sc_processRead();
+    void sc_processFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void voip_processRead();
+    void voip_processFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 signals:
     void stateChanged();

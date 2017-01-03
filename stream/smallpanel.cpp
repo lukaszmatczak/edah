@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ SmallPanel::SmallPanel(Stream *stream) : stream(stream)
     infoLbl = new QLabel("-:--:--");
     infoLbl->setAlignment(Qt::AlignCenter | Qt::AlignBottom);
     layout->addWidget(infoLbl, 1);
+
+    this->streamStateChanged();
 }
 
 void SmallPanel::showEvent(QShowEvent *e)
@@ -77,19 +79,45 @@ void SmallPanel::streamStateChanged()
 {
     if(!stream->isActive())
     {
-        nameLbl->setStyleSheet("");
-        infoLbl->setText("-:--:--");
-    }
-    else
-    {
-        nameLbl->setStyleSheet("color: red;");
+        QString text;
+
+        Status sc_status = stream->getShoutcastStatus();
+        if(sc_status != DISABLED)
+            text += "<font color=#1e282d>SC </font>";
+
+        Status voip_status = stream->getVoipStatus();
+        if(voip_status != DISABLED)
+            text += "<font color=#1e282d>VoIP</font>";
+
+        text += "<br/>-:--:--";
+
+        infoLbl->setText(text);
     }
 }
 
 void SmallPanel::streamPositionChanged(QTime position)
 {
+    QString text;
+
+    QMap<Status, QString> colors;
+    colors[STOPPED] = "#1e282d";
+    colors[RUNNING] = "#ffff00";
+    colors[OK] = "#0050ff";
+
+    Status sc_status = stream->getShoutcastStatus();
+    if(sc_status != DISABLED)
+        text += QString("<font color=%1>SC </font>").arg(colors[sc_status]);
+
+    Status voip_status = stream->getVoipStatus();
+    if(voip_status != DISABLED)
+        text += QString("<font color=%1>VoIP</font>").arg(colors[voip_status]);
+
     if(position.isValid())
-        infoLbl->setText(position.toString("H:mm:ss"));
+        text += "<br/>" + position.toString("H:mm:ss");
+
+
+
+    infoLbl->setText(text);
 }
 
 void SmallPanel::addPeakMeter(PeakMeter *peakMeter)

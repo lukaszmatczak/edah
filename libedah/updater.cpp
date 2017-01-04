@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -194,7 +194,7 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
         if(local.isEmpty() || local["b"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
-            info.action = UpdateInfo::Update;
+            info.action = local.isEmpty() ? UpdateInfo::Install : UpdateInfo::Update;
             info.name = remote["name"].toString();
             info.oldVersion = local["v"].toString("");
             info.oldBuild = local["b"].toInt(0);
@@ -536,6 +536,32 @@ bool Updater::verify(const QList<FileInfo> &filesToUpdate)
 
 void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
 {
+    bool ok;
+    int timeout = 4;
+    do
+    {
+        ok = true;
+        for(int i=0; i<filesToUpdate.size(); i++) // check if all files are writeable
+        {
+            QString path = filesToUpdate[i].isPlugin ?
+                        installDir + "/plugins/" + filesToUpdate[i].module + "/" + filesToUpdate[i].filename :
+                        installDir + filesToUpdate[i].filename;
+
+            QFile f(path);
+            if(!f.open(QIODevice::ReadWrite))
+                ok = false;
+        }
+        timeout--;
+        QThread::sleep(1);
+    } while(!ok && timeout);
+
+    if(!ok)
+    {
+        LOG("File is not writeable!");
+        emit verFailed();
+        return;
+    }
+
     for(int i=0; i<filesToUpdate.size(); i++)
     {
         emit progress(2, i+1, filesToUpdate.size());

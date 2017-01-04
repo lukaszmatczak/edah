@@ -152,7 +152,7 @@
     <message>
         <location filename="../stream.cpp" line="465"/>
         <source>Stopping stream</source>
-        <translation>Zatrzymywanie telekonferencji</translation>
+        <translation>Zatrzymywanie transmisji</translation>
     </message>
     <message>
         <location filename="../stream.cpp" line="323"/>

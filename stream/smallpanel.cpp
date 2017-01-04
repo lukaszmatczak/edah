@@ -32,6 +32,7 @@ SmallPanel::SmallPanel(Stream *stream) : stream(stream)
     layout->addWidget(nameLbl, 1);
 
     infoLbl = new QLabel("-:--:--");
+    infoLbl->setObjectName("infoLbl");
     infoLbl->setAlignment(Qt::AlignCenter | Qt::AlignBottom);
     layout->addWidget(infoLbl, 1);
 
@@ -79,7 +80,7 @@ void SmallPanel::streamStateChanged()
 {
     if(!stream->isActive())
     {
-        QString text;
+        QString text = "<br/><br/>"; // TODO: vertical align
 
         Status sc_status = stream->getShoutcastStatus();
         if(sc_status != DISABLED)

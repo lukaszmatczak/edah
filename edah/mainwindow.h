@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -62,6 +62,8 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    void reloadPlugins();
+
 protected:
     void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
@@ -76,7 +78,7 @@ private:
     bool loadPlugin(const QString &id, Plugin *plugin);
     void unloadPlugin(Plugin *plugin);
     bool findPlugin(const QString &id, Plugin *plugin);
-    void reloadPlugins();
+
     void changeActivePlugin(int pluginIdx);
 
     void createTitleBar(QWidget *parent);
@@ -133,6 +135,7 @@ private slots:
 
 signals:
     void checkForUpdates();
+    void loadProgressChanged(int curr, int max);
 };
 
 #endif // MAINWINDOW_H

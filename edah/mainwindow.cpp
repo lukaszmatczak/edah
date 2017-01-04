@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(qApp, &QApplication::focusChanged, this, &MainWindow::onFocusChanged);
 
-    this->reloadPlugins();
+    //this->reloadPlugins();
 
 #ifdef Q_OS_WIN
     //bool experimental = globalSettings->value("experimental", false).toBool();
@@ -342,6 +342,21 @@ bool MainWindow::findPlugin(const QString &id, Plugin *plugin)
 
 void MainWindow::reloadPlugins()
 {
+    QVector<PluginCfgEntry> cfg;
+    QByteArray arr = settings->value("plugins").toByteArray();
+    QDataStream stream(arr);
+    stream >> cfg;
+
+    int enabledPlugins = 0;
+    int curr = 1;
+    for(int i=0; i<cfg.size(); i++)
+    {
+        if(cfg[i].enabled)
+            enabledPlugins++;
+    }
+
+    emit loadProgressChanged(1, enabledPlugins+1);
+
     QVector<QString> newPluginsId;
     QVector<Plugin> newPlugins;
 
@@ -367,11 +382,6 @@ void MainWindow::reloadPlugins()
     }
 
     // load new plugins
-    QVector<PluginCfgEntry> cfg;
-    QByteArray arr = settings->value("plugins").toByteArray();
-    QDataStream stream(arr);
-    stream >> cfg;
-
     for(int i=0; i<cfg.size(); i++)
     {
         if(!cfg[i].enabled)
@@ -386,6 +396,8 @@ void MainWindow::reloadPlugins()
             newPlugins.push_back(p);
             newPluginsId.push_back(pluginId);
         }
+        curr++;
+        emit loadProgressChanged(curr, enabledPlugins+1);
     }
 
     // select new big widget

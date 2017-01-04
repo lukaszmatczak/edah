@@ -20,13 +20,15 @@ SOURCES += main.cpp\
     winframe.cpp \
     aboutdialog.cpp \
     settings.cpp \
-    updatedialog.cpp
+    updatedialog.cpp \
+    splashscreen.cpp
 
 HEADERS  += mainwindow.h \
     winframe.h \
     aboutdialog.h \
     settings.h \
-    updatedialog.h
+    updatedialog.h \
+    splashscreen.h
 
 INCLUDEPATH += ..
 

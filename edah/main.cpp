@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 */
 
 #include "mainwindow.h"
+#include "splashscreen.h"
 #include "qtsingleapplication.h"
 
 #include <QThread>
@@ -32,9 +33,18 @@ int main(int argc, char *argv[])
         return !a.sendMessage(QString::fromLocal8Bit(argv[1]));
     }
 
+    QPixmap pix(":/img/splash.png");
+    SplashScreen splash(pix);
+    splash.show();
+    a.processEvents();
+
     MainWindow w;
     QObject::connect(&a, &QtSingleApplication::messageReceived, &w, &MainWindow::newProcess);
+    QObject::connect(&w, &MainWindow::loadProgressChanged, &splash, &SplashScreen::setProgress);
+    w.reloadPlugins();
     w.show();
+
+    splash.finish(&w);
 
     return a.exec();
 }

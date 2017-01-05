@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -81,6 +81,9 @@ Recorder::Recorder(QObject *parent) :
 
 Recorder::~Recorder()
 {
+    if(recordingActive)
+        this->stop(bPanel->nameEdit->text());
+
     delete bPanel;
     delete sPanel;
     delete settingsTab;

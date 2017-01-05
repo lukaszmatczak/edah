@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ BigPanel::BigPanel(Recorder *recorder) : QWidget(0), recorder(recorder)
     recBtn = new MyPushButton("", this);
     recBtn->setIcon(QIcon(":/recorder-img/record.svg"));
     recBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    recBtn->setFocusPolicy(Qt::NoFocus);
     connect(recBtn, &MyPushButton::clicked, this, &BigPanel::recBtn_clicked);
     layout->addWidget(recBtn, 1, 1);
 

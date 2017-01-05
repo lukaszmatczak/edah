@@ -82,6 +82,11 @@ Stream::Stream(QObject *parent) :
 
 Stream::~Stream()
 {
+    this->stop();
+
+    sc_process.waitForFinished(10000);
+    voip_process.waitForFinished(10000);
+
     delete bPanel;
     delete sPanel;
     delete settingsTab;
@@ -279,6 +284,20 @@ void Stream::deleteSharedMemory(T *&shared)
     //CloseHandle(handle); // TODO
 }
 
+quint32 Stream::hash_str(const char* s)
+{
+    const quint32 A = 54059;
+    const quint32 B = 76963;
+    const quint32 C = 86969;
+
+    quint32 h = 37;
+    while (*s) {
+        h = (h * A) ^ (s[0] * B);
+        s++;
+    }
+    return h;
+}
+
 void Stream::sc_start(int version, const QString &url, int port, int streamid, const QString &username, const QString &password, int channels, int bitrate, int samplerate, const QString &recDev)
 {
     sc_status = RUNNING;
@@ -301,7 +320,7 @@ void Stream::sc_start(int version, const QString &url, int port, int streamid, c
          << "--channels=" + QString::number(channels)
          << "--bitrate=" + QString::number(bitrate)
          << "--samplerate=" + QString::number(samplerate)
-         << "--recDev=" + recDev;
+         << "--recDev=" + QString::number(this->hash_str(recDev.toUtf8().data()));
 
     this->createSharedMemory("sc_shared", sc_shared);
     sc_shared->end = false;

@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,6 +39,20 @@ BOOL CALLBACK RecordProc(HRECORD handle, const void *buffer, DWORD length, void 
     return TRUE;
 }
 
+uint32_t hash_str(const char* s)
+{
+    const uint32_t A = 54059;
+    const uint32_t B = 76963;
+    const uint32_t C = 86969;
+
+    uint32_t h = 37;
+    while (*s) {
+        h = (h * A) ^ (s[0] * B);
+        s++;
+    }
+    return h;
+}
+
 int main(int argc, char **argv)
 {
     std::cerr << "Start\n";
@@ -70,7 +84,7 @@ int main(int argc, char **argv)
 
     for(int i=0; BASS_RecordGetDeviceInfo(i, &info); i++)
     {
-        if(recDev == info.name)
+        if(recDev == std::to_string(hash_str(info.name)))
         {
             recDevNo = i;
             break;

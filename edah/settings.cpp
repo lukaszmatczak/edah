@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -119,6 +119,11 @@ void Settings::writeSettings()
 
     emit settingsChanged();
 
+    foreach(Plugin p, *plugins)
+    {
+        p.plugin->loadSettings();
+    }
+
     // TODO: reload tabs
 }
 
@@ -141,6 +146,10 @@ GeneralTab::GeneralTab(Updater *updater) : updater(updater)
 
     fullscreenChk = new QCheckBox(this);
     layout->addRow(fullscreenChk);
+
+    autostart = new QSettings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+    autostartChk = new QCheckBox(this);
+    layout->addRow(autostartChk);
 
     QHBoxLayout *pluginsLayout = new QHBoxLayout;
     layout->addRow(pluginsLayout);
@@ -225,6 +234,7 @@ void GeneralTab::changeEvent(QEvent *e)
     {
         langLbl->setText(tr("Language:"));
         fullscreenChk->setText(tr("Show main window on full-screen"));
+        autostartChk->setText(tr("Run program on startup"));
         installedPluginsLbl->setText(tr("Installed plugins:"));
         availPluginsLbl->setText(tr("Available plugins:"));
         moveUpBtn->setText(tr("Move up"));
@@ -350,6 +360,7 @@ void GeneralTab::loadSettings()
     langBox->setCurrentIndex(idx);
 
     fullscreenChk->setChecked(settings->value("fullscreen", false).toBool());
+    autostartChk->setChecked(autostart->value("Edah", 0) != 0);
 
     QStringList pluginsId = pluginsModel->load();
     availPluginsModel->refresh(pluginsId);
@@ -359,6 +370,11 @@ void GeneralTab::writeSettings()
 {
     settings->setValue("lang", langBox->currentData());
     settings->setValue("fullscreen", fullscreenChk->isChecked());
+
+    if(autostartChk->isChecked() && autostart->value("Edah", 0) == 0)
+        autostart->setValue("Edah", QDir::toNativeSeparators(QCoreApplication::applicationDirPath() + "/edah.exe"));
+    else if(!autostartChk->isChecked() && autostart->value("Edah", 0) != 0)
+        autostart->remove("Edah");
 
     QVector<PluginCfgEntry> cfg;
 

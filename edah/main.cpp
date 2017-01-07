@@ -41,7 +41,22 @@ int main(int argc, char *argv[])
     MainWindow w;
     QObject::connect(&a, &QtSingleApplication::messageReceived, &w, &MainWindow::newProcess);
     QObject::connect(&w, &MainWindow::loadProgressChanged, &splash, &SplashScreen::setProgress);
-    w.reloadPlugins();
+
+    QStringList args = a.arguments();
+    bool rescue = false;
+
+    for(int i=0; i<args.size(); i++)
+    {
+        if(args[i] == "--rescue")
+        {
+            rescue = true;
+            break;
+        }
+    }
+
+    if(!rescue)
+        w.reloadPlugins();
+
     w.show();
 
     splash.finish(&w);

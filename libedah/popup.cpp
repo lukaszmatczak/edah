@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,6 +85,11 @@ int Popup::exec()
     return QDialog::Accepted;
 }
 
+void Popup::show()
+{
+    this->showAnimated();
+}
+
 void Popup::setStyleSheet(const QString &stylesheet)
 {
     QDialog::setStyleSheet(this->stylesheet +
@@ -109,7 +114,7 @@ void Popup::showAnimated()
     BlurOpacityEffect *blurEffect = new BlurOpacityEffect(nullptr);
     blurEffect->setBlurRadiusAndOpacity(100.0f, 0.0f);
     this->setGraphicsEffect(blurEffect);
-    this->show();
+    QDialog::show();
 
     timeLine.setFrameRange(100, 0);
     connect(&timeLine, &QTimeLine::frameChanged, this, [blurEffect](int frame) {

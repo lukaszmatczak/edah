@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016-2017  Lukasz Matczak
+    Copyright (C) 2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,38 +16,34 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef POPUP_H
-#define POPUP_H
+#ifndef CLOSINGPOPUP_H
+#define CLOSINGPOPUP_H
 
-#include "libedah.h"
+#include <libedah/popup.h>
+#include <libedah/mypushbutton.h>
 
-#include <QDialog>
+#include <QtSvg/QSvgWidget>
 
-class LIBEDAHSHARED_EXPORT Popup : public QDialog
+class ClosingPopup : public Popup
 {
     Q_OBJECT
 public:
-    explicit Popup(QWidget *parent);
-    void setSize(float width, float height);
-    int exec();
-    void show();
-    void setStyleSheet(const QString &stylesheet);
+    ClosingPopup(QWidget *parent);
 
 protected:
-    void paintEvent(QPaintEvent *e);
-    void closeEvent(QCloseEvent *e);
-
-public slots:
-    void resize();
+    void resizeEvent(QResizeEvent *event);
 
 private:
-    void showAnimated();
+    void recalcSizes(const QSize &size);
 
     QWidget *parent;
-    QString stylesheet;
 
-    float percentWidth;
-    float percentHeight;
+    MyPushButton *shutdownBtn;
+    MyPushButton *closeBtn;
+    MyPushButton *cancelBtn;
+
+private slots:
+    void shutdown();
 };
 
-#endif // POPUP_H
+#endif // CLOSINGPOPUP_H

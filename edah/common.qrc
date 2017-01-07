@@ -9,5 +9,7 @@
         <file>lang/lang.pl.qm</file>
         <file>img/menu_info.svg</file>
         <file>img/splash.png</file>
+        <file>img/arrow-back.svg</file>
+        <file>img/power.svg</file>
     </qresource>
 </RCC>

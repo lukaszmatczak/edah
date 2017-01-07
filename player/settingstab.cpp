@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -251,7 +251,7 @@ void SettingsTab::loadSettings()
 void SettingsTab::writeSettings()
 {
     QRegExp rx("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}\\b", Qt::CaseInsensitive);
-    if(!rx.exactMatch(downloadEmail->text()))
+    if(downloadChk->isChecked() && !rx.exactMatch(downloadEmail->text()))
     {
         downloadChk->setChecked(false);
         QMessageBox msg(QMessageBox::Warning,

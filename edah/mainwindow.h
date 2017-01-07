@@ -132,6 +132,7 @@ private slots:
     void showUpdateDialog();
     void showSettings();
     void showUpdate(UpdateInfoArray info);
+    void closeApp();
 
 signals:
     void checkForUpdates();

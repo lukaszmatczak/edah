@@ -20,6 +20,7 @@
 #include "aboutdialog.h"
 #include "updatedialog.h"
 #include "settings.h"
+#include "closingpopup.h"
 
 #include <libedah/logger.h>
 #include <libedah/utils.h>
@@ -151,8 +152,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(qApp, &QApplication::focusChanged, this, &MainWindow::onFocusChanged);
 
-    //this->reloadPlugins();
-
 #ifdef Q_OS_WIN
     //bool experimental = globalSettings->value("experimental", false).toBool();
     updater = new Updater;
@@ -172,21 +171,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-#ifdef Q_OS_WIN
-    updaterThread.quit();
-    updaterThread.wait();
-#endif
-
-    if(!this->isFullScreen())
-    {
-        settings->setValue("MainWindow_geometry", this->saveGeometry());
-    }
-
-    foreach(Plugin plugin, plugins)
-    {
-        this->unloadPlugin(&plugin);
-    }
-
     delete settings;
     delete logger;
     delete utils;
@@ -296,9 +280,32 @@ void MainWindow::keyReleaseEvent(QKeyEvent *e)
     }
 }
 
+void MainWindow::closeApp()
+{
+    ClosingPopup *popup = new ClosingPopup(this);
+    popup->setAttribute(Qt::WA_DeleteOnClose);
+    popup->setSize(0.9f, 0.3f);
+    popup->show();
+}
+
 void MainWindow::closeEvent(QCloseEvent *e)
 {
     e->accept();
+
+#ifdef Q_OS_WIN
+    updaterThread.quit();
+    updaterThread.wait();
+#endif
+
+    if(!this->isFullScreen())
+    {
+        settings->setValue("MainWindow_geometry", this->saveGeometry());
+    }
+
+    foreach(Plugin plugin, plugins)
+    {
+        this->unloadPlugin(&plugin);
+    }
 
     qApp->quit();
 }
@@ -589,7 +596,7 @@ void MainWindow::createTitleBar(QWidget *parent)
     closeBtn->setIcon(QIcon(":/img/close.svg"));
     closeBtn->setFixedSize(24, 24);
     closeBtn->setObjectName("closeBtn");
-    connect(closeBtn, &QToolButton::clicked, this, &MainWindow::close);
+    connect(closeBtn, &QToolButton::clicked, this, &MainWindow::closeApp);
     titleBar->layout()->addWidget(closeBtn);
 }
 
@@ -608,7 +615,7 @@ void MainWindow::createBottomBar(QWidget *parent)
     closeBtn_bottom->setIcon(QIcon(":/img/close.svg"));
     closeBtn_bottom->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
     closeBtn_bottom->setObjectName("closeBtn_bottom");
-    connect(closeBtn_bottom, &QToolButton::clicked, this, &MainWindow::close);
+    connect(closeBtn_bottom, &QToolButton::clicked, this, &MainWindow::closeApp);
     bottomBar->layout()->addWidget(closeBtn_bottom);
 
     minimizeBtn_bottom = new QToolButton(bottomBar);

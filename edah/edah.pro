@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets network
+QT       += core gui widgets network svg
 
 TARGET = edah
 TEMPLATE = app
@@ -21,14 +21,16 @@ SOURCES += main.cpp\
     aboutdialog.cpp \
     settings.cpp \
     updatedialog.cpp \
-    splashscreen.cpp
+    splashscreen.cpp \
+    closingpopup.cpp
 
 HEADERS  += mainwindow.h \
     winframe.h \
     aboutdialog.h \
     settings.h \
     updatedialog.h \
-    splashscreen.h
+    splashscreen.h \
+    closingpopup.h
 
 INCLUDEPATH += ..
 
@@ -41,6 +43,10 @@ CONFIG(release) {
 }
 
 LIBS += -L$$PWD/../libedah -ledah
+
+win32 {
+    LIBS += -ladvapi32 -luser32
+}
 
 RC_FILE = res.rc
 

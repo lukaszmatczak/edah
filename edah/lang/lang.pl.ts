@@ -20,49 +20,77 @@
     </message>
 </context>
 <context>
+    <name>ClosingPopup</name>
+    <message>
+        <location filename="../closingpopup.cpp" line="41"/>
+        <source>Shutdown computer</source>
+        <translation>Wyłącz komputer</translation>
+    </message>
+    <message>
+        <location filename="../closingpopup.cpp" line="47"/>
+        <source>Close app</source>
+        <translation>Zamknij program</translation>
+    </message>
+    <message>
+        <location filename="../closingpopup.cpp" line="57"/>
+        <source>Return to Edah</source>
+        <translation>Wróć do programu</translation>
+    </message>
+    <message>
+        <location filename="../closingpopup.cpp" line="68"/>
+        <source>Closing Edah...</source>
+        <translation>Zamykanie programu...</translation>
+    </message>
+</context>
+<context>
     <name>GeneralTab</name>
     <message>
-        <location filename="../settings.cpp" line="226"/>
+        <location filename="../settings.cpp" line="235"/>
         <source>Language:</source>
         <translation>Język:</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="227"/>
+        <location filename="../settings.cpp" line="236"/>
         <source>Show main window on full-screen</source>
         <translation>Wyświetlaj główne okno na pełnym ekranie</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="228"/>
+        <location filename="../settings.cpp" line="237"/>
+        <source>Run program on startup</source>
+        <translation>Uruchamiaj program przy starcie systemu</translation>
+    </message>
+    <message>
+        <location filename="../settings.cpp" line="238"/>
         <source>Installed plugins:</source>
         <translation>Zainstalowane wtyczki:</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="229"/>
+        <location filename="../settings.cpp" line="239"/>
         <source>Available plugins:</source>
         <translation>Dostępne wtyczki:</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="230"/>
+        <location filename="../settings.cpp" line="240"/>
         <source>Move up</source>
         <translation>Przenieś w górę</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="231"/>
+        <location filename="../settings.cpp" line="241"/>
         <source>Move down</source>
         <translation>Przenieś w dół</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="232"/>
+        <location filename="../settings.cpp" line="242"/>
         <source>Download and install</source>
         <translation>Pobierz i zainstaluj</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="306"/>
+        <location filename="../settings.cpp" line="316"/>
         <source>Uninstall plugin</source>
         <translation>Odinstaluj wtyczkę</translation>
     </message>
     <message>
-        <location filename="../settings.cpp" line="324"/>
+        <location filename="../settings.cpp" line="334"/>
         <source>Download and install plugin</source>
         <translation>Pobierz i zainstaluj wtyczkę</translation>
     </message>
@@ -70,58 +98,58 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../mainwindow.cpp" line="624"/>
+        <location filename="../mainwindow.cpp" line="651"/>
         <source>hh:mm AP</source>
         <translation>HH:mm</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="213"/>
-        <location filename="../mainwindow.cpp" line="219"/>
+        <location filename="../mainwindow.cpp" line="197"/>
+        <location filename="../mainwindow.cpp" line="203"/>
         <source>Menu</source>
         <translation>Menu</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="214"/>
-        <location filename="../mainwindow.cpp" line="218"/>
+        <location filename="../mainwindow.cpp" line="198"/>
+        <location filename="../mainwindow.cpp" line="202"/>
         <source>Minimize</source>
         <translation>Minimalizuj</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="197"/>
-        <location filename="../mainwindow.cpp" line="215"/>
+        <location filename="../mainwindow.cpp" line="181"/>
+        <location filename="../mainwindow.cpp" line="199"/>
         <source>Maximize</source>
         <translation>Maksymalizuj</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="197"/>
-        <location filename="../mainwindow.cpp" line="215"/>
+        <location filename="../mainwindow.cpp" line="181"/>
+        <location filename="../mainwindow.cpp" line="199"/>
         <source>Restore</source>
         <translation>Przywróć</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="216"/>
-        <location filename="../mainwindow.cpp" line="217"/>
+        <location filename="../mainwindow.cpp" line="200"/>
+        <location filename="../mainwindow.cpp" line="201"/>
         <source>Close</source>
         <translation>Zamknij</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="223"/>
-        <location filename="../mainwindow.cpp" line="692"/>
+        <location filename="../mainwindow.cpp" line="207"/>
+        <location filename="../mainwindow.cpp" line="719"/>
         <source>There aren&apos;t any plugins selected!&lt;br/&gt;Go to: &amp;#x2630; &gt; Settings...</source>
         <translation>Nie wybrano żadnych wtyczek!&lt;br/&gt;Przejdź do: &amp;#x2630; &gt; Ustawienia...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="770"/>
+        <location filename="../mainwindow.cpp" line="797"/>
         <source>Settings...</source>
         <translation>Ustawienia...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="774"/>
+        <location filename="../mainwindow.cpp" line="801"/>
         <source>Update is available to download!</source>
         <translation>Dostępna nowa wersja programu!</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="777"/>
+        <location filename="../mainwindow.cpp" line="804"/>
         <source>About...</source>
         <translation>O programie...</translation>
     </message>

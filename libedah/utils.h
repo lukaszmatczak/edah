@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@ public:
     QString getAppVersion();
     int getAppBuild();
     QWidget *getMainWindow();
+    void setExperimental(bool experimental);
 
     QString parseFilename(QString fmt, const QString &name, const QDateTime &time);
 
@@ -79,6 +80,7 @@ private:
 
     QString appVersion;
     int appBuild;
+    bool experimental;
 
 #ifdef Q_OS_WIN
     RECT area;

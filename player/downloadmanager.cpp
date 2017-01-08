@@ -249,7 +249,8 @@ QStringList DownloadManager::checkFilesToDownload(const QMap<QString, QList<Mult
                     }
                 }
 
-                if(map[*it][i].checksum.compare(hash.result().toHex(), Qt::CaseInsensitive))
+                if((map[*it][i].checksum.size() > 0) && (map[*it][i].checksum.compare(hash.result().toHex(), Qt::CaseInsensitive)) ||
+                        map[*it][i].size != file.size())
                 {
                     urlsToDownload << map[*it][i].url;
                     *downloadQueueBytes += map[*it][i].size;
@@ -271,7 +272,7 @@ QStringList DownloadManager::checkFilesToDownload(const QMap<QString, QList<Mult
     return urlsToDownload;
 }
 
-void DownloadManager::downloadFiles(const QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes)
+void DownloadManager::downloadFiles(QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes)
 {
     for(auto it=map.keyBegin(); it!=map.keyEnd(); ++it)
     {
@@ -282,7 +283,7 @@ void DownloadManager::downloadFiles(const QMap<QString, QList<MultimediaInfo> > 
 
             if(!map[*it][i].url.isEmpty() && urlsToDownload->contains(map[*it][i].url))
             {
-                bool ok = this->downloadFile(map[*it][i], this->path + "/" + *it + "/" + QUrl(map[*it][i].url).fileName());
+                bool ok = this->downloadFile(&map[*it][i], this->path + "/" + *it + "/" + QUrl(map[*it][i].url).fileName());
                 urlsToDownload->removeAll(map[*it][i].url);
                 *downloadQueueBytes -= map[*it][i].size;
 
@@ -433,13 +434,19 @@ void DownloadManager::downloadAndParseProgram(Playlist *playlist, const QString 
     }
 }
 
-bool DownloadManager::downloadFile(const MultimediaInfo &info, const QString &local)
+bool DownloadManager::downloadFile(MultimediaInfo *info, const QString &local)
 {
+    RemoteInfo rinfo = this->getRemoteInfo(*info);
+    info->url = rinfo.url;
+    info->title = rinfo.url;
+    info->size = rinfo.size;
+    info->checksum = rinfo.checksum;
+
     if(!manager) manager = new QNetworkAccessManager;
-    QNetworkRequest request(QUrl{info.url});
+    QNetworkRequest request(QUrl{info->url});
     reply = manager->get(request);
 
-    QFile file(local);
+    QFile file(local + ".part");
     file.open(QIODevice::WriteOnly);
 
     QCryptographicHash hash(QCryptographicHash::Md5);
@@ -461,10 +468,14 @@ bool DownloadManager::downloadFile(const MultimediaInfo &info, const QString &lo
         return false;
     }
 
-    if(info.checksum.compare(hash.result().toHex(), Qt::CaseInsensitive))
+    if((info->checksum.size() > 0) && (info->checksum.compare(hash.result().toHex(), Qt::CaseInsensitive)) ||
+            info->size != file.size())
     {
         return false;
     }
+
+    QFile::remove(local);
+    file.rename(local);
 
     return true;
 }

@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
 Utils *utils;
 LIBEDAHSHARED_EXPORT QSettings *settings;
 
-Utils::Utils(QWidget *mainwindow) : mainwindow(mainwindow)
+Utils::Utils(QWidget *mainwindow) : mainwindow(mainwindow), experimental(false)
 {
     QDir confDir(this->getConfigPath());
     if(!confDir.exists())
@@ -120,9 +120,14 @@ QString Utils::getConfigPath()
     return QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
 }
 
+void Utils::setExperimental(bool experimental)
+{
+    this->experimental = experimental;
+}
+
 QString Utils::getServerUrl()
 {
-    return "http://edah.mn.xaa.pl/";
+    return experimental ? "http://edah.mn.xaa.pl/test/" : "http://edah.mn.xaa.pl/";
 }
 
 QString Utils::getAppVersion()

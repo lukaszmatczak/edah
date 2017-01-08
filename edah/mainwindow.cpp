@@ -153,7 +153,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(qApp, &QApplication::focusChanged, this, &MainWindow::onFocusChanged);
 
 #ifdef Q_OS_WIN
-    //bool experimental = globalSettings->value("experimental", false).toBool();
+    globalSettings = new QSettings("HKEY_LOCAL_MACHINE\\Software\\Lukasz Matczak\\Edah", QSettings::NativeFormat);
+    experimental = globalSettings->value("experimental", false).toBool();
+    utils->setExperimental(experimental);
     updater = new Updater;
     updater->setInstallDir(QApplication::applicationDirPath());
     connect(this, &MainWindow::checkForUpdates, updater, &Updater::checkUpdates);
@@ -162,10 +164,12 @@ MainWindow::MainWindow(QWidget *parent)
     updaterThread.start();
     emit checkForUpdates();
 
-    /*if(experimental)
+    if(experimental)
     {
         titleLbl->setText(tr("Edah - testing version"));
-    }*/
+    }
+#else
+    experimental = false;
 #endif
 }
 
@@ -212,10 +216,10 @@ void MainWindow::changeEvent(QEvent *e)
             pluginContainer->setText("");
         }
 
-        /*if(experimental)
+        if(experimental)
         {
             titleLbl->setText(tr("Edah - testing version"));
-        }*/
+        }
     }
     else
     {

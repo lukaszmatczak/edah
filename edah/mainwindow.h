@@ -86,6 +86,11 @@ private:
 
     QTranslator translator;
 
+#ifdef Q_OS_WIN
+    QSettings *globalSettings;
+#endif
+    bool experimental;
+
     QWidget *centralWidget;
     WinFrame *winFrame;
     QFrame *container;

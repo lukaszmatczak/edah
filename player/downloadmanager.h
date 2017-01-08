@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,10 +85,10 @@ private:
     RemoteInfo getRemoteInfo(const MultimediaInfo &minfo);
     void getRemoteMultimediaInfo(QMap<QString, QList<MultimediaInfo> > *map);
     QStringList checkFilesToDownload(const QMap<QString, QList<MultimediaInfo> > &map, int *downloadQueueBytes);
-    void downloadFiles(const QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes);
+    void downloadFiles(QMap<QString, QList<MultimediaInfo> > &map, QStringList *urlsToDownload, int *downloadQueueBytes);
     bool downloadRemote(const RemoteInfo &info, QByteArray *dest);
     void downloadAndParseProgram(Playlist *playlist, const QString &pub, const QString &issue);
-    bool downloadFile(const MultimediaInfo &info, const QString &local);
+    bool downloadFile(MultimediaInfo *info, const QString &local);
     bool extractFile(QString zipFile, QString srcName, QString destName);
 
     void loadPlaylist(Playlist *playlist);

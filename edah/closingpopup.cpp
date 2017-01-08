@@ -103,6 +103,8 @@ void ClosingPopup::recalcSizes(const QSize &size)
 
 void ClosingPopup::shutdown()
 {
+    qApp->quit();
+
     HANDLE hToken;
     TOKEN_PRIVILEGES tkp;
 

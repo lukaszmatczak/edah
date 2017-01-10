@@ -22,7 +22,7 @@
 #include <libedah/popup.h>
 #include <libedah/mypushbutton.h>
 
-#include <QtSvg/QSvgWidget>
+#include <QStackedWidget>
 
 class ClosingPopup : public Popup
 {
@@ -37,6 +37,8 @@ private:
     void recalcSizes(const QSize &size);
 
     QWidget *parent;
+
+    QStackedWidget *stacked;
 
     MyPushButton *shutdownBtn;
     MyPushButton *closeBtn;

@@ -19,11 +19,9 @@
 #include "closingpopup.h"
 
 #include <QLabel>
-#include <QStackedWidget>
 #include <QHBoxLayout>
 #include <QResizeEvent>
 #include <QApplication>
-#include <QtSvg/QSvgRenderer>
 
 #include <libedah/logger.h>
 
@@ -32,7 +30,7 @@
 ClosingPopup::ClosingPopup(QWidget *parent) : Popup(parent), parent(parent)
 {
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
-    QStackedWidget *stacked = new QStackedWidget(this);
+    stacked = new QStackedWidget(this);
     mainLayout->addWidget(stacked);
 
     QWidget *first = new QWidget(this);
@@ -47,7 +45,7 @@ ClosingPopup::ClosingPopup(QWidget *parent) : Popup(parent), parent(parent)
     closeBtn = new MyPushButton(tr("Close app"), this);
     closeBtn->setObjectName("closeBtn_");
     closeBtn->setIcon(QIcon(":/img/close.svg"));
-    connect(closeBtn, &MyPushButton::clicked, this, [this, stacked]() {
+    connect(closeBtn, &MyPushButton::clicked, this, [this]() {
         stacked->setCurrentIndex(1);
         qApp->processEvents();
         this->parent->close();
@@ -103,7 +101,9 @@ void ClosingPopup::recalcSizes(const QSize &size)
 
 void ClosingPopup::shutdown()
 {
-    qApp->quit();
+    stacked->setCurrentIndex(1);
+    qApp->processEvents();
+    this->parent->close();
 
     HANDLE hToken;
     TOKEN_PRIVILEGES tkp;

@@ -537,10 +537,12 @@ bool Updater::verify(const QList<FileInfo> &filesToUpdate)
 void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
 {
     bool ok;
-    int timeout = 4;
+    int timeout = 30;
+    QStringList notWriteableFiles;
     do
     {
         ok = true;
+        notWriteableFiles.clear();
         for(int i=0; i<filesToUpdate.size(); i++) // check if all files are writeable
         {
             QString path = filesToUpdate[i].isPlugin ?
@@ -548,16 +550,18 @@ void Updater::installUpdate(const QList<FileInfo> &filesToUpdate)
                         installDir + filesToUpdate[i].filename;
 
             QFile f(path);
-            if(!f.open(QIODevice::ReadWrite))
+            if(f.exists() && !f.open(QIODevice::ReadWrite))
+            {
                 ok = false;
+                notWriteableFiles.append(path);
+            }
         }
-        timeout--;
         QThread::sleep(1);
-    } while(!ok && timeout);
+    } while(!ok && (timeout-- > 0));
 
     if(!ok)
     {
-        LOG("File is not writeable!");
+        LOG("Following files are not writeable: " + notWriteableFiles.join(", "));
         emit verFailed();
         return;
     }

@@ -41,7 +41,9 @@ AboutDialog::AboutDialog()
     QLabel *text = new QLabel(this);
     text->setText(QString("<b>Edah %1</b><br/>").arg(utils->getAppVersion()) +
                   "<br/>"
-                  + tr("Edah<br/>"));
+                  + tr("Edah (heb. ʽe&middot;dhahʹ, eng. assembly) - program that handles multimedia during meetings. "
+                       "Edah can be extended by plugins (for example: \"Player\", \"Recorder\", \"Stream\"), "
+                       "supports touchscreen and is fully configurable.<br/>"));
     text->setWordWrap(true);
     layout->addWidget(text, 0, 1);
 

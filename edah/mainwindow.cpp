@@ -704,7 +704,7 @@ void MainWindow::recalcSizes(QSize size)
                             "stop:1 rgba(0, 0, 0, 0));")
                             .arg(titleLbl->width()));
 
-    int height = size.height()*this->physicalDpiY()/2048;
+    int height = size.height()/16;
     bottomBar->setFixedHeight(height);
     QSize iconSize = QSize(height*2, height/2);
     closeBtn_bottom->setIconSize(iconSize);

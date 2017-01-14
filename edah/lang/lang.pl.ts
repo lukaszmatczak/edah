@@ -10,11 +10,15 @@
     </message>
     <message>
         <location filename="../aboutdialog.cpp" line="44"/>
-        <source>Edah&lt;br/&gt;</source>
-        <translation>Edah&lt;br/&gt;</translation>
+        <source>Edah (heb. ʽe&amp;middot;dhahʹ, eng. assembly) - program that handles multimedia during meetings. Edah can be extended by plugins (for example: &quot;Player&quot;, &quot;Recorder&quot;, &quot;Stream&quot;), supports touchscreen and is fully configurable.&lt;br/&gt;</source>
+        <translation>Edah (heb. ʽedah, pl. zgromadzenie) - program ułatwiający obsługę multimediów podczas zebrań. Może być rozszerzany za pomocą wtyczek (na przykład: &quot;Odtwarzanie&quot;, &quot;Nagrywanie&quot;, &quot;Transmisja&quot;), wspiera ekrany dotykowe oraz jest w pełni konfigurowalny.&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../aboutdialog.cpp" line="77"/>
+        <source>Edah&lt;br/&gt;</source>
+        <translation type="vanished">Edah&lt;br/&gt;</translation>
+    </message>
+    <message>
+        <location filename="../aboutdialog.cpp" line="79"/>
         <source>Close</source>
         <translation>Zamknij</translation>
     </message>
@@ -22,22 +26,22 @@
 <context>
     <name>ClosingPopup</name>
     <message>
-        <location filename="../closingpopup.cpp" line="41"/>
+        <location filename="../closingpopup.cpp" line="39"/>
         <source>Shutdown computer</source>
         <translation>Wyłącz komputer</translation>
     </message>
     <message>
-        <location filename="../closingpopup.cpp" line="47"/>
+        <location filename="../closingpopup.cpp" line="45"/>
         <source>Close app</source>
         <translation>Zamknij program</translation>
     </message>
     <message>
-        <location filename="../closingpopup.cpp" line="57"/>
+        <location filename="../closingpopup.cpp" line="55"/>
         <source>Return to Edah</source>
         <translation>Wróć do programu</translation>
     </message>
     <message>
-        <location filename="../closingpopup.cpp" line="68"/>
+        <location filename="../closingpopup.cpp" line="66"/>
         <source>Closing Edah...</source>
         <translation>Zamykanie programu...</translation>
     </message>
@@ -98,58 +102,64 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../mainwindow.cpp" line="651"/>
+        <location filename="../mainwindow.cpp" line="655"/>
         <source>hh:mm AP</source>
         <translation>HH:mm</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="197"/>
-        <location filename="../mainwindow.cpp" line="203"/>
+        <location filename="../mainwindow.cpp" line="201"/>
+        <location filename="../mainwindow.cpp" line="207"/>
         <source>Menu</source>
         <translation>Menu</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="198"/>
         <location filename="../mainwindow.cpp" line="202"/>
+        <location filename="../mainwindow.cpp" line="206"/>
         <source>Minimize</source>
         <translation>Minimalizuj</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="181"/>
-        <location filename="../mainwindow.cpp" line="199"/>
+        <location filename="../mainwindow.cpp" line="185"/>
+        <location filename="../mainwindow.cpp" line="203"/>
         <source>Maximize</source>
         <translation>Maksymalizuj</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="181"/>
-        <location filename="../mainwindow.cpp" line="199"/>
+        <location filename="../mainwindow.cpp" line="169"/>
+        <location filename="../mainwindow.cpp" line="221"/>
+        <source>Edah - testing version</source>
+        <translation>Edah - wersja testowa</translation>
+    </message>
+    <message>
+        <location filename="../mainwindow.cpp" line="185"/>
+        <location filename="../mainwindow.cpp" line="203"/>
         <source>Restore</source>
         <translation>Przywróć</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="200"/>
-        <location filename="../mainwindow.cpp" line="201"/>
+        <location filename="../mainwindow.cpp" line="204"/>
+        <location filename="../mainwindow.cpp" line="205"/>
         <source>Close</source>
         <translation>Zamknij</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="207"/>
-        <location filename="../mainwindow.cpp" line="719"/>
+        <location filename="../mainwindow.cpp" line="211"/>
+        <location filename="../mainwindow.cpp" line="723"/>
         <source>There aren&apos;t any plugins selected!&lt;br/&gt;Go to: &amp;#x2630; &gt; Settings...</source>
         <translation>Nie wybrano żadnych wtyczek!&lt;br/&gt;Przejdź do: &amp;#x2630; &gt; Ustawienia...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="797"/>
+        <location filename="../mainwindow.cpp" line="801"/>
         <source>Settings...</source>
         <translation>Ustawienia...</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="801"/>
+        <location filename="../mainwindow.cpp" line="805"/>
         <source>Update is available to download!</source>
         <translation>Dostępna nowa wersja programu!</translation>
     </message>
     <message>
-        <location filename="../mainwindow.cpp" line="804"/>
+        <location filename="../mainwindow.cpp" line="808"/>
         <source>About...</source>
         <translation>O programie...</translation>
     </message>

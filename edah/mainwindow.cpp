@@ -206,15 +206,7 @@ void MainWindow::changeEvent(QEvent *e)
         minimizeBtn_bottom->setToolTip(tr("Minimize"));
         menuBtn_bottom->setToolTip(tr("Menu"));
 
-        if(plugins.size() == 0)
-        {
-            pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
-                                        "Go to: &#x2630; > Settings..."));
-        }
-        else
-        {
-            pluginContainer->setText("");
-        }
+        this->refreshPluginContainerText();
 
         if(experimental)
         {
@@ -244,7 +236,8 @@ void MainWindow::mousePressEvent(QMouseEvent *e)
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
 {
     if ((e->buttons() & Qt::LeftButton) &&
-        this->titleBar->geometry().contains(movePos))
+            this->titleBar->isVisible() &&
+            this->titleBar->geometry().contains(movePos))
     {
         QPoint diff = e->pos() - movePos;
         QPoint newpos = this->pos() + diff;
@@ -256,7 +249,8 @@ void MainWindow::mouseMoveEvent(QMouseEvent *e)
 void MainWindow::mouseDoubleClickEvent(QMouseEvent *e)
 {
     if ((e->buttons() & Qt::LeftButton) &&
-        this->titleBar->geometry().contains(e->pos()))
+            this->titleBar->isVisible() &&
+            this->titleBar->geometry().contains(e->pos()))
     {
         this->onMaximizeBtnClicked();
     }
@@ -312,6 +306,40 @@ void MainWindow::closeEvent(QCloseEvent *e)
     }
 
     qApp->quit();
+}
+
+void MainWindow::refreshPluginContainerText()
+{
+    static int done = 0;
+    static int enabledPlugins = 0;
+    if(plugins.size() == 0)
+    {
+        if(!done)
+        {
+            QVector<PluginCfgEntry> cfg;
+            QByteArray arr = settings->value("plugins").toByteArray();
+            QDataStream stream(arr);
+            stream >> cfg;
+
+            for(int i=0; i<cfg.size(); i++)
+            {
+                if(cfg[i].enabled)
+                    enabledPlugins++;
+            }
+        }
+
+        if(enabledPlugins == 0 || done > 1) // skip first ChangeEvent and first ResizeEvent
+        {
+            pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
+                                        "Go to: &#x2630; > Settings..."));
+        }
+
+        done++;
+    }
+    else
+    {
+        pluginContainer->setText("");
+    }
 }
 
 bool MainWindow::loadPlugin(const QString &id, Plugin *plugin)
@@ -718,15 +746,7 @@ void MainWindow::recalcSizes(QSize size)
     pluginContainer->setStyleSheet(QString("#pluginContainer { font-size: %1px; }")
                                    .arg(fontSize));
 
-    if(plugins.size() == 0)
-    {
-        pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
-                                    "Go to: &#x2630; > Settings..."));
-    }
-    else
-    {
-        pluginContainer->setText("");
-    }
+    this->refreshPluginContainerText();
 
     int visiblePluginsCount = 0;
     for(int i=0; i<plugins.size(); i++)

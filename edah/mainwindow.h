@@ -75,6 +75,8 @@ protected:
     void closeEvent(QCloseEvent *e);
 
 private:
+    void refreshPluginContainerText();
+
     bool loadPlugin(const QString &id, Plugin *plugin);
     void unloadPlugin(Plugin *plugin);
     bool findPlugin(const QString &id, Plugin *plugin);

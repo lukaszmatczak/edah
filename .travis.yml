@@ -23,18 +23,18 @@ script:
   - cp bass/x64/libbass.so player/libbass.so
   - mkdir tmp_dir
   - cd libedah
-  - /opt/qt55/bin/qmake
-  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
+  - /opt/qt55/bin/qmake || true
+  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make || true
   - cd ..
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
   - cd player
-  - /opt/qt55/bin/qmake
-  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
+  - /opt/qt55/bin/qmake || true
+  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make || true
   - cd ..
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
   - cd edah
-  - /opt/qt55/bin/qmake
-  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make
+  - /opt/qt55/bin/qmake || true
+  - build-wrapper-linux-x86-64 --out-dir ../tmp_dir make || true
   - cd ..
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
 

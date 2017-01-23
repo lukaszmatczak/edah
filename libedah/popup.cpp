@@ -79,10 +79,7 @@ int Popup::exec()
 {
     this->showAnimated();
 
-    QEventLoop loop;
-    loop.exec();
-
-    return QDialog::Accepted;
+    return QDialog::exec();
 }
 
 void Popup::show()

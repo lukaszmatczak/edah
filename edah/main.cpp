@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     if(!rescue)
         w.reloadPlugins();
 
-    w.show();
+    w.showWindow();
 
     splash.finish(&w);
 

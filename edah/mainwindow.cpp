@@ -137,16 +137,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     qApp->installTranslator(&translator);
 
-    if(settings->value("fullscreen", false).toBool())
-    {
-        titleBar->setVisible(false);
-        this->showFullScreen();
-    }
-    else
-    {
-        bottomBar->setVisible(false);
-    }
-
     connect(&timer, &QTimer::timeout, this, &MainWindow::timerSlot);
     timer.start(100);
 
@@ -168,6 +158,11 @@ MainWindow::MainWindow(QWidget *parent)
     {
         titleLbl->setText(tr("Edah - testing version"));
     }
+
+    if(settings->value("keepScreen", false).toBool())
+    {
+        SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED); // TODO: settings reload
+    }
 #else
     experimental = false;
 #endif
@@ -175,9 +170,27 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+#ifdef Q_OS_WIN
+    SetThreadExecutionState(ES_CONTINUOUS);
+#endif
+
     delete settings;
     delete logger;
     delete utils;
+}
+
+void MainWindow::showWindow()
+{
+    if(settings->value("fullscreen", false).toBool())
+    {
+        titleBar->setVisible(false);
+        this->showFullScreen();
+    }
+    else
+    {
+        bottomBar->setVisible(false);
+        this->show();
+    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
@@ -310,31 +323,10 @@ void MainWindow::closeEvent(QCloseEvent *e)
 
 void MainWindow::refreshPluginContainerText()
 {
-    static int done = 0;
-    static int enabledPlugins = 0;
     if(plugins.size() == 0)
     {
-        if(!done)
-        {
-            QVector<PluginCfgEntry> cfg;
-            QByteArray arr = settings->value("plugins").toByteArray();
-            QDataStream stream(arr);
-            stream >> cfg;
-
-            for(int i=0; i<cfg.size(); i++)
-            {
-                if(cfg[i].enabled)
-                    enabledPlugins++;
-            }
-        }
-
-        if(enabledPlugins == 0 || done > 1) // skip first ChangeEvent and first ResizeEvent
-        {
-            pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
-                                        "Go to: &#x2630; > Settings..."));
-        }
-
-        done++;
+        pluginContainer->setText(tr("There aren't any plugins selected!<br/>"
+                                    "Go to: &#x2630; > Settings..."));
     }
     else
     {

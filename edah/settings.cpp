@@ -151,6 +151,9 @@ GeneralTab::GeneralTab(Updater *updater) : updater(updater)
     autostartChk = new QCheckBox(this);
     layout->addRow(autostartChk);
 
+    keepScreenChk = new QCheckBox(this);
+    layout->addRow(keepScreenChk);
+
     QHBoxLayout *pluginsLayout = new QHBoxLayout;
     layout->addRow(pluginsLayout);
 
@@ -235,6 +238,7 @@ void GeneralTab::changeEvent(QEvent *e)
         langLbl->setText(tr("Language:"));
         fullscreenChk->setText(tr("Show main window on full-screen"));
         autostartChk->setText(tr("Run program on startup"));
+        keepScreenChk->setText(tr("Prevent screensaver"));
         installedPluginsLbl->setText(tr("Installed plugins:"));
         availPluginsLbl->setText(tr("Available plugins:"));
         moveUpBtn->setText(tr("Move up"));
@@ -361,6 +365,7 @@ void GeneralTab::loadSettings()
 
     fullscreenChk->setChecked(settings->value("fullscreen", false).toBool());
     autostartChk->setChecked(autostart->value("Edah", 0) != 0);
+    keepScreenChk->setChecked(settings->value("keepScreen", false).toBool());
 
     QStringList pluginsId = pluginsModel->load();
     availPluginsModel->refresh(pluginsId);
@@ -370,6 +375,7 @@ void GeneralTab::writeSettings()
 {
     settings->setValue("lang", langBox->currentData());
     settings->setValue("fullscreen", fullscreenChk->isChecked());
+    settings->setValue("keepScreen", keepScreenChk->isChecked());
 
     if(autostartChk->isChecked() && autostart->value("Edah", 0) == 0)
         autostart->setValue("Edah", QDir::toNativeSeparators(QCoreApplication::applicationDirPath() + "/edah.exe"));

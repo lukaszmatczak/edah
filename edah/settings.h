@@ -106,6 +106,7 @@ private:
     QComboBox *langBox;
     QCheckBox *fullscreenChk;
     QCheckBox *autostartChk;
+    QCheckBox *keepScreenChk;
 
     QSettings *autostart;
 

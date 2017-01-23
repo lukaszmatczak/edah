@@ -63,6 +63,7 @@ public:
     ~MainWindow();
 
     void reloadPlugins();
+    void showWindow();
 
 protected:
     void resizeEvent(QResizeEvent *e);

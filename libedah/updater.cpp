@@ -516,6 +516,7 @@ bool Updater::verify(const QList<FileInfo> &filesToUpdate)
 
         if(!file.open(QIODevice::ReadOnly))
         {
+            LOG(QString("Cannot open file \"%1\"!").arg(file.fileName()));
             emit verFailed();
             return false;
         }
@@ -526,6 +527,9 @@ bool Updater::verify(const QList<FileInfo> &filesToUpdate)
 
         if(filesToUpdate[i].compressedChecksum != localChecksum)
         {
+            LOG(QString("Checksum mismatch: \"%1\" and \"%2\"!")
+                .arg(file.fileName())
+                .arg(filesToUpdate[i].filename));
             emit verFailed();
             return false;
         }

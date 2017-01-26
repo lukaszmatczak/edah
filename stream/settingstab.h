@@ -56,6 +56,7 @@ private:
     QGroupBox *voipBox;
     QLineEdit *voip_username;
     QLineEdit *voip_password;
+    QComboBox *voip_port;
     QLineEdit *voip_number;
     QLineEdit *voip_pin;
     QComboBox *voip_playDev;

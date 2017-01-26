@@ -54,6 +54,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 
     id = args.GetOptionString("i");
     code = args.GetOptionString("c");
+    port = args.GetOptionString("s");
 
     PString playDev = args.GetOptionString("d");
     PString recDev = args.GetOptionString("r");
@@ -61,11 +62,11 @@ PBoolean MyManager::Initialise(PArgList & args)
     cerr << "Logging in";
 
     sipEP = new SIPEndPoint(*this);
-    sipEP->SetProxy("sip.ipfon.pl", user, password);
+    sipEP->SetProxy("sip.ipfon.pl:"+port, user, password);
     sipEP->SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
 
     SIPRegister::Params params;
-    params.m_addressOfRecord =  user + "@sip.ipfon.pl";
+    params.m_addressOfRecord =  user + "@sip.ipfon.pl:" + port;
     params.m_password = password;
 
     //SIPURL::DefaultPort = SIPURL::DefaultPort-(numberOfProcess.AsInteger()-1);
@@ -130,7 +131,7 @@ void MyManager::Main(PArgList & args)
 
     cerr << "Connecting";
 
-    SetUpCall("pc:*", "sip:"+id+"@sip.ipfon.pl", callToken);
+    SetUpCall("pc:*", "sip:"+id+"@sip.ipfon.pl:"+port, callToken);
 
     if ((FindCallWithLock(callToken)) != NULL)
     {
@@ -220,11 +221,12 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 void VoipProcess::Main()
 {
     PArgList & args = GetArguments();
-    args.Parse("u:p:i:c:d:r:");
+    args.Parse("u:p:s:i:c:d:r:");
 
     if(!(args.HasOption("u") && args.HasOption("p") &&
-         args.HasOption("i") && args.HasOption("c") &&
-         args.HasOption("d") && args.HasOption("r")))
+         args.HasOption("s") && args.HasOption("i") &&
+         args.HasOption("c") && args.HasOption("d") &&
+         args.HasOption("r")))
     {
         cerr << "Incorrect configuration";
         SetTerminationValue(-3);

@@ -367,13 +367,14 @@ void Stream::sc_processFinished(int exitCode, QProcess::ExitStatus exitStatus)
     emit stateChanged();
 }
 
-void Stream::voip_start(const QString &username, const QString &password, const QString &number, const QString &pin, const QString &playDev, const QString &recDev)
+void Stream::voip_start(const QString &username, const QString &password, const QString &port, const QString &number, const QString &pin, const QString &playDev, const QString &recDev)
 {
     voip_status = RUNNING;
 
     QStringList args;
     args << "-u" << username
          << "-p" << password
+         << "-s" << port
          << "-i" << number
          << "-c" << pin
          << "-d" << playDev
@@ -460,6 +461,7 @@ void Stream::start()
     {
         this->voip_start(settings->value("voip_username").toString(),
                          QByteArray::fromBase64(settings->value("voip_password").toByteArray()),
+                         settings->value("voip_port", "5060").toString(),
                          settings->value("voip_number").toString(),
                          QByteArray::fromBase64(settings->value("voip_pin").toByteArray()),
                          settings->value("voip_playDev", "Mute").toString(),

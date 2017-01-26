@@ -98,7 +98,7 @@ private:
 
     quint32 hash_str(const char* s);
     void sc_start(int version, const QString &url, int port, int streamid, const QString &username, const QString &password, int channels, int bitrate, int samplerate, const QString &recDev);
-    void voip_start(const QString &username, const QString &password, const QString &number, const QString &pin, const QString &playDev, const QString &recDev);
+    void voip_start(const QString &username, const QString &password, const QString &port, const QString &number, const QString &pin, const QString &playDev, const QString &recDev);
 
     BigPanel *bPanel;
     SmallPanel *sPanel;

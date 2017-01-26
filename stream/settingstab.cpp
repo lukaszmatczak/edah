@@ -113,6 +113,11 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
     voip_password->setEchoMode(QLineEdit::Password);
     voipBoxLayout->addRow(tr("Password: "), voip_password);
 
+    voip_port = new QComboBox(this);
+    voip_port->setEditable(true);
+    voip_port->setValidator(new QIntValidator(0, 65535));
+    voipBoxLayout->addRow(tr("SIP port: "), voip_port);
+
     voip_number = new QLineEdit(this);
     voip_number->setValidator(new QIntValidator(0, 999999999));
     voipBoxLayout->addRow(tr("Phone number: "), voip_number);
@@ -165,6 +170,19 @@ void SettingsTab::loadSettings()
     voip_number->setText(settings->value("voip_number").toString());
     voip_pin->setText(QByteArray::fromBase64(settings->value("voip_pin").toByteArray()));
 
+    QString vPort = settings->value("voip_port", "5060").toString();
+    QStringList ports;
+    ports << "5060" << "6060";
+
+    if(!ports.contains(vPort))
+    {
+        ports.insert(0, vPort);
+    }
+
+    voip_port->clear();
+    voip_port->addItems(ports);
+    voip_port->setCurrentIndex(ports.indexOf(vPort));
+
     QString playDev = settings->value("voip_playDev", "Mute").toString();
     if(playDev == "Mute")
         voip_playDev->setCurrentIndex(0);
@@ -194,6 +212,7 @@ void SettingsTab::writeSettings()
     settings->setValue("voip", voipBox->isChecked());
     settings->setValue("voip_username", voip_username->text());
     settings->setValue("voip_password", QString::fromUtf8(voip_password->text().toUtf8().toBase64()));
+    settings->setValue("voip_port", voip_port->currentText());
     settings->setValue("voip_number", voip_number->text());
     settings->setValue("voip_pin", QString::fromUtf8(voip_pin->text().toUtf8().toBase64()));
 

@@ -76,22 +76,27 @@
         <translation>VoIP (ipfon.pl)</translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="118"/>
+        <location filename="../settingstab.cpp" line="119"/>
+        <source>SIP port: </source>
+        <translation>Port SIP: </translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="123"/>
         <source>Phone number: </source>
         <translation>Numer telefonu: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="123"/>
+        <location filename="../settingstab.cpp" line="128"/>
         <source>PIN: </source>
         <translation>PIN: </translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="128"/>
+        <location filename="../settingstab.cpp" line="133"/>
         <source>Mute</source>
         <translation>Wycisz</translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="133"/>
+        <location filename="../settingstab.cpp" line="138"/>
         <source>Play device: </source>
         <translation>Urządzenie odtwarzające: </translation>
     </message>
@@ -99,70 +104,70 @@
 <context>
     <name>Stream</name>
     <message>
-        <location filename="../stream.cpp" line="118"/>
+        <location filename="../stream.cpp" line="123"/>
         <source>Stream</source>
         <translation>Transmisja</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="322"/>
+        <location filename="../stream.cpp" line="341"/>
         <source>Starting</source>
         <translation>Rozpoczynanie</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="326"/>
-        <location filename="../stream.cpp" line="389"/>
+        <location filename="../stream.cpp" line="345"/>
+        <location filename="../stream.cpp" line="409"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="379"/>
+        <location filename="../stream.cpp" line="399"/>
         <source>Logging in</source>
         <translation>Logowanie</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="380"/>
+        <location filename="../stream.cpp" line="400"/>
         <source>Unable to log in</source>
         <translation>Nie można się zalogować</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="381"/>
+        <location filename="../stream.cpp" line="401"/>
         <source>Connecting</source>
         <translation>Łączenie</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="382"/>
+        <location filename="../stream.cpp" line="402"/>
         <source>Joining a conference call</source>
         <translation>Dołączanie do telekonferencji</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="383"/>
+        <location filename="../stream.cpp" line="403"/>
         <source>Incorrect PIN</source>
         <translation>Kod PIN jest niepoprawny</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="384"/>
+        <location filename="../stream.cpp" line="404"/>
         <source>Unable to join</source>
         <translation>Nie można dołączyć</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="385"/>
+        <location filename="../stream.cpp" line="405"/>
         <source>Incorrect configuration</source>
         <translation>Niepoprawna konfiguracja programu</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="465"/>
+        <location filename="../stream.cpp" line="486"/>
         <source>Stopping stream</source>
         <translation>Zatrzymywanie transmisji</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="323"/>
-        <location filename="../stream.cpp" line="407"/>
+        <location filename="../stream.cpp" line="342"/>
+        <location filename="../stream.cpp" line="427"/>
         <source>Ended</source>
         <translation>Zakończono</translation>
     </message>
     <message>
-        <location filename="../stream.cpp" line="341"/>
-        <location filename="../stream.cpp" line="403"/>
+        <location filename="../stream.cpp" line="360"/>
+        <location filename="../stream.cpp" line="423"/>
         <source>Stopped with error: %1</source>
         <translation>Zakończono z błędem: %1</translation>
     </message>

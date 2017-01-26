@@ -46,6 +46,7 @@ private:
 
     PString id;
     PString code;
+    PString port;
 
     PString numberOfProcess;
     PString join;

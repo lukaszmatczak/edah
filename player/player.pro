@@ -57,7 +57,7 @@ HEADERS += player.h \
     windowselector.h \
     windowthumbnail.h
 
-TRANSLATIONS = player-lang/lang.pl.ts
+TRANSLATIONS = player-lang/lang.pl.ts player-lang/lang.ru.ts
 
 LIBS += -ltag -lbass
 

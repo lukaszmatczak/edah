@@ -36,7 +36,7 @@ CONFIG(debug) {
 RESOURCES += \
     common.qrc
 
-TRANSLATIONS = recorder-lang/lang.pl.ts
+TRANSLATIONS = recorder-lang/lang.pl.ts recorder-lang/lang.ru.ts
 
 QMAKE_EXTRA_COMPILERS += lrelease
 lrelease.input         = TRANSLATIONS

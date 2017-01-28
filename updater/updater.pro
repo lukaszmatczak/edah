@@ -31,7 +31,7 @@ LIBS += -ledah -ladvapi32 -luser32
 
 RC_FILE = res.rc
 
-TRANSLATIONS = lang/lang.pl.ts
+TRANSLATIONS = lang/lang.pl.ts lang/lang.ru.ts
 
 QMAKE_EXTRA_COMPILERS += lrelease
 lrelease.input         = TRANSLATIONS

@@ -480,7 +480,13 @@ void Updater::downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSiz
         if(filesToUpdate[i].type == FileInfo::File)
         {
             QFile currFile(updateDir + "/compressed/" + filesToUpdate[i].checksum);
-            currFile.open(QIODevice::WriteOnly);
+            if(!currFile.open(QIODevice::WriteOnly))
+            {
+                LOG(QString("Cannot open file \"%1\", error: %2!")
+                    .arg(currFile.fileName())
+                    .arg(currFile.errorString()));
+                return;
+            }
 
             if(!manager) manager = new QNetworkAccessManager;
             QNetworkRequest url(QUrl(utils->getServerUrl() + "/api/compressed/" + filesToUpdate[i].checksum));
@@ -499,6 +505,8 @@ void Updater::downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSiz
             loop.exec();
 
             bytesDownloaded += filesToUpdate[i].compressedSize;
+
+            currFile.close(); // TODO: ??
         }
     }
 }
@@ -516,7 +524,7 @@ bool Updater::verify(const QList<FileInfo> &filesToUpdate)
 
         if(!file.open(QIODevice::ReadOnly))
         {
-            LOG(QString("Cannot open file \"%1\"!").arg(file.fileName()));
+            LOG(QString("Cannot open file \"%1\", error: %2!").arg(file.fileName()).arg(file.errorString()));
             emit verFailed();
             return false;
         }

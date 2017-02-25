@@ -471,7 +471,7 @@ void Updater::doUpdate()
 
 void Updater::downloadUpdates(const QList<FileInfo> &filesToUpdate, int filesSize)
 {
-    QDir().mkdir(updateDir + "/compressed");
+    QDir().mkpath(updateDir + "/compressed");
 
     int bytesDownloaded = 0;
 

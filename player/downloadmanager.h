@@ -74,7 +74,7 @@ class DownloadManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit DownloadManager(QString path, QString videoQuality);
+    explicit DownloadManager(QString path, QString videoQuality, bool signLang);
 
 public slots:
     void start();
@@ -98,6 +98,7 @@ private:
 
     QString path;
     QString lang;
+    QString fileLang;
     QString videoQuality;
 
     QNetworkAccessManager *manager;

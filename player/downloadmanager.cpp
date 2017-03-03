@@ -44,10 +44,11 @@ const QString dbGetUrl = "https://www.jw.org/apps/GETPUBMEDIALINKS?output=json&a
 const quint32 magic = 0xEDA0A0ED;
 const quint32 currVersion = 2;
 
-DownloadManager::DownloadManager(QString path, QString videoQuality) :
+DownloadManager::DownloadManager(QString path, QString videoQuality, bool signLang) :
     path(path), videoQuality(videoQuality), QObject(nullptr), manager(nullptr)
 {
     lang = tr("E");
+    fileLang = signLang ? tr("BSL") : lang;
 }
 
 void DownloadManager::start()
@@ -149,7 +150,7 @@ RemoteInfo DownloadManager::getRemoteInfo(const MultimediaInfo &minfo)
 {
     if(!manager) manager = new QNetworkAccessManager;
     QNetworkRequest url(QUrl(dbGetUrl + QString("&langwritten=%1&txtCMSLang=%1&issue=%2&pub=%3&docid=%4")
-                             .arg(lang)
+                             .arg(fileLang)
                              .arg(minfo.IssueTagNumber)
                              .arg(minfo.KeySymbol)
                              .arg(minfo.MepsDocumentId)));
@@ -167,7 +168,7 @@ RemoteInfo DownloadManager::getRemoteInfo(const MultimediaInfo &minfo)
     {
         QJsonObject fileTypes = QJsonDocument::fromJson(reply->readAll()).object()
                 .value("files").toObject()
-                .value(lang).toObject();
+                .value(fileLang).toObject();
 
         for(auto it=fileTypes.begin(); it!=fileTypes.end(); ++it)
         {
@@ -524,7 +525,7 @@ QDataStream &operator>>(QDataStream &stream, Playlist &playlist)
 
 void DownloadManager::loadPlaylist(Playlist *playlist)
 {
-    QFile file(this->path + QString("/playlist_%1.db").arg(this->lang));
+    QFile file(this->path + QString("/playlist_%1.db").arg(this->fileLang));
     if(file.open(QIODevice::ReadOnly))
     {
         quint32 readMagic, version;
@@ -579,7 +580,7 @@ void DownloadManager::savePlaylist(const Playlist &playlist)
         QDir().mkpath(this->path + "/" + *it);
     }
 
-    QFile file(this->path + QString("/playlist_%1.db").arg(this->lang));
+    QFile file(this->path + QString("/playlist_%1.db").arg(this->fileLang));
     if(file.open(QIODevice::WriteOnly))
     {
         QDataStream stream(&file);

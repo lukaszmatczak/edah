@@ -101,6 +101,9 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     downloadChkLayout->addRow(tr("Downloads directory: "), downloadLayout);
 
+    signLangChk = new QCheckBox(tr("Download videos in sign language"), this);
+    downloadChkLayout->addWidget(signLangChk);
+
     downloadQuality = new QComboBox(downloadChk);
     downloadQuality->addItems({"240p", "360p", "480p", "720p"});
     downloadChkLayout->addRow(tr("Video quality: "), downloadQuality);
@@ -240,7 +243,8 @@ void SettingsTab::loadSettings()
     hwdecChk->setChecked(settings->value("hwdec", false).toBool());
     downloadChk->setChecked(settings->value("download", false).toBool());
     downloadDir->setText(settings->value("downloadDir", "").toString());
-    downloadQuality->setCurrentText(settings->value("downloadQualoty", "720p").toString());
+    signLangChk->setChecked(settings->value("downloadSignLang", false).toBool());
+    downloadQuality->setCurrentText(settings->value("downloadQuality", "720p").toString());
     downloadEmail->setText(settings->value("downloadEmail").toString());
     settings->endGroup();
 
@@ -271,6 +275,7 @@ void SettingsTab::writeSettings()
     settings->setValue("hwdec", hwdecChk->isChecked());
     settings->setValue("download", downloadChk->isChecked());
     settings->setValue("downloadDir", downloadDir->text());
+    settings->setValue("downloadSignLang", signLangChk->isChecked());
     settings->setValue("downloadQuality", downloadQuality->currentText());
     settings->setValue("downloadEmail", downloadEmail->text());
     settings->endGroup();

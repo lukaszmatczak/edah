@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -147,7 +147,8 @@ Player::Player() : autoplay(false), currPos(0.0)
     {
         downloadDir = settings->value("downloadDir", "").toString();
         downloadManager = new DownloadManager(downloadDir,
-                                              settings->value("downloadQuality", "720p").toString());
+                                              settings->value("downloadQuality", "720p").toString(),
+                                              settings->value("downloadSignLang", false).toBool());
         connect(this, &Player::downloaderStart, downloadManager, &DownloadManager::start);
         connect(downloadManager, &DownloadManager::setTrayText, this, [this](QString text) {
             trayIcon->setVisible(!text.isEmpty());

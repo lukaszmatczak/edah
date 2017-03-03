@@ -98,13 +98,18 @@
         <translation>U</translation>
     </message>
     <message>
-        <location filename="../downloadmanager.cpp" line="59"/>
-        <location filename="../downloadmanager.cpp" line="281"/>
+        <location filename="../downloadmanager.cpp" line="51"/>
+        <source>BSL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../downloadmanager.cpp" line="60"/>
+        <location filename="../downloadmanager.cpp" line="282"/>
         <source>Downloading</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../downloadmanager.cpp" line="282"/>
+        <location filename="../downloadmanager.cpp" line="283"/>
         <source>
 %n file(s) (%1 MB) left</source>
         <translation type="unfinished">
@@ -145,12 +150,12 @@
 <context>
     <name>Player</name>
     <message>
-        <location filename="../player.cpp" line="231"/>
+        <location filename="../player.cpp" line="232"/>
         <source>Player</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../player.cpp" line="290"/>
+        <location filename="../player.cpp" line="291"/>
         <source>Enter first song number</source>
         <translation type="unfinished"></translation>
     </message>
@@ -238,43 +243,48 @@ Settings:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="106"/>
-        <source>Video quality: </source>
+        <location filename="../settingstab.cpp" line="104"/>
+        <source>Download videos in sign language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../settingstab.cpp" line="109"/>
+        <source>Video quality: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="112"/>
         <source>Email address: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="111"/>
+        <location filename="../settingstab.cpp" line="114"/>
         <source>Valid email address is required. You will receive report about downloaded files every Sunday.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="158"/>
+        <location filename="../settingstab.cpp" line="161"/>
         <source>
 Main</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="180"/>
+        <location filename="../settingstab.cpp" line="183"/>
         <source>You couldn&apos;t choose main display!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="258"/>
+        <location filename="../settingstab.cpp" line="262"/>
         <source>Warning!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="259"/>
+        <location filename="../settingstab.cpp" line="263"/>
         <source>You haven&apos;t entered valid email address! Auto-download will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="286"/>
+        <location filename="../settingstab.cpp" line="291"/>
         <source>en</source>
         <translation>ru</translation>
     </message>

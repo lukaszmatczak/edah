@@ -254,7 +254,8 @@ void Player::settingsChanged()
 
     settings->beginGroup(this->getPluginId());
     songsDir = QDir(settings->value("songsDir").toString());
-    QString playDev = settings->value("device", "").toString(); // TODO
+    //QString playDev = settings->value("device", "").toString(); // TODO
+    hideScreen = settings->value("hideScreen", true).toBool();
     settings->endGroup();
 
     this->loadSongs();
@@ -423,17 +424,12 @@ void Player::refreshState()
     else
         utils->enableCursorClip(false);
 
-    bool hidden = (currPos == 0.0) && paused && !videoWindow->isImageVisible() && !videoWindow->isWindowVisible();
+    bool hidden = ((currPos == 0.0) && paused &&
+            !videoWindow->isImageVisible() && !videoWindow->isWindowVisible())
+            || this->autoplay;
 
     videoWindow->videoWidget->setHidden(hidden);
-    if(!settings->value("hideScreen", true).toBool()) // TODO
-    {
-        videoWindow->setHidden(hidden);
-    }
-    else
-    {
-        videoWindow->setHidden(false);
-    }
+    videoWindow->setHidden(hideScreen ? false : hidden);
 }
 
 bool Player::isPlaying()

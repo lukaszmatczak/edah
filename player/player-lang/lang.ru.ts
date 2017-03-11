@@ -155,7 +155,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../player.cpp" line="291"/>
+        <location filename="../player.cpp" line="292"/>
         <source>Enter first song number</source>
         <translation type="unfinished"></translation>
     </message>
@@ -218,7 +218,7 @@ Settings:</source>
     </message>
     <message>
         <location filename="../settingstab.cpp" line="77"/>
-        <location filename="../settingstab.cpp" line="98"/>
+        <location filename="../settingstab.cpp" line="101"/>
         <source>Select directory</source>
         <translation type="unfinished"></translation>
     </message>
@@ -229,62 +229,67 @@ Settings:</source>
     </message>
     <message>
         <location filename="../settingstab.cpp" line="83"/>
-        <source>Enable hardware decoding</source>
+        <source>Hide content of secondary screen while not playing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../settingstab.cpp" line="86"/>
+        <source>Enable hardware decoding</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settingstab.cpp" line="89"/>
         <source>Automatically download videos from jw.org</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="102"/>
+        <location filename="../settingstab.cpp" line="105"/>
         <source>Downloads directory: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="104"/>
+        <location filename="../settingstab.cpp" line="107"/>
         <source>Download videos in sign language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="109"/>
+        <location filename="../settingstab.cpp" line="112"/>
         <source>Video quality: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="112"/>
+        <location filename="../settingstab.cpp" line="115"/>
         <source>Email address: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="114"/>
+        <location filename="../settingstab.cpp" line="117"/>
         <source>Valid email address is required. You will receive report about downloaded files every Sunday.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="161"/>
+        <location filename="../settingstab.cpp" line="164"/>
         <source>
 Main</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="183"/>
+        <location filename="../settingstab.cpp" line="186"/>
         <source>You couldn&apos;t choose main display!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="262"/>
+        <location filename="../settingstab.cpp" line="266"/>
         <source>Warning!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="263"/>
+        <location filename="../settingstab.cpp" line="267"/>
         <source>You haven&apos;t entered valid email address! Auto-download will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settingstab.cpp" line="291"/>
+        <location filename="../settingstab.cpp" line="296"/>
         <source>en</source>
         <translation>ru</translation>
     </message>

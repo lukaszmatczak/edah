@@ -91,6 +91,7 @@ private:
     QFrame *monitorsFrame;
     QComboBox *playDevBox;
     QLineEdit *songsDir;
+    QCheckBox *hideScreenChk;
     QCheckBox *hwdecChk;
     QGroupBox *downloadChk;
     QLineEdit *downloadDir;

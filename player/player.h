@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -126,6 +126,7 @@ private:
 
     QDir songsDir;
     QString downloadDir;
+    bool hideScreen;
     PeakMeter *peakMeter;
     MPV *mpv;
     ShufflePlaylist *rndPlaylist;

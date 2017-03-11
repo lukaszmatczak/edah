@@ -80,6 +80,9 @@ SettingsTab::SettingsTab(IPlugin *parent) : QWidget(0), plugin(parent)
 
     layout->addRow(tr("Songs directory: "), songsLayout);
 
+    hideScreenChk = new QCheckBox(tr("Hide content of secondary screen while not playing"));
+    layout->addRow(hideScreenChk);
+
     hwdecChk = new QCheckBox(tr("Enable hardware decoding"));
     layout->addRow(hwdecChk);
 
@@ -240,6 +243,7 @@ void SettingsTab::loadSettings()
     settings->beginGroup(plugin->getPluginId());
     selectedMonitor = settings->value("displayGeometry").toRect();
     songsDir->setText(settings->value("songsDir", "").toString());
+    hideScreenChk->setChecked(settings->value("hideScreen", true).toBool());
     hwdecChk->setChecked(settings->value("hwdec", false).toBool());
     downloadChk->setChecked(settings->value("download", false).toBool());
     downloadDir->setText(settings->value("downloadDir", "").toString());
@@ -272,6 +276,7 @@ void SettingsTab::writeSettings()
     settings->beginGroup(plugin->getPluginId());
     settings->setValue("displayGeometry", selectedMonitor);
     settings->setValue("songsDir", songsDir->text());
+    settings->setValue("hideScreen", hideScreenChk->isChecked());
     settings->setValue("hwdec", hwdecChk->isChecked());
     settings->setValue("download", downloadChk->isChecked());
     settings->setValue("downloadDir", downloadDir->text());

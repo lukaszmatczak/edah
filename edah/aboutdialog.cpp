@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,10 +40,12 @@ AboutDialog::AboutDialog()
 
     QLabel *text = new QLabel(this);
     text->setText(QString("<b>Edah %1</b><br/>").arg(utils->getAppVersion()) +
-                  "<br/>"
-                  + tr("Edah (heb. ʽe&middot;dhahʹ, eng. assembly) - program that handles multimedia during meetings. "
+                  "<br/>" +
+                  tr("Edah (heb. ʽe&middot;dhahʹ, eng. assembly) - program that handles multimedia during meetings. "
                        "Edah can be extended by plugins (for example: \"Player\", \"Recorder\", \"Stream\"), "
-                       "supports touchscreen and is fully configurable.<br/>"));
+                       "supports touchscreen and is fully configurable.<br/>") +
+                  "WWW: <a href=\"http://edah.tk\">edah.tk</a>");
+    text->setOpenExternalLinks(true);
     text->setWordWrap(true);
     layout->addWidget(text, 0, 1);
 

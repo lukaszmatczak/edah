@@ -36,7 +36,7 @@ CONFIG(debug) {
 RESOURCES += \
     common.qrc
 
-TRANSLATIONS = stream-lang/lang.pl.ts stream-lang/lang.ru.ts
+TRANSLATIONS = stream-lang/lang.pl.ts
 
 QMAKE_EXTRA_COMPILERS += lrelease
 lrelease.input         = TRANSLATIONS

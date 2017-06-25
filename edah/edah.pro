@@ -53,7 +53,7 @@ RC_FILE = res.rc
 RESOURCES += \
     common.qrc
 
-TRANSLATIONS = lang/lang.pl.ts lang/lang.ru.ts
+TRANSLATIONS = lang/lang.pl.ts
 
 CONFIG(debug) {
 MY_DESTDIR_TARGET = "$$OUT_PWD/debug"

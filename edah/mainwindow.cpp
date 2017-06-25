@@ -100,9 +100,6 @@ MainWindow::MainWindow(QWidget *parent)
             pluginLayout->setSpacing(0);
             pluginContainer->setLayout(pluginLayout);
             container->layout()->addWidget(pluginContainer);
-
-            this->createBottomBar(container);
-            container->layout()->addWidget(bottomBar);
         }
     }
 
@@ -120,11 +117,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     qApp->installTranslator(&translator);
-
-    connect(&timer, &QTimer::timeout, this, &MainWindow::timerSlot);
-    timer.start(100);
-
-    connect(qApp, &QApplication::focusChanged, this, &MainWindow::onFocusChanged);
 
 #ifdef Q_OS_WIN
     globalSettings = new QSettings("HKEY_LOCAL_MACHINE\\Software\\Lukasz Matczak\\Edah", QSettings::NativeFormat);
@@ -163,18 +155,9 @@ MainWindow::~MainWindow()
     delete utils;
 }
 
-void MainWindow::showWindow()
+void MainWindow::showWindow() // TODO
 {
-    if(settings->value("fullscreen", false).toBool())
-    {
-        titleBar->setVisible(false);
-        this->showFullScreen();
-    }
-    else
-    {
-        bottomBar->setVisible(false);
-        this->show();
-    }
+    this->show();
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
@@ -199,9 +182,6 @@ void MainWindow::changeEvent(QEvent *e)
         minimizeBtn->setToolTip(tr("Minimize"));
         maximizeBtn->setToolTip(this->isMaximized() ? tr("Restore") : tr("Maximize"));
         closeBtn->setToolTip(tr("Close"));
-        closeBtn_bottom->setToolTip(tr("Close"));
-        minimizeBtn_bottom->setToolTip(tr("Minimize"));
-        menuBtn_bottom->setToolTip(tr("Menu"));
 
         this->refreshPluginContainerText();
 
@@ -292,10 +272,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
     updaterThread.wait();
 #endif
 
-    if(!this->isFullScreen())
-    {
-        settings->setValue("MainWindow_geometry", this->saveGeometry());
-    }
+    settings->setValue("MainWindow_geometry", this->saveGeometry());
 
     foreach(Plugin plugin, plugins)
     {
@@ -552,55 +529,9 @@ void MainWindow::createTitleBar(QWidget *parent)
     titleBar->layout()->addWidget(closeBtn);
 }
 
-void MainWindow::createBottomBar(QWidget *parent)
-{
-    bottomBar = new QFrame(parent);
-    bottomBar->setObjectName("bottomBar");
-
-    bottomBar->setLayout(new QHBoxLayout);
-    bottomBar->layout()->setSpacing(0);
-    bottomBar->layout()->setContentsMargins(QMargins());
-
-    ((QHBoxLayout*)bottomBar->layout())->addStretch(1);
-
-    closeBtn_bottom = new QToolButton(bottomBar);
-    closeBtn_bottom->setIcon(QIcon(":/img/close.svg"));
-    closeBtn_bottom->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
-    closeBtn_bottom->setObjectName("closeBtn_bottom");
-    connect(closeBtn_bottom, &QToolButton::clicked, this, &MainWindow::closeApp);
-    bottomBar->layout()->addWidget(closeBtn_bottom);
-
-    minimizeBtn_bottom = new QToolButton(bottomBar);
-    minimizeBtn_bottom->setIcon(QIcon(":/img/minimize.svg"));
-    minimizeBtn_bottom->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
-    minimizeBtn_bottom->setObjectName("minimizeBtn_bottom");
-    connect(minimizeBtn_bottom, &QToolButton::clicked, this, &MainWindow::showMinimized);
-    bottomBar->layout()->addWidget(minimizeBtn_bottom);
-
-    menuBtn_bottom = new QToolButton(bottomBar);
-    menuBtn_bottom->setIcon(QIcon(":/img/menu.svg"));
-    menuBtn_bottom->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
-    menuBtn_bottom->setObjectName("menuBtn_bottom");
-    connect(menuBtn_bottom, &QToolButton::clicked, this, &MainWindow::showMenu);
-    bottomBar->layout()->addWidget(menuBtn_bottom);
-
-    ((QHBoxLayout*)bottomBar->layout())->addStretch(12);
-
-    clockLbl = new QLabel("--:--", bottomBar);
-
-    bottomBar->layout()->addWidget(clockLbl);
-
-    ((QHBoxLayout*)bottomBar->layout())->addStretch(1);
-}
-
 void MainWindow::newProcess(const QString &message)
 {
     // TODO
-}
-
-void MainWindow::timerSlot()
-{
-    clockLbl->setText(QTime::currentTime().toString(tr("hh:mm AP")));
 }
 
 void MainWindow::onFocusChanged(QWidget *old, QWidget *now)
@@ -629,11 +560,11 @@ void MainWindow::recalcSizes(QSize size)
 
     foreach(QWidget *widget, vec)
     {
-        widget->setProperty("isMaximized", this->isMaximized() || this->isFullScreen());
+        widget->setProperty("isMaximized", this->isMaximized());
         utils->updateStyle(widget);
     }
 
-    if(this->isMaximized() || this->isFullScreen())
+    if(this->isMaximized())
     {
         winFrame->hide();
         container->setGeometry(0, 0, size.width(), size.height());
@@ -653,15 +584,7 @@ void MainWindow::recalcSizes(QSize size)
                             .arg(titleLbl->width()));
 
     int height = size.height()/16;
-    bottomBar->setFixedHeight(height);
-    QSize iconSize = QSize(height*2, height/2);
-    closeBtn_bottom->setIconSize(iconSize);
-    minimizeBtn_bottom->setIconSize(iconSize);
-    menuBtn_bottom->setIconSize(iconSize);
-
     int fontSize = height/1.5f;
-    clockLbl->setStyleSheet(QString("font-size: %1px")
-                            .arg(fontSize));
 
     pluginContainer->setStyleSheet(QString("#pluginContainer { font-size: %1px; }")
                                    .arg(fontSize));
@@ -708,15 +631,7 @@ void MainWindow::settingsChanged()
     QLocale locale = QLocale(settings->value("lang", "").toString());
     translator.load(locale, "lang", ".", ":/lang");
 
-    bool fullscreen = settings->value("fullscreen", false).toBool();
-    if(fullscreen != this->isFullScreen())
-    {
-        titleBar->setVisible(!fullscreen);
-        bottomBar->setVisible(fullscreen);
-        fullscreen ? this->showFullScreen() : this->showNormal();
-    }
-
-    this->reloadPlugins();
+    titleBar->setVisible(true);
 
     for(int i=0; i<plugins.size(); i++)
     {
@@ -745,17 +660,7 @@ void MainWindow::showMenu()
 
     menu->addAction(tr("About..."), this, SLOT(showAbout()));
 
-    if(QObject::sender() == menuBtn_bottom)
-    {
-        menu->setStyleSheet(QString("font-size: %1px")
-                            .arg(this->height()/32));
-
-        menu->popup(menuBtn_bottom->mapToGlobal(QPoint(0, -menu->sizeHint().height())));
-    }
-    else
-    {
-        menu->popup(menuBtn->mapToGlobal(QPoint(0, menuBtn->height())));
-    }
+    menu->popup(menuBtn->mapToGlobal(QPoint(0, menuBtn->height())));
 }
 
 void MainWindow::showAbout()
@@ -792,6 +697,5 @@ void MainWindow::showUpdate(UpdateInfoArray info)
         this->updateInfo = info;
 
         menuBtn->setIcon(QIcon(":/img/menu_info.svg"));
-        menuBtn_bottom->setIcon(QIcon(":/img/menu_info.svg"));
     }
 }

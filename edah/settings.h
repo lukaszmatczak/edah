@@ -43,7 +43,6 @@ protected:
 private:
     QLabel *langLbl;
     QComboBox *langBox;
-    QCheckBox *fullscreenChk;
     QCheckBox *autostartChk;
     QCheckBox *keepScreenChk;
 

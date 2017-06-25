@@ -135,9 +135,6 @@ GeneralTab::GeneralTab()
 
     layout->addRow(langLbl, langBox);
 
-    fullscreenChk = new QCheckBox(this);
-    layout->addRow(fullscreenChk);
-
     autostart = new QSettings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     autostartChk = new QCheckBox(this);
     layout->addRow(autostartChk);
@@ -160,7 +157,6 @@ void GeneralTab::changeEvent(QEvent *e)
     if(e->type() == QEvent::LanguageChange)
     {
         langLbl->setText(tr("Language:"));
-        fullscreenChk->setText(tr("Show main window on full-screen"));
         autostartChk->setText(tr("Run program on startup"));
         keepScreenChk->setText(tr("Prevent screensaver"));
     }
@@ -187,7 +183,6 @@ void GeneralTab::loadSettings()
     }
     langBox->setCurrentIndex(idx);
 
-    fullscreenChk->setChecked(settings->value("fullscreen", false).toBool());
     autostartChk->setChecked(autostart->value("Edah", 0) != 0);
     keepScreenChk->setChecked(settings->value("keepScreen", false).toBool());
 }
@@ -195,7 +190,6 @@ void GeneralTab::loadSettings()
 void GeneralTab::writeSettings()
 {
     settings->setValue("lang", langBox->currentData());
-    settings->setValue("fullscreen", fullscreenChk->isChecked());
     settings->setValue("keepScreen", keepScreenChk->isChecked());
 
     if(autostartChk->isChecked() && autostart->value("Edah", 0) == 0)

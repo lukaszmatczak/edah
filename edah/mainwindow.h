@@ -75,7 +75,6 @@ private:
     void changeActivePlugin(int pluginIdx);
 
     void createTitleBar(QWidget *parent);
-    void createBottomBar(QWidget *parent);
 
     QTranslator translator;
 
@@ -97,14 +96,7 @@ private:
     QToolButton *maximizeBtn;
     QToolButton *closeBtn;
 
-    QFrame *bottomBar;
-    QToolButton *closeBtn_bottom;
-    QToolButton *minimizeBtn_bottom;
-    QToolButton *menuBtn_bottom;
-    QLabel *clockLbl;
-
     QPoint movePos;
-    QTimer timer;
 
     QVector<Plugin> plugins;
     int activePlugin;
@@ -120,7 +112,6 @@ public slots:
     void newProcess(const QString &message);
 
 private slots:
-    void timerSlot();
     void onFocusChanged(QWidget *old, QWidget *now);
     void recalcSizes(QSize size);
     void settingsChanged();

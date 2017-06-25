@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,45 +27,17 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
     layout = new QVBoxLayout(this);
     this->setLayout(layout);
 
-    int install = 0, remove = 0, update = 0;
-    for(int i=0; i<info->size(); i++)
-    {
-        switch(info->at(i).action)
-        {
-        case UpdateInfo::Install: install++; break;
-        case UpdateInfo::Uninstall: remove++; break;
-        case UpdateInfo::Update: update++; break;
-        }
-    }
-
     label = new QLabel(this);
-    QString text;
+    QString text = tr("<b>New version is available!</b><br/><br/>");
 
-    if((update > 0) && (install == 0) && (remove == 0))
-        text += tr("<b>New version is available!</b><br/><br/>");
-
-    text += tr("Following components will be changed:<br/>");
+    text += tr("Following components will be updated:<br/>");
 
     for(int i=0; i<info->size(); i++)
     {
-        switch(info->at(i).action)
-        {
-        case UpdateInfo::Install:
-            text += tr("&nbsp;&nbsp;&nbsp;\"%1\" (%2) will be installed<br/>")
-                    .arg(info->at(i).name)
-                    .arg(info->at(i).newVersion);
-            break;
-        case UpdateInfo::Uninstall:
-            text += tr("&nbsp;&nbsp;&nbsp;\"%1\" will be removed<br/>")
-                    .arg(info->at(i).name);
-            break;
-        case UpdateInfo::Update:
-            text += tr("&nbsp;&nbsp;&nbsp;\"%1\" will be updated from version %2 to %3<br/>")
-                    .arg(info->at(i).name)
-                    .arg(info->at(i).oldVersion)
-                    .arg(info->at(i).newVersion);
-            break;
-        }
+        text += tr("&nbsp;&nbsp;&nbsp;\"%1\" (from %2 to %3)<br/>")
+                .arg(info->at(i).name)
+                .arg(info->at(i).oldVersion)
+                .arg(info->at(i).newVersion);
     }
 
     label->setText(text);
@@ -73,9 +45,6 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
 
     sizeLabel = new QLabel(tr("Size of data to download: ... KB"), this);
     layout->addWidget(sizeLabel);
-
-    if((update == 0) && (install == 0))
-        sizeLabel->hide();
 
     QLabel *label2 = new QLabel(tr("Do you want to close Edah and apply these changes?"), this);
     layout->addWidget(label2);
@@ -90,7 +59,6 @@ UpdateDialog::UpdateDialog(UpdateInfoArray *info, Updater *updater, QWidget *par
 
     connect(buttonBox, &QDialogButtonBox::accepted, updater, &Updater::prepareUpdate);
     connect(buttonBox, &QDialogButtonBox::rejected, this, [this]() {
-        this->updater->setInstallPlugin("");
         this->close();
     });
 

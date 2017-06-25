@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -67,7 +67,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     updater = new Updater;
     updater->setInstallDir(QCoreApplication::arguments().at(1));
-    updater->setInstallPlugin(QCoreApplication::arguments().at(2));
     connect(this, &MainWindow::doUpdate, updater, &Updater::doUpdate);
     connect(updater, &Updater::progress, this, &MainWindow::progress);
     connect(updater, &Updater::verFailed, this, [this](){

@@ -37,20 +37,6 @@
 
 #include <QDebug>
 
-QDataStream &operator<<(QDataStream &stream, const PluginCfgEntry &entry)
-{
-    stream << entry.enabled << entry.id;
-
-    return stream;
-}
-
-QDataStream &operator>>(QDataStream &stream, PluginCfgEntry &entry)
-{
-    stream >> entry.enabled >> entry.id;
-
-    return stream;
-}
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), activePlugin(-1), updateAvailable(false)
 {
@@ -132,8 +118,6 @@ MainWindow::MainWindow(QWidget *parent)
             LOG(QString("Couldn't load translation for \"%1\"").arg(localeStr));
         }
     }
-
-    MultilangString::setLang(localeStr);
 
     qApp->installTranslator(&translator);
 
@@ -357,72 +341,25 @@ void MainWindow::unloadPlugin(Plugin *plugin)
     delete plugin->loader;
 }
 
-bool MainWindow::findPlugin(const QString &id, Plugin *plugin)
-{
-    for(int i=0; i<plugins.size(); i++)
-    {
-        if(plugins[i].id == id)
-        {
-            *plugin = plugins[i];
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void MainWindow::reloadPlugins()
 {
-    QVector<PluginCfgEntry> cfg;
-    QByteArray arr = settings->value("plugins").toByteArray();
-    QDataStream stream(arr);
-    stream >> cfg;
-
-    int enabledPlugins = 0;
     int curr = 1;
-    for(int i=0; i<cfg.size(); i++)
-    {
-        if(cfg[i].enabled)
-            enabledPlugins++;
-    }
+    QStringList pluginsList = QDir(utils->getDataDir()+"/plugins").entryList(QDir::AllDirs | QDir::NoDotAndDotDot);
+    const int enabledPlugins = pluginsList.size();
 
     emit loadProgressChanged(1, enabledPlugins+1);
 
     QVector<QString> newPluginsId;
     QVector<Plugin> newPlugins;
 
-    // delete all items in pluginLayout
-    QLayoutItem *item;
-    while((item = pluginLayout->takeAt(0)) != 0)
-    {
-        item->widget()->hide();
-        if(item->widget()->objectName() == "line")
-        {
-            delete item->widget();
-        }
-        else if(item->widget()->objectName() == "plugin.container")
-        {
-            QList<QWidget*> children = item->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
-            for(int i=0; i<children.size(); i++)
-            {
-                children[i]->setParent(this);
-            }
-            delete item->widget();
-        }
-        delete item;
-    }
-
     // load new plugins
-    for(int i=0; i<cfg.size(); i++)
+    for(int i=0; i<pluginsList.size(); i++)
     {
-        if(!cfg[i].enabled)
-            continue;
-
-        QString pluginId = cfg[i].id;
+        QString pluginId = pluginsList[i];
 
         Plugin p;
 
-        if(this->findPlugin(pluginId, &p) || this->loadPlugin(pluginId, &p))
+        if(this->loadPlugin(pluginId, &p))
         {
             newPlugins.push_back(p);
             newPluginsId.push_back(pluginId);
@@ -445,15 +382,6 @@ void MainWindow::reloadPlugins()
                 activePlugin = i;
                 break;
             }
-        }
-    }
-
-    // unload old plugins
-    for(int i=0; i<plugins.size(); i++)
-    {
-        if(!newPluginsId.contains(plugins[i].id))
-        {
-            this->unloadPlugin(&plugins[i]);
         }
     }
 
@@ -777,8 +705,6 @@ void MainWindow::recalcSizes(QSize size)
 
 void MainWindow::settingsChanged()
 {
-    MultilangString::setLang(settings->value("lang", "en").toString());
-
     QLocale locale = QLocale(settings->value("lang", "").toString());
     translator.load(locale, "lang", ".", ":/lang");
 
@@ -850,7 +776,7 @@ void MainWindow::showUpdateDialog()
 
 void MainWindow::showSettings()
 {
-    Settings *settings = new Settings(&plugins, updater);
+    Settings *settings = new Settings(&plugins);
     settings->setAttribute(Qt::WA_DeleteOnClose);
     connect(settings, &Settings::settingsChanged, this, &MainWindow::settingsChanged);
     settings->exec();

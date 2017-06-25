@@ -21,80 +21,19 @@
 
 #include "mainwindow.h"
 
-#include <libedah/multilangstring.h>
-
 #include <QDialog>
 #include <QComboBox>
 #include <QCheckBox>
-#include <QTableView>
-#include <QTextBrowser>
 #include <QFile>
 #include <QDialogButtonBox>
 #include <QLabel>
-#include <QNetworkAccessManager>
-
-struct PluginInfo
-{
-    bool enabled;
-    QString id;
-    MultilangString name;
-    MultilangString desc;
-    QString version;
-#ifdef Q_OS_LINUX
-    QString url;
-#endif
-};
-
-class PluginTableModel : public QAbstractTableModel
-{
-    Q_OBJECT
-
-public:
-    QStringList load();
-    PluginInfo loadFromFile(QFile &file);
-    void refresh();
-    int rowCount(const QModelIndex &parent) const;
-    int columnCount(const QModelIndex &parent) const;
-    QVariant data(const QModelIndex &index, int role) const;
-    void swapEntries(int pos1, int pos2);
-
-    PluginInfo getPluginInfo(int i);
-    void toggleChecked(int i);
-    QStringList getIds();
-
-private:
-    QVector<PluginInfo> plugins;
-
-};
-
-class AvailPluginTableModel : public QAbstractTableModel
-{
-    Q_OBJECT
-
-public:
-    AvailPluginTableModel();
-    virtual ~AvailPluginTableModel();
-    int rowCount(const QModelIndex &parent) const;
-    int columnCount(const QModelIndex &parent) const;
-    QVariant data(const QModelIndex &index, int role) const;
-
-    PluginInfo getPluginInfo(int i);
-    void refresh(QStringList skipPlugins);
-
-private:
-    QNetworkAccessManager *manager;
-    QNetworkReply *reply;
-
-    QVector<PluginInfo> plugins;
-    QJsonObject json;
-};
 
 class GeneralTab : public QWidget
 {
     Q_OBJECT
 
 public:
-    GeneralTab(Updater *updater);
+    GeneralTab();
     void loadSettings();
     void writeSettings();
 
@@ -110,35 +49,7 @@ private:
 
     QSettings *autostart;
 
-    QTableView *pluginsTbl;
-    PluginTableModel *pluginsModel;
-
-    QTableView *availPluginsTbl;
-    AvailPluginTableModel *availPluginsModel;
-
-    QLabel *installedPluginsLbl;
-    QLabel *availPluginsLbl;
-    QPushButton *moveUpBtn;
-    QPushButton *moveDownBtn;
-    QPushButton *downloadPlugin;
-
-    QTextBrowser *pluginDesc;
-
     QString currLang;
-
-    Updater *updater;
-    QString pluginToChange;
-
-private slots:
-    void installedPluginSelected(const QModelIndex &index);
-    void availablePluginSelected(const QModelIndex &index);
-    void moveUpBtnClicked();
-    void moveDownBtnClicked();
-    void downloadPluginClicked();
-
-signals:
-    void installPlugin();
-    void uninstallPlugin();
 };
 
 class Settings : public QDialog
@@ -146,7 +57,7 @@ class Settings : public QDialog
     Q_OBJECT
 
 public:
-    Settings(QVector<Plugin> *plugins, Updater *updater);
+    Settings(QVector<Plugin> *plugins);
     virtual ~Settings();
 
 protected:

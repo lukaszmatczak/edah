@@ -35,15 +35,6 @@
 #include <QPluginLoader>
 #include <QThread>
 
-struct PluginCfgEntry
-{
-    QString id;
-    bool enabled;
-};
-
-QDataStream &operator<<(QDataStream &stream, const PluginCfgEntry &entry);
-QDataStream &operator>>(QDataStream &stream, PluginCfgEntry &entry);
-
 struct Plugin
 {
     QString id;
@@ -80,7 +71,6 @@ private:
 
     bool loadPlugin(const QString &id, Plugin *plugin);
     void unloadPlugin(Plugin *plugin);
-    bool findPlugin(const QString &id, Plugin *plugin);
 
     void changeActivePlugin(int pluginIdx);
 

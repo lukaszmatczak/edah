@@ -19,7 +19,6 @@ SOURCES += logger.cpp \
     utils.cpp \
     mypushbutton.cpp \
     peakmeter.cpp \
-    multilangstring.cpp \
     bluropacityeffect.cpp \
     popup.cpp \
     flickcharm.cpp
@@ -30,7 +29,6 @@ HEADERS += iplugin.h \
     mypushbutton.h \
     libedah.h \
     peakmeter.h \
-    multilangstring.h \
     bluropacityeffect.h \
     popup.h \
     flickcharm.h

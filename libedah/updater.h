@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,9 +29,6 @@
 
 struct UpdateInfo
 {
-    enum Action { Update, Install, Uninstall };
-
-    Action action;
     QString name;
     QString oldVersion;
     QString newVersion;
@@ -70,14 +67,12 @@ class LIBEDAHSHARED_EXPORT Updater : public QObject
 public:
     explicit Updater(QObject *parent = 0);
     void setInstallDir(QString dir);
-    void setInstallPlugin(QString plugin);
 
 public slots:
     UpdateInfoEx checkUpdates(); // stage 1
     UpdateInfoEx checkFiles(); // stage 2
     void prepareUpdate(); // stage 3
     void doUpdate(); // stage 4
-    void uninstallPlugin();
 
 private:
     QStringList getInstalledPlugins();
@@ -103,7 +98,6 @@ private:
 
     QString installDir;
     QString updateDir;
-    QString installPlugin;
 
     QNetworkAccessManager *manager;
     QNetworkReply *reply;

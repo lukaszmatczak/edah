@@ -139,7 +139,6 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
         if(pluginJson["build"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
-            info.action = UpdateInfo::Update;
             info.name = pluginJson["id"].toString();
             info.oldVersion = pluginJson["version"].toString();
             info.oldBuild = pluginJson["build"].toInt();
@@ -148,27 +147,6 @@ void Updater::checkForPluginsUpdate(const QJsonArray &remoteJson, QSet<QString> 
 
             updates->push_back(info);
         }
-    }
-
-    if(this->installPlugin.startsWith("+"))
-    {
-        QString pluginName = this->installPlugin.mid(1);
-
-        QJsonObject remote = JsonFindModule(remoteJson, pluginName);
-
-        QStringList dep = remote["d"].toString().split(" ", QString::SkipEmptyParts);
-        for(int i=0; i<dep.size(); i++)
-            depedencies->insert(dep[i]);
-
-        UpdateInfo info;
-        info.action = UpdateInfo::Install;
-        info.name = pluginName;
-        info.oldVersion = "";
-        info.oldBuild = 0;
-        info.newVersion = remote["v"].toString();
-        info.newBuild = remote["b"].toInt();
-
-        updates->push_back(info);
     }
 }
 
@@ -194,7 +172,6 @@ void Updater::checkForModulesUpdate(const QJsonArray &remoteJson, QSet<QString> 
         if(local.isEmpty() || local["b"].toInt() < remote["b"].toInt(0))
         {
             UpdateInfo info;
-            info.action = local.isEmpty() ? UpdateInfo::Install : UpdateInfo::Update;
             info.name = remote["name"].toString();
             info.oldVersion = local["v"].toString("");
             info.oldBuild = local["b"].toInt(0);
@@ -312,7 +289,7 @@ QList<FileInfo> Updater::compareChecksums(const QJsonObject &modules, const QSet
     {
         QString name = modules.keys()[i];
 
-        if(pluginsList.contains(name) || depedencies.contains(name) || installPlugin == "+"+name)
+        if(pluginsList.contains(name) || depedencies.contains(name))
         {
             QJsonArray files = modules[name].toArray();
 
@@ -375,7 +352,7 @@ void Updater::prepareUpdate()
     ShellExecuteW(0,
                   L"runas",
                   (LPCWSTR)(updateDir + "/updater.exe").utf16(),
-                  (LPCWSTR)("\"" + installDir + "\" \"" + installPlugin + "\"").utf16(),
+                  (LPCWSTR)("\"" + installDir + "\"").utf16(),
                   (LPCWSTR)updateDir.utf16(),
                   SW_SHOWNORMAL);
 
@@ -388,81 +365,14 @@ void Updater::prepareUpdate()
 
 void Updater::doUpdate()
 {
-    if(this->installPlugin[0] == '-')
+    UpdateInfoEx info = this->checkFiles();
+    this->downloadUpdates(info.filesToUpdate, info.totalDownloadSize);
+    if(this->verify(info.filesToUpdate))
     {
-        QString name = this->installPlugin.mid(1);
-
-        // depedencies
-        QSet<QString> depedencies;
-        depedencies.insert("core");
-        QStringList pluginsList;
-        int i=0;
-        do
-        {
-            if(i++ > 100)
-            {
-                LOG("Cannot remove plugin \"" + name + "\"");
-                break;
-            }
-
-            QDir(this->installDir + "/plugins/" + name).removeRecursively();
-            pluginsList = getInstalledPlugins();
-            QThread::msleep(10);
-        } while(pluginsList.contains(name));
-
-        for(int i=0; i<pluginsList.size(); i++)
-        {
-            QFile file(this->installDir+"/plugins/"+pluginsList[i]+"/info.json");
-            if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-            {
-                LOG(QString("Couldn't open file \"%1\"!").arg(file.fileName()));
-                continue;
-            }
-
-            QJsonObject pluginJson = QJsonDocument::fromJson(file.readAll()).object();
-
-            QStringList dep = pluginJson["depedencies"].toString().split(" ", QString::SkipEmptyParts);
-            for(int i=0; i<dep.size(); i++)
-                depedencies.insert(dep[i]);
-        }
-
-        this->cleanupDepedencies(depedencies);
-
-        // updateVersionInfo
-        QFile versionJson(this->installDir + "version.json");
-        if(!versionJson.open(QIODevice::ReadWrite | QIODevice::Text))
-        {
-            LOG(QString("Couldn't open file \"%1\"!").arg(versionJson.fileName()));
-            return;
-        }
-
-        QJsonArray json = QJsonDocument::fromJson(versionJson.readAll()).array();
-        QJsonArray jsonOut;
-        for(int i=0; i<json.size(); i++)
-        {
-            if(depedencies.contains(json[i].toObject()["name"].toString()))
-            {
-                jsonOut.append(json[i]);
-            }
-        }
-
-        QJsonDocument doc;
-        doc.setArray(jsonOut);
-        versionJson.seek(0);
-        versionJson.write(doc.toJson(QJsonDocument::Compact));
-        versionJson.resize(versionJson.pos());
-    }
-    else
-    {
-        UpdateInfoEx info = this->checkFiles();
-        this->downloadUpdates(info.filesToUpdate, info.totalDownloadSize);
-        if(this->verify(info.filesToUpdate))
-        {
-            this->installUpdate(info.filesToUpdate);
-            this->cleanupDepedencies(info.depedencies);
-            this->runPostinstScripts(info.updates);
-            this->updateVersionInfo(info.depedencies, info.remoteJson, info.modules);
-        }
+        this->installUpdate(info.filesToUpdate);
+        this->cleanupDepedencies(info.depedencies);
+        this->runPostinstScripts(info.updates);
+        this->updateVersionInfo(info.depedencies, info.remoteJson, info.modules);
     }
 
     QDir(updateDir).removeRecursively();
@@ -713,28 +623,4 @@ void Updater::updateVersionInfo(const QSet<QString> &depedencies, const QJsonArr
     }
 
     versionJson.write(json.toUtf8());
-}
-
-void Updater::setInstallPlugin(QString plugin)
-{
-    if(plugin.size() && !plugin.startsWith("+") && !plugin.startsWith("-"))
-    {
-        LOG("Command must start with \"+\" or \"-\"!");
-        return;
-    }
-
-    this->installPlugin = plugin;
-}
-
-void Updater::uninstallPlugin()
-{
-    UpdateInfoArray updates;
-
-    UpdateInfo info;
-    info.action = UpdateInfo::Uninstall;
-    info.name = this->installPlugin.mid(1);
-
-    updates.push_back(info);
-
-    emit newUpdates(updates);
 }

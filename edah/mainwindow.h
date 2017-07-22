@@ -34,6 +34,7 @@
 #include <QSettings>
 #include <QPluginLoader>
 #include <QThread>
+#include <QSystemTrayIcon>
 
 struct Plugin
 {
@@ -60,8 +61,6 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
     void changeEvent(QEvent *e);
-    void mouseMoveEvent(QMouseEvent *e);
-    void mouseDoubleClickEvent(QMouseEvent *e);
     void closeEvent(QCloseEvent *e);
 
 private:
@@ -69,8 +68,6 @@ private:
 
     bool loadPlugin(const QString &id, Plugin *plugin);
     void unloadPlugin(Plugin *plugin);
-
-    void createTitleBar(QWidget *parent);
 
     QTranslator translator;
 
@@ -85,14 +82,11 @@ private:
     QLabel *pluginContainer;
     QHBoxLayout *pluginLayout;
 
-    QFrame *titleBar;
-    QToolButton *menuBtn;
-    QLabel *titleLbl;
-    QToolButton *minimizeBtn;
-    QToolButton *maximizeBtn;
-    QToolButton *closeBtn;
+    QSystemTrayIcon *trayIcon;
 
-    QPoint movePos;
+    //QLabel *titleLbl;
+    //QToolButton *minimizeBtn;
+    //QToolButton *closeBtn;
 
     QVector<Plugin> plugins;
 
@@ -107,16 +101,14 @@ public slots:
     void newProcess(const QString &message);
 
 private slots:
-    void onFocusChanged(QWidget *old, QWidget *now);
     void recalcSizes(QSize size);
     void settingsChanged();
     void onMaximizeBtnClicked();
-    void showMenu();
+    void showMenu(QSystemTrayIcon::ActivationReason reason);
     void showAbout();
     void showUpdateDialog();
     void showSettings();
     void showUpdate(UpdateInfoArray info);
-    void closeApp();
 
 signals:
     void checkForUpdates();

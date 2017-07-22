@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,9 +25,6 @@ MyPushButton::MyPushButton(const QString &text, QWidget *parent) :
 {
     this->setAttribute(Qt::WA_AcceptTouchEvents);
     this->grabGesture(Qt::TapGesture);
-
-    connect(&timer, &QTimer::timeout, this, &MyPushButton::timerTimeout);
-    timer.setInterval(1000/30);
 }
 
 bool MyPushButton::event(QEvent *e)
@@ -55,32 +52,7 @@ bool MyPushButton::event(QEvent *e)
 
         return true;
     }
-    else if((e->type() == QEvent::Enter) || (e->type() == QEvent::Leave))
-    {
-        timer.start();
-
-        return true;
-    }
 
     return QWidget::event(e);
 }
 
-void MyPushButton::timerTimeout()
-{
-    int prevColor = hoverColor;
-    hoverColor = this->underMouse() ? qMin(hoverColor+8, 40)
-                                    : qMax(hoverColor-2, 0);
-
-    if(!this->isEnabled())
-        hoverColor = 0;
-
-    if(hoverColor != prevColor)
-    {
-        this->setStyleSheet(QString("QPushButton { background-color: rgb(36,36,%1); }")
-                            .arg(36+hoverColor));
-    }
-    else
-    {
-        timer.stop();
-    }
-}

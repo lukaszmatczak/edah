@@ -20,7 +20,6 @@
 #include "aboutdialog.h"
 #include "updatedialog.h"
 #include "settings.h"
-#include "closingpopup.h"
 
 #include <libedah/logger.h>
 #include <libedah/utils.h>
@@ -90,8 +89,8 @@ MainWindow::MainWindow(QWidget *parent)
         container->layout()->setSpacing(0);
         container->layout()->setContentsMargins(QMargins());
         {
-            this->createTitleBar(container);
-            container->layout()->addWidget(titleBar);
+            //this->createTitleBar(container);
+            //container->layout()->addWidget(titleBar);
 
             pluginContainer = new QLabel(container);
             pluginContainer->setObjectName("pluginContainer");
@@ -130,11 +129,6 @@ MainWindow::MainWindow(QWidget *parent)
     updaterThread.start();
     emit checkForUpdates();
 
-    if(experimental)
-    {
-        titleLbl->setText(tr("Edah - testing version"));
-    }
-
     if(settings->value("keepScreen", false).toBool())
     {
         SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED); // TODO: settings reload
@@ -142,6 +136,10 @@ MainWindow::MainWindow(QWidget *parent)
 #else
     experimental = false;
 #endif
+
+    trayIcon = new QSystemTrayIcon(QIcon(":/img/icon.svg"), this);
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::showMenu);
+    trayIcon->show();
 }
 
 MainWindow::~MainWindow()
@@ -162,8 +160,6 @@ void MainWindow::showWindow() // TODO
 
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
-    maximizeBtn->setToolTip(this->isMaximized() ? tr("Restore") : tr("Maximize"));
-
     recalcSizes(e->size());
 }
 
@@ -178,53 +174,15 @@ void MainWindow::changeEvent(QEvent *e)
 {
     if(e->type() == QEvent::LanguageChange)
     {
-        menuBtn->setToolTip(tr("Menu"));
-        minimizeBtn->setToolTip(tr("Minimize"));
-        maximizeBtn->setToolTip(this->isMaximized() ? tr("Restore") : tr("Maximize"));
-        closeBtn->setToolTip(tr("Close"));
+        //minimizeBtn->setToolTip(tr("Minimize"));
+        //closeBtn->setToolTip(tr("Close"));
 
         this->refreshPluginContainerText();
-
-        if(experimental)
-        {
-            titleLbl->setText(tr("Edah - testing version"));
-        }
     }
     else
     {
         QMainWindow::changeEvent(e);
     }
-}
-
-void MainWindow::mouseMoveEvent(QMouseEvent *e)
-{
-    if ((e->buttons() & Qt::LeftButton) &&
-            this->titleBar->isVisible() &&
-            this->titleBar->geometry().contains(movePos))
-    {
-        QPoint diff = e->pos() - movePos;
-        QPoint newpos = this->pos() + diff;
-
-        this->move(newpos);
-    }
-}
-
-void MainWindow::mouseDoubleClickEvent(QMouseEvent *e)
-{
-    if ((e->buttons() & Qt::LeftButton) &&
-            this->titleBar->isVisible() &&
-            this->titleBar->geometry().contains(e->pos()))
-    {
-        this->onMaximizeBtnClicked();
-    }
-}
-
-void MainWindow::closeApp()
-{
-    ClosingPopup *popup = new ClosingPopup(this);
-    popup->setAttribute(Qt::WA_DeleteOnClose);
-    popup->setSize(0.9f, 0.3f);
-    popup->show();
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)
@@ -341,80 +299,15 @@ void MainWindow::reloadPlugins()
     this->recalcSizes(this->size());
 }
 
-void MainWindow::createTitleBar(QWidget *parent)
-{
-    titleBar = new QFrame(parent);
-    titleBar->setObjectName("titleBar");
-    titleBar->setFixedHeight(32);
-
-    titleBar->setLayout(new QHBoxLayout);
-    titleBar->layout()->setMargin(0);
-    titleBar->layout()->setContentsMargins(8, 4, 8, 4);
-
-    menuBtn = new QToolButton(titleBar);
-    menuBtn->setIcon(QIcon(":/img/menu.svg"));
-    menuBtn->setFixedSize(24, 24);
-    menuBtn->setObjectName("menuBtn");
-    connect(menuBtn, &QToolButton::clicked, this, &MainWindow::showMenu);
-    titleBar->layout()->addWidget(menuBtn);
-
-    QLabel *iconLbl = new QLabel(titleBar);
-    iconLbl->setPixmap(QIcon(":/img/icon.svg").pixmap(24, 24));
-    titleBar->layout()->addWidget(iconLbl);
-
-    this->setWindowTitle("Edah");
-    titleLbl = new QLabel("Edah", titleBar);
-    utils->addShadowEffect(titleLbl, Qt::white);
-    ((QHBoxLayout*)titleBar->layout())->addWidget(titleLbl, 1);
-
-    minimizeBtn = new QToolButton(titleBar);
-    minimizeBtn->setIcon(QIcon(":/img/minimize.svg"));
-    minimizeBtn->setFixedSize(24, 24);
-    minimizeBtn->setObjectName("minimizeBtn");
-    connect(minimizeBtn, &QToolButton::clicked, this, &MainWindow::showMinimized);
-    titleBar->layout()->addWidget(minimizeBtn);
-
-    maximizeBtn = new QToolButton(titleBar);
-    maximizeBtn->setIcon(QIcon(":/img/maximize.svg"));
-    maximizeBtn->setFixedSize(24, 24);
-    maximizeBtn->setObjectName("maximizeBtn");
-    connect(maximizeBtn, &QToolButton::clicked, this, &MainWindow::onMaximizeBtnClicked);
-    titleBar->layout()->addWidget(maximizeBtn);
-
-    closeBtn = new QToolButton(titleBar);
-    closeBtn->setIcon(QIcon(":/img/close.svg"));
-    closeBtn->setFixedSize(24, 24);
-    closeBtn->setObjectName("closeBtn");
-    connect(closeBtn, &QToolButton::clicked, this, &MainWindow::closeApp);
-    titleBar->layout()->addWidget(closeBtn);
-}
-
 void MainWindow::newProcess(const QString &message)
 {
     // TODO
 }
 
-void MainWindow::onFocusChanged(QWidget *old, QWidget *now)
-{
-    Q_UNUSED(old); Q_UNUSED(now);
-
-    winFrame->setProperty("hasFocus", this->isActiveWindow());
-    utils->updateStyle(winFrame);
-
-    titleBar->setProperty("hasFocus", this->isActiveWindow());
-    utils->updateStyle(titleBar);
-
-    QGraphicsDropShadowEffect *shadow = dynamic_cast<QGraphicsDropShadowEffect*>(titleBar->graphicsEffect());
-    if(shadow)
-    {
-        shadow->setBlurRadius(this->isActiveWindow() ? 30 : 0);
-    }
-}
-
 void MainWindow::recalcSizes(QSize size)
 {
     QVector<QWidget*> vec;
-    vec.push_back(titleBar);
+    //vec.push_back(titleBar);
     vec.push_back(container);
     vec.push_back(pluginContainer);
 
@@ -437,11 +330,11 @@ void MainWindow::recalcSizes(QSize size)
         container->setGeometry(3, 4, size.width()-6, size.height()-6);
     }
 
-    titleLbl->setStyleSheet(QString("color: qlineargradient(spread:pad, x1:0, y1:0, x2:%1, y2:0,"
+    /*titleLbl->setStyleSheet(QString("color: qlineargradient(spread:pad, x1:0, y1:0, x2:%1, y2:0,"
                             "stop:0 rgba(255, 255, 255, 255),"
                             "stop:0.95 rgba(255,255,255,255),"
                             "stop:1 rgba(0, 0, 0, 0));")
-                            .arg(titleLbl->width()));
+                            .arg(titleLbl->width()));*/
 
     int height = size.height()/16;
     int fontSize = height/1.5f;
@@ -481,8 +374,6 @@ void MainWindow::settingsChanged()
     QLocale locale = QLocale(settings->value("lang", "").toString());
     translator.load(locale, "lang", ".", ":/lang");
 
-    titleBar->setVisible(true);
-
     for(int i=0; i<plugins.size(); i++)
     {
         plugins[i].plugin->settingsChanged();
@@ -497,8 +388,11 @@ void MainWindow::onMaximizeBtnClicked()
         this->showMaximized();
 }
 
-void MainWindow::showMenu()
+void MainWindow::showMenu(QSystemTrayIcon::ActivationReason reason)
 {
+    if(reason != QSystemTrayIcon::Trigger && reason != QSystemTrayIcon::Context)
+        return;
+
     QMenu *menu = new QMenu(this);
 
     menu->addAction(tr("Settings..."), this, SLOT(showSettings()));
@@ -509,8 +403,9 @@ void MainWindow::showMenu()
     }
 
     menu->addAction(tr("About..."), this, SLOT(showAbout()));
+    menu->addAction(tr("Close"), this, &MainWindow::close);
 
-    menu->popup(menuBtn->mapToGlobal(QPoint(0, menuBtn->height())));
+    menu->popup(QCursor::pos());
 }
 
 void MainWindow::showAbout()
@@ -546,6 +441,6 @@ void MainWindow::showUpdate(UpdateInfoArray info)
         this->updateAvailable = true;
         this->updateInfo = info;
 
-        menuBtn->setIcon(QIcon(":/img/menu_info.svg"));
+        //menuBtn->setIcon(QIcon(":/img/menu_info.svg")); // TODO: tray badge
     }
 }

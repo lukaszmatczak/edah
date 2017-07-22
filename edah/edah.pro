@@ -21,16 +21,14 @@ SOURCES += main.cpp\
     aboutdialog.cpp \
     settings.cpp \
     updatedialog.cpp \
-    splashscreen.cpp \
-    closingpopup.cpp
+    splashscreen.cpp
 
 HEADERS  += mainwindow.h \
     winframe.h \
     aboutdialog.h \
     settings.h \
     updatedialog.h \
-    splashscreen.h \
-    closingpopup.h
+    splashscreen.h
 
 INCLUDEPATH += ..
 

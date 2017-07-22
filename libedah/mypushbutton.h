@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "libedah.h"
 
 #include <QPushButton>
-#include <QTimer>
 
 class LIBEDAHSHARED_EXPORT MyPushButton : public QPushButton
 {
@@ -33,7 +32,6 @@ protected:
     bool event(QEvent *e);
 
 private:
-    QTimer timer;
     int hoverColor;
 
 private slots:

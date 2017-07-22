@@ -58,16 +58,10 @@ Stream::Stream(QObject *parent) :
     connect(bPanel, &BigPanel::stop, this, &Stream::stop);
     bPanel->retranslate();
 
-    sPanel = new SmallPanel(this);
-    sPanel->retranslate();
-
     settingsTab = new SettingsTab(this);
 
     connect(this, &Stream::stateChanged, bPanel, &BigPanel::streamStateChanged);
-    connect(this, &Stream::stateChanged, sPanel, &SmallPanel::streamStateChanged);
-
     connect(this, &Stream::positionChanged, bPanel, &BigPanel::streamPositionChanged);
-    connect(this, &Stream::positionChanged, sPanel, &SmallPanel::streamPositionChanged);
 
     connect(&sc_process, &QProcess::readyReadStandardError, this, &Stream::sc_processRead);
     connect(&sc_process, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this, &Stream::sc_processFinished);
@@ -88,24 +82,14 @@ Stream::~Stream()
     voip_process.waitForFinished(10000);
 
     delete bPanel;
-    delete sPanel;
     delete settingsTab;
 }
 
-QWidget *Stream::bigPanel()
+QWidget *Stream::panel()
 {
-    sPanel->removePeakMeter(peakMeter);
-    bPanel->addPeakMeter(peakMeter);
+    bPanel->addPeakMeter(peakMeter); //TODO
 
     return bPanel;
-}
-
-QWidget *Stream::smallPanel()
-{
-    bPanel->removePeakMeter(peakMeter);
-    sPanel->addPeakMeter(peakMeter);
-
-    return sPanel;
 }
 
 bool Stream::hasPanel() const
@@ -208,11 +192,6 @@ void Stream::settingsChanged()
                          qRgb(115, 50, 150), qRgb(255, 255, 0), qRgb(255, 0, 0));
 
     emit stateChanged();
-}
-
-void Stream::setPanelOpacity(int opacity)
-{
-    Q_UNUSED(opacity)
 }
 
 bool Stream::isActive()

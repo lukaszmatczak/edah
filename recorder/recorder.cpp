@@ -58,18 +58,12 @@ Recorder::Recorder(QObject *parent) :
     connect(bPanel, &BigPanel::stop, this, &Recorder::stop);
     bPanel->retranslate();
 
-    sPanel = new SmallPanel(this);
-    sPanel->retranslate();
-
     settingsTab = new SettingsTab(this);
 
     this->settingsChanged();
 
     connect(this, &Recorder::stateChanged, bPanel, &BigPanel::recorderStateChanged);
-    connect(this, &Recorder::stateChanged, sPanel, &SmallPanel::recorderStateChanged);
-
     connect(this, &Recorder::positionChanged, bPanel, &BigPanel::recorderPositionChanged);
-    connect(this, &Recorder::positionChanged, sPanel, &SmallPanel::recorderPositionChanged);
 
     timer.setInterval(35);
     connect(&timer, &QTimer::timeout, this, &Recorder::refreshState);
@@ -85,30 +79,18 @@ Recorder::~Recorder()
         this->stop(bPanel->nameEdit->text());
 
     delete bPanel;
-    delete sPanel;
     delete settingsTab;
 
     BASS_RecordFree();
 }
 
-QWidget *Recorder::bigPanel()
+QWidget *Recorder::panel()
 {
-    sPanel->removePeakMeter(peakMeter);
-    bPanel->addPeakMeter(peakMeter);
+    bPanel->addPeakMeter(peakMeter); // TODO
 
-    bPanel->nameEdit->grabKeyboard();
+    //bPanel->nameEdit->grabKeyboard(); // TODO
 
     return bPanel;
-}
-
-QWidget *Recorder::smallPanel()
-{
-    bPanel->removePeakMeter(peakMeter);
-    sPanel->addPeakMeter(peakMeter);
-
-    bPanel->nameEdit->releaseKeyboard();
-
-    return sPanel;
 }
 
 bool Recorder::hasPanel() const
@@ -199,11 +181,6 @@ void Recorder::settingsChanged()
             recStream = BASS_RecordStart(sampleRate, channels, 0, RecordProc, nullptr);
         }
     }
-}
-
-void Recorder::setPanelOpacity(int opacity)
-{
-    Q_UNUSED(opacity)
 }
 
 bool Recorder::isRecording()

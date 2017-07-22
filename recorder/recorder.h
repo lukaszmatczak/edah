@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 
 #include "settingstab.h"
 #include "bigpanel.h"
-#include "smallpanel.h"
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
@@ -43,8 +42,7 @@ public:
     Recorder(QObject *parent = 0);
     virtual ~Recorder();
 
-    QWidget *bigPanel();
-    QWidget *smallPanel();
+    QWidget *panel();
     bool hasPanel() const;
     QWidget *getSettingsTab();
     QString getPluginName() const;
@@ -54,8 +52,6 @@ public:
     void writeSettings();
     void settingsChanged();
 
-    void setPanelOpacity(int opacity);
-
     bool isRecording();
 
 private:
@@ -64,7 +60,6 @@ private:
     QString genNextFilename(const QString &filename, const QString &ext);
 
     BigPanel *bPanel;
-    SmallPanel *sPanel;
 
     QTranslator translator;
     QTimer timer;

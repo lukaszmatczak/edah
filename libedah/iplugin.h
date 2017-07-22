@@ -1,6 +1,6 @@
 /*
     Edah
-    Copyright (C) 2016  Lukasz Matczak
+    Copyright (C) 2016-2017  Lukasz Matczak
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 class IPlugin
 {
 public:
-    virtual QWidget *bigPanel() = 0;
-    virtual QWidget *smallPanel() = 0;
+    virtual QWidget *panel() = 0;
     virtual bool hasPanel() const = 0;
     virtual QWidget *getSettingsTab() = 0;
     virtual QString getPluginName() const = 0;
@@ -34,8 +33,6 @@ public:
     virtual void loadSettings() = 0;
     virtual void writeSettings() = 0;
     virtual void settingsChanged() = 0;
-
-    virtual void setPanelOpacity(int opacity) = 0;
 };
 
 Q_DECLARE_INTERFACE(IPlugin, "edah.iplugin")

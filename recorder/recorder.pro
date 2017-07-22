@@ -18,13 +18,11 @@ win32:INCLUDEPATH += .. C:/Users/lukas/Desktop/bass
 
 SOURCES += recorder.cpp \
     settingstab.cpp \
-    bigpanel.cpp \
-    smallpanel.cpp
+    bigpanel.cpp
 
 HEADERS += recorder.h \
     settingstab.h \
-    bigpanel.h \
-    smallpanel.h
+    bigpanel.h
 
 LIBS += -L. -lbass -lbassenc
 win32: LIBS += -LC:/Users/lukas/Desktop/bass -ledah

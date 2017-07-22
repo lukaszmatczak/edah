@@ -60,10 +60,8 @@ protected:
     void resizeEvent(QResizeEvent *e);
     void showEvent(QShowEvent *e);
     void changeEvent(QEvent *e);
-    void mousePressEvent(QMouseEvent *e);
     void mouseMoveEvent(QMouseEvent *e);
     void mouseDoubleClickEvent(QMouseEvent *e);
-    void keyReleaseEvent(QKeyEvent *e);
     void closeEvent(QCloseEvent *e);
 
 private:
@@ -71,8 +69,6 @@ private:
 
     bool loadPlugin(const QString &id, Plugin *plugin);
     void unloadPlugin(Plugin *plugin);
-
-    void changeActivePlugin(int pluginIdx);
 
     void createTitleBar(QWidget *parent);
 
@@ -99,7 +95,6 @@ private:
     QPoint movePos;
 
     QVector<Plugin> plugins;
-    int activePlugin;
 
 #ifdef Q_OS_WIN
     QThread updaterThread;

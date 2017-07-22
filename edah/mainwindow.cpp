@@ -38,7 +38,7 @@
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), activePlugin(-1), updateAvailable(false)
+    : QMainWindow(parent), updateAvailable(false)
 {
     QCoreApplication::setOrganizationName("Lukasz Matczak");
     QCoreApplication::setApplicationName("Edah");
@@ -196,20 +196,6 @@ void MainWindow::changeEvent(QEvent *e)
     }
 }
 
-void MainWindow::mousePressEvent(QMouseEvent *e)
-{
-    movePos = e->pos();
-
-    for(int i=0; i<plugins.size(); i++)
-    {
-        if(plugins[i].plugin->hasPanel() && plugins[i].container->underMouse())
-        {
-            this->changeActivePlugin(i);
-            break;
-        }
-    }
-}
-
 void MainWindow::mouseMoveEvent(QMouseEvent *e)
 {
     if ((e->buttons() & Qt::LeftButton) &&
@@ -230,28 +216,6 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *e)
             this->titleBar->geometry().contains(e->pos()))
     {
         this->onMaximizeBtnClicked();
-    }
-}
-
-void MainWindow::keyReleaseEvent(QKeyEvent *e)
-{
-    if((e->key() >= Qt::Key_F1) && (e->key() <= Qt::Key_F35))
-    {
-        int key = e->key()-Qt::Key_F1;
-
-        int idx = 0;
-        for(int i=0; i<plugins.size(); i++)
-        {
-            if(plugins[i].plugin->hasPanel())
-            {
-                if(key == idx)
-                {
-                    this->changeActivePlugin(i);
-                    break;
-                }
-                idx++;
-            }
-        }
     }
 }
 
@@ -345,23 +309,6 @@ void MainWindow::reloadPlugins()
         emit loadProgressChanged(curr, enabledPlugins+1);
     }
 
-    // select new big widget
-    if(activePlugin != -1)
-    {
-        activePlugin = newPluginsId.indexOf(plugins[activePlugin].id);
-    }
-    if(activePlugin == -1)
-    {
-        for(int i=0; i<newPlugins.size(); i++)
-        {
-            if(newPlugins[i].plugin->hasPanel())
-            {
-                activePlugin = i;
-                break;
-            }
-        }
-    }
-
     plugins.swap(newPlugins);
 
     // insert plugins' widgets to pluginLayout
@@ -380,9 +327,7 @@ void MainWindow::reloadPlugins()
             pluginLayout->addWidget(line);
         }
 
-        plugins[i].panel = (i == activePlugin) ?
-                    plugins[i].plugin->bigPanel() :
-                    plugins[i].plugin->smallPanel();
+        plugins[i].panel = plugins[i].plugin->panel();
         plugins[i].container = new QWidget(pluginContainer);
         plugins[i].container->setObjectName("plugin.container");
         plugins[i].container->setLayout(new QGridLayout);
@@ -393,92 +338,7 @@ void MainWindow::reloadPlugins()
         plugins[i].panel->show();
     }
 
-    if(activePlugin >= 0)
-        plugins[activePlugin].panel->setFocus();
-
     this->recalcSizes(this->size());
-}
-
-void MainWindow::changeActivePlugin(int pluginIdx)
-{
-    // prevent changing active plugin during another change
-    static bool isDuringChanging;
-
-    if(isDuringChanging)
-    {
-        return;
-    }
-
-    isDuringChanging = true;
-
-    if(activePlugin != pluginIdx)
-    {
-        utils->fadeInOut(plugins[activePlugin].panel,
-                         plugins[pluginIdx].panel,
-                         250, 255, 0,
-                         [this, pluginIdx](int opacity) {
-            plugins[activePlugin].plugin->setPanelOpacity(opacity);
-            plugins[pluginIdx].plugin->setPanelOpacity(opacity);
-        });
-
-        int smallWidth = plugins[pluginIdx].container->width();
-        int bigWidth = plugins[activePlugin].container->width();
-
-        plugins[pluginIdx].panel->hide();
-        plugins[activePlugin].panel->hide();
-
-        plugins[pluginIdx].panel = plugins[pluginIdx].plugin->bigPanel();
-        plugins[pluginIdx].panel->hide();
-        plugins[pluginIdx].panel->setParent(plugins[pluginIdx].container);
-        plugins[pluginIdx].container->layout()->addWidget(plugins[pluginIdx].panel);
-
-        plugins[activePlugin].panel = plugins[activePlugin].plugin->smallPanel();
-        plugins[activePlugin].panel->hide();
-        plugins[activePlugin].panel->setParent(plugins[activePlugin].container);
-        plugins[activePlugin].container->layout()->addWidget(plugins[activePlugin].panel);
-
-        QTimeLine timeLine(350);
-        timeLine.setEasingCurve(QEasingCurve::InOutSine);
-        timeLine.setFrameRange(smallWidth, bigWidth);
-
-        plugins[activePlugin].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        plugins[pluginIdx].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-
-        connect(&timeLine, &QTimeLine::frameChanged, this, [this, pluginIdx, smallWidth, bigWidth](int frame) {
-            plugins[activePlugin].container->setFixedWidth(bigWidth-(frame-smallWidth));
-            plugins[pluginIdx].container->setFixedWidth(frame);
-
-            for(int i=0; i<plugins.size(); i++)
-            {
-                if(plugins[i].panel)
-                {
-                    plugins[i].panel->repaint();
-                }
-            }
-        });
-        timeLine.start();
-
-        QEventLoop loop;
-        connect(&timeLine, &QTimeLine::finished, &loop, &QEventLoop::quit);
-        loop.exec();
-
-        plugins[activePlugin].panel->show();
-        plugins[pluginIdx].panel->show();
-
-        utils->fadeInOut(plugins[activePlugin].panel,
-                         plugins[pluginIdx].panel,
-                         250, 0, 255,
-                         [this, pluginIdx](int opacity) {
-            plugins[activePlugin].plugin->setPanelOpacity(opacity);
-            plugins[pluginIdx].plugin->setPanelOpacity(opacity);
-        });
-    }
-
-    plugins[pluginIdx].panel->setFocus();
-
-    activePlugin = pluginIdx;
-
-    isDuringChanging = false;
 }
 
 void MainWindow::createTitleBar(QWidget *parent)
@@ -598,7 +458,7 @@ void MainWindow::recalcSizes(QSize size)
             visiblePluginsCount++;
     }
 
-    int width = pluginContainer->contentsRect().width()/(visiblePluginsCount+3);
+    int width = pluginContainer->contentsRect().width()/visiblePluginsCount;
 
     for(int i=0; i<plugins.size(); i++)
     {
@@ -607,22 +467,12 @@ void MainWindow::recalcSizes(QSize size)
             continue;
         }
 
-        if(i == activePlugin)
-        {
-            int margin = qMax(0.0, width*2.6666 - pluginContainer->height())*0.75;
-            plugins[i].container->layout()->setContentsMargins(margin, 0, margin, 0);
-            plugins[i].container->setFixedWidth(width*4);
-            plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
-            plugins[i].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        }
-        else
-        {
-            plugins[i].container->setMaximumWidth(32768);
-            plugins[i].container->setMinimumWidth(1);
-            plugins[i].container->setFixedWidth(width*0.9f);
-            plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
-            plugins[i].container->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-        }
+        int margin = qMax(0.0, width*2.6666 - pluginContainer->height())*0.75;
+        margin = 0;
+        plugins[i].container->layout()->setContentsMargins(margin, 0, margin, 0);
+        plugins[i].container->setFixedWidth(width);
+        plugins[i].container->setFixedHeight(qMin<int>(width*2.6666, pluginContainer->height()));
+        plugins[i].container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
 }
 

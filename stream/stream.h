@@ -21,7 +21,6 @@
 
 #include "settingstab.h"
 #include "bigpanel.h"
-#include "smallpanel.h"
 
 #include <libedah/iplugin.h>
 #include <libedah/peakmeter.h>
@@ -73,8 +72,7 @@ public:
     Stream(QObject *parent = 0);
     virtual ~Stream();
 
-    QWidget *bigPanel();
-    QWidget *smallPanel();
+    QWidget *panel();
     bool hasPanel() const;
     QWidget *getSettingsTab();
     QString getPluginName() const;
@@ -83,8 +81,6 @@ public:
     void loadSettings();
     void writeSettings();
     void settingsChanged();
-
-    void setPanelOpacity(int opacity);
 
     bool isActive();
     Status getShoutcastStatus();
@@ -101,7 +97,6 @@ private:
     void voip_start(const QString &username, const QString &password, const QString &port, const QString &number, const QString &pin, const QString &playDev, const QString &recDev);
 
     BigPanel *bPanel;
-    SmallPanel *sPanel;
 
     QTranslator translator;
     QTimer timer;

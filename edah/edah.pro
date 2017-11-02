@@ -35,11 +35,11 @@ HEADERS  += mainwindow.h \
 INCLUDEPATH += ..
 
 CONFIG(debug) {
-    LIBS += -L$$PWD/../../build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Debug/debug
+    LIBS += -L$$PWD/../../build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Debug/debug
 }
 
 CONFIG(release) {
-    LIBS += -L$$PWD/../../build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Release/release
+    LIBS += -L$$PWD/../../build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Release/release
 }
 
 LIBS += -L$$PWD/../libedah -ledah

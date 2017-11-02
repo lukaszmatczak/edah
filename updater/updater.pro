@@ -20,11 +20,11 @@ QMAKE_LFLAGS += "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
 INCLUDEPATH += ..
 
 CONFIG(debug) {
-    LIBS +=  -L$$PWD/../../build-libedah-Qt_5_5_0_msvc2010-Debug/debug
+    LIBS +=  -L$$PWD/../../build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Debug/debug
 }
 
 CONFIG(release) {
-    LIBS +=  -L$$PWD/../../build-libedah-Qt_5_5_0_msvc2010-Release/release
+    LIBS +=  -L$$PWD/../../build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Release/release
 }
 
 LIBS += -ledah -ladvapi32 -luser32

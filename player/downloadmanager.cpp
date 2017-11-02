@@ -118,6 +118,7 @@ RemoteInfo DownloadManager::getRemoteInfo(const QString &pub, const QString &iss
                              .arg(lang)
                              .arg(issue)
                              .arg(pub)));
+    url.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     reply = manager->get(url);
 
     QEventLoop loop;
@@ -154,6 +155,7 @@ RemoteInfo DownloadManager::getRemoteInfo(const MultimediaInfo &minfo)
                              .arg(minfo.IssueTagNumber)
                              .arg(minfo.KeySymbol)
                              .arg(minfo.MepsDocumentId)));
+    url.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     reply = manager->get(url);
 
     QEventLoop loop;

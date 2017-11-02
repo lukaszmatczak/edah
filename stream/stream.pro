@@ -30,7 +30,7 @@ LIBS += -L. -lbass
 win32: LIBS += -LC:/Users/lukas/Desktop/bass -ledah
 
 CONFIG(debug) {
-    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Debug/debug
+    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Debug/debug
 }
 
 RESOURCES += \

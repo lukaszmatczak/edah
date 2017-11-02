@@ -39,7 +39,7 @@
 #include <quazip/quazip.h>
 #include <quazip/quazipfile.h>
 
-const QString dbGetUrl = "https://www.jw.org/apps/GETPUBMEDIALINKS?output=json&alllangs=0";
+const QString dbGetUrl = "https://apps.jw.org/GETPUBMEDIALINKS?output=json&alllangs=0";
 
 const quint32 magic = 0xEDA0A0ED;
 const quint32 currVersion = 2;
@@ -212,7 +212,7 @@ void DownloadManager::getRemoteMultimediaInfo(QMap<QString, QList<MultimediaInfo
     {
         for(int i=0; i<it->size(); i++)
         {
-            if(!songs.contains(it->at(i).KeySymbol) && it->at(i).url.isEmpty()) // TODO: video quality change
+            if(!songs.contains(it->at(i).KeySymbol))
             {
                 RemoteInfo info = this->getRemoteInfo(it->at(i));
 

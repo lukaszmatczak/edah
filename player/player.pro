@@ -66,11 +66,11 @@ win32 {
 }
 
 CONFIG(debug) {
-    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Debug/debug -LC:/Users/lukas/Desktop/taglib/debug/lib
+    #win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Debug/debug -LC:/Users/lukas/Desktop/taglib/debug/lib
 }
 
 CONFIG(release) {
-    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_9_2_MSVC2015_32bit-Release/release -LC:/Users/lukas/Desktop/taglib/lib
+    win32: LIBS += -LC:/Users/lukas/Desktop/edah/build-libedah-Desktop_Qt_5_7_0_MSVC2015_32bit-Release/release -LC:/Users/lukas/Desktop/taglib/lib
 }
 
 RESOURCES += \
